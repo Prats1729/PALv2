@@ -68,6 +68,7 @@ h3{
     display: flex;
     align-items: center;
     gap: 3px;
+    white-space: nowrap;
     position: absolute;
     right: 10px;
     top: 10px;
@@ -85,6 +86,7 @@ h3{
 
 .score img{
     height: 10px;
+    flex-shrink: 0;
 }
 
 
