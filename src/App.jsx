@@ -1,16 +1,9 @@
 import { useState, useEffect } from "react";
-import { request, gql } from "graphql-request";
-import TopBar from "./components/TopBar";
+
+import TopBar from "./components/layout/TopBar";
 import "./App.css";
 
-// anilist api endpoint
-const endpoint = "https://graphql.anilist.co/";
 
-// gql accepts '$search' string parameter
-
-const SEARCH_QUERY = gql`
-  
-`
 
 export default function App() {
   // state for the query in the search box

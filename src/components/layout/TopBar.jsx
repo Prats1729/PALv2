@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import "../styles/TopBar.css";
-import searchIcon from "../assets/search-button-svgrepo-com.svg"
+import "../../styles/TopBar.css";
+import searchIcon from "../../assets/search-button-svgrepo-com.svg"
 
 export default function TopBar({ onSearch }) {
     const [searchQuery, setSearchQuery] = useState("");
