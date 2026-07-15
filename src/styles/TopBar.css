@@ -25,21 +25,25 @@
 
 .search-box{
     display: flex;
-     border: 1px solid transparent;
+    align-items: center;
+    border: 1px solid transparent;
+    border-radius: 7px;
+    overflow: hidden;
     transition: all 0.2s ease-in-out;
+    /* GPU acceleration properties to prevent scaling jitter/blur */
+    backface-visibility: hidden;
+    transform: translateZ(0);
 }
 
 .search-box:hover{
     border: 1px solid #707070;
-    border-radius: 7px;
-    transform: scale(1.02);
+    transform: scale(1.02) translateZ(0);
 }
 
 .search-box input{
     background-color: #0b0813;
     width: 200px;
-    height: 35px;
-    border-radius: 7px 0 0 7px;
+    height: 36px;
     border: none;
     outline: none;
     color: #959595;
@@ -55,11 +59,15 @@
 }
 
 .search-box button{
-    height: 37px;
-    border-radius: 0 7px 7px 0;
+    height: 36px;
     background-color: #0b0813;
     color: white;
-    border: none
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 12px;
 }
 
 .search-box button img{

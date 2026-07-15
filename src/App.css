@@ -1,4 +1,110 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
 body{
     margin-left: 0px;
+    font-family: 'Outfit', sans-serif;
     background-color: #0b0813;
+}
+
+p{
+    margin: 0px;
+    
+}
+h3{
+    margin: 0px;
+}
+
+.main-content {
+    margin-top: 65px;
+    padding: 20px;
+    color: #959595;
+}
+
+.anime-grid{
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 20px;
+    padding: 20px;
+    
+}
+
+.anime-card {
+    position: relative;
+    width: 100%;
+    height: 325px;
+    background-color: #1a1822;
+    border: 1px solid rgba(255, 255, 255, 0.15); /* Soft border for separation */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    border-radius: 7px;
+    text-align: center;
+    transition: all 0.2s ease-in-out;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+
+}
+
+.anime-card:hover{
+    transform: scale(1.02);
+    cursor: pointer;
+}
+
+.anime-title{
+    margin-top: 10px;
+    font-weight: 600;
+    font-size: 16px;
+    padding: 0 5px 0 5px;
+}
+
+.anime-card img{
+    width: 100%;        
+    height: 220px;
+    object-fit: cover;
+    border-radius: 7px 7px 0 0;
+}
+
+.score{
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    position: absolute;
+    right: 10px;
+    top: 10px;
+    background-color: rgba(11, 8, 19, 0.75); /* Deep dark background */
+    backdrop-filter: blur(8px);               /* Frosted glass effect */
+    border: 1px solid rgba(255, 255, 255, 0.15); /* Soft border for separation */
+    color: #f8fafc;
+    font-weight: 700;
+    font-size: 12px;
+    padding: 4px 8px;
+    border-radius: 6px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    z-index: 5;
+}
+
+.score img{
+    height: 10px;
+}
+
+
+.extra-info{
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    background-color: rgba(11, 8, 19, 0.75); /* Deep dark background */
+    backdrop-filter: blur(8px);               /* Frosted glass effect */
+    border: 1px solid rgba(255, 255, 255, 0.15); /* Soft border for separation */
+    color: #f8fafc;
+    font-weight: 700;
+    font-size: 12px;
+    padding: 4px 8px;
+    border-radius: 6px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    z-index: 5;
+}
+
+.extra-info p {
+    margin: 0;
+    line-height: 1.2;
 }
