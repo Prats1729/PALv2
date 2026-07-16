@@ -18,6 +18,18 @@ export default function TopBar({ onSearch }) {
         onSearch(searchQuery);
       }
     }
+
+    // Debounce search input
+    useEffect(() => {
+      // Setup a timer that will wait for 500ms after the user stops typing
+      const timer = setTimeout(()=>{
+        onSearch(searchQuery);
+      }, 500); // 500ms debounce delay
+      // Cleanup function: this runs if the component unmounts
+      // or if the effect runs again (due to searchQuery changing)
+      // This prevents the timer from running if the user types again quickly.
+      return () => clearTimeout(timer);
+    }, [searchQuery, onSearch]);
   
     return (
     <div className="top-bar">

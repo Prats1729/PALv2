@@ -17,8 +17,12 @@ export default function App() {
 
 
   useEffect(() => {
-    // Dont search if empty query
-    if (!query) return;
+    // if query  is empty, clear the previous results and stop
+    if (!query) {
+      setResults([]);
+      setError(null);
+      return;
+    }
 
     const performSearch = async () => {
       setLoading(true);
