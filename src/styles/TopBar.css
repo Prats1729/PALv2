@@ -17,10 +17,12 @@
 }
 
 .middle-section {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
   display: flex;
   align-items: center;
   justify-content: space-around;
-  justify-content: center;
 }
 
 .search-box {
@@ -91,4 +93,97 @@
 
 .right-section img{
   width: 30px;
+}
+
+
+/* Container must be relative so absolute dropdown is positioned correctly */
+.search-container {
+  position: relative;
+}
+
+/* Floating dropdown panel */
+.search-dropdown {
+  position: absolute;
+  top: calc(100% + 8px); /* Float 8px below the search bar */
+  left: 50%;
+  transform: translateX(-50%);
+  width: 320px;
+  background-color: rgba(22, 18, 44, 0.95);
+    backdrop-filter: blur(8px); /* Frosted glass effect */ /* Semi-transparent dark slate */
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+  overflow: hidden;
+}
+
+/* Status text (loading, no results) */
+.dropdown-status {
+  padding: 15px;
+  text-align: center;
+  color: #959595;
+  font-size: 14px;
+}
+
+/* Dropdown list item */
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 15px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.dropdown-item:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+}
+
+/* Thumbnail image */
+.dropdown-thumb {
+  width: 40px;
+  height: 55px;
+  object-fit: cover;
+  border-radius: 4px;
+}
+
+/* Metadata and title styling */
+.dropdown-info {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0; /* Prevents overflow */
+}
+
+.dropdown-title {
+  color: #fff;
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis; /* Ellipsis for long titles */
+}
+
+.dropdown-meta {
+  color: #959595;
+  font-size: 12px;
+  margin-top: 3px;
+}
+
+/* Footer (VIEW ALL button) */
+.dropdown-footer {
+  padding: 12px;
+  text-align: center;
+  background-color: rgba(11, 8, 19, 0.5);
+  color: #6366f1; /* Glowing Indigo theme */
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.dropdown-footer:hover {
+  background-color: rgba(99, 102, 241, 0.1);
+  color: #fff;
 }

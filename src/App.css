@@ -71,7 +71,7 @@ h3{
   right: 10px;
   top: 10px;
   background-color: rgba(11, 8, 19, 0.75); /* Deep dark background */
-  backdrop-filter: blur(8px); /* Frosted glass effect */
+  backdrop-filter: blur(12px); /* Frosted glass effect */
   border: 1px solid rgba(255, 255, 255, 0.15); /* Soft border for separation */
   color: #f8fafc;
   font-weight: 700;

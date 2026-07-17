@@ -1,0 +1,118 @@
+.details-container {
+  min-height: 100vh;
+  background-color: #0b0813;
+  color: #fff;
+  padding-bottom: 50px;
+}
+
+/* Banner sizing and fade effect */
+.details-banner-wrapper {
+  position: relative;
+  width: 100%;
+  height: 350px;
+  overflow: hidden;
+}
+
+.details-banner {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+/* Fades the bottom of the banner into the page background color */
+.details-banner-wrapper::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 120px;
+  background: linear-gradient(to top, #0b0813, transparent);
+}
+/* Content grid (Layout aligns cover and text info) */
+.details-content {
+  max-width: 1100px;
+  margin: -100px auto 0 auto; /* Pulls content up over the banner */
+  padding: 0 20px;
+  display: flex;
+  gap: 40px;
+  position: relative;
+  z-index: 10;
+}
+/* Cover Image styling */
+.details-cover {
+  width: 230px;
+  height: 325px;
+  object-fit: cover;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  flex-shrink: 0;
+}
+/* Text details column */
+.details-main-info {
+  flex: 1;
+  padding-top: 100px; /* Offset to align with cover top */
+}
+.details-title {
+  font-size: 32px;
+  font-weight: 700;
+  margin: 0 0 15px 0;
+  line-height: 1.2;
+}
+/* Meta info row styling */
+.details-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #959595;
+  font-size: 15px;
+  margin-bottom: 20px;
+}
+.details-rating {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background-color: rgba(255, 255, 255, 0.08);
+  padding: 4px 8px;
+  border-radius: 6px;
+  color: #fff;
+  font-weight: 700;
+  font-size: 13px;
+}
+.details-rating img {
+  width: 13px;
+  height: 13px;
+}
+/* Genres tag badges */
+.genres-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 30px;
+}
+.genre-badge {
+  background-color: rgba(99, 102, 241, 0.15); /* Premium indigo overlay */
+  color: #a5b4fc;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 500;
+}
+/* Synopsis Section */
+.details-synopsis-section h2 {
+  font-size: 20px;
+  margin-bottom: 12px;
+  font-weight: 600;
+}
+.details-synopsis {
+  color: #959595;
+  font-size: 15px;
+  line-height: 1.6;
+}
+/* Center loading/error text */
+.details-status {
+  padding: 100px;
+  text-align: center;
+  color: #959595;
+  font-size: 18px;
+}
