@@ -59,3 +59,9 @@ Once you have learned React Router, here is the sequence of goals we will tackle
 ### 3. AniList OAuth Integration
 * Integrate official AniList authentication (OAuth).
 * Allow the application to read and update the user's live list on AniList itself.
+
+---
+
+## 🎓 Learning Guidelines
+* **Role**: The assistant will explain architecture, patterns, and provide precise, clean code snippets. The assistant will NOT directly edit the source code files unless explicitly requested by the USER. Otherwise, the USER will write/copy the code themselves to maximize learning.
+
