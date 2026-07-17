@@ -109,3 +109,101 @@ h3{
   margin: 0;
   line-height: 1.2;
 }
+
+
+/* Home layout spacing */
+.home-container {
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+  padding-bottom: 50px;
+}
+
+.home-section h2 {
+  color: #fff;
+  font-size: 22px;
+  margin-bottom: 20px;
+  padding-left: 20px;
+  font-weight: 600;
+}
+
+/* Reset links so cards don't show underline styling */
+.card-link {
+  text-decoration: none;
+  color: inherit;
+}
+
+/* Hero Section Layout */
+.hero-section {
+  height: 460px; /* Taller banner */
+  background-size: cover;
+  background-position: center;
+  border-radius: 12px;
+  display: flex;
+  align-items: flex-end;
+  padding: 45px; /* Slightly more padding for breathing room */
+  box-sizing: border-box;
+  margin: 0 20px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: none;
+  border-top: none;
+  
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+}
+
+
+.hero-content {
+  max-width: 600px;
+}
+
+.hero-badge {
+  background-color: #6366f1;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 4px;
+  letter-spacing: 1px;
+}
+
+.hero-title {
+  color: #fff;
+  font-size: 38px;
+  margin: 15px 0 10px 0;
+  font-weight: 800;
+  line-height: 1.2;
+  text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+}
+
+.hero-desc {
+  color: #cccccc;
+  font-size: 15px;
+  line-height: 1.5;
+  margin-bottom: 20px;
+  text-shadow: 0 2px 5px rgba(0,0,0,0.5);
+}
+
+.hero-button {
+  display: inline-block;
+  background-color: #fff;
+  color: #0b0813;
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 14px;
+  padding: 12px 24px;
+  border-radius: 8px;
+  transition: transform 0.2s ease, background-color 0.2s ease;
+}
+
+.hero-button:hover {
+  transform: scale(1.03);
+  background-color: #e2e8f0;
+}
+
+/* Loading center alignment */
+.home-loading {
+  padding: 100px;
+  text-align: center;
+  color: #959595;
+  font-size: 18px;
+}

@@ -70,7 +70,7 @@ export default function AnimeDetails() {
         Error: {error}
       </div>
     );
-  if (!anime) return <div className="details-status">No anime found.</div>
+  if (!anime) return <div className="details-status">No anime found.</div>;
 
   //clean description
   const cleanedDescription = anime.description
@@ -80,15 +80,17 @@ export default function AnimeDetails() {
   return (
     <div className="details-container">
       {/* banner */}
-      {anime.bannerImage && (
         <div className="details-banner-wrapper">
-          <img
-            src={anime.bannerImage}
-            alt="banner"
-            className="details-banner"
-          />
+          {anime.bannerImage ? (
+            <img
+              src={anime.bannerImage}
+              alt="banner"
+              className="details-banner"
+            />
+          ) : (
+            <div className="details-banner-placeholder"></div>
+          )}
         </div>
-      )}
       <div className="details-content">
         <img
           src={anime.coverImage.large}

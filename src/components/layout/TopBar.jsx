@@ -4,10 +4,7 @@ import { searchAnime } from "../../services/anilist";
 import "../../styles/TopBar.css";
 import searchIcon from "../../assets/search-button-svgrepo-com.svg";
 import logo from "../../assets/pal-logo.svg";
-import discoverLogo from "../../assets/discover-svgrepo-com.svg";
-import statisticsLogo from "../../assets/statistics-svgrepo-com.svg";
-import libraryLogo from "../../assets/open-book-svgrepo-com.svg";
-import settingLogo from "../../assets/settings-svgrepo-com (1).svg";
+
 
 export default function TopBar() {
   const navigate = useNavigate();
@@ -70,12 +67,7 @@ export default function TopBar() {
   return (
     <div className="top-bar">
       <div className="left-section">
-        <NavLink
-          to="/"
-          className={({ isActive }) =>
-            isActive ? "nav-link-active" : "nav-link"
-          }
-        >
+        <NavLink to="/" className="home-logo-link">
           <img className="home-logo" src={logo} alt="home-button" />
         </NavLink>
       </div>
@@ -90,6 +82,12 @@ export default function TopBar() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onFocus={() => searchQuery.trim() !== "" && setIsOpen(true)}
+              onKeyDown={(e) => {
+                if (e.key === "Escape") {
+                  setSearchQuery("");
+                  setIsOpen(false);
+                }
+              }}
             />
             <button type="submit">
               <img src={searchIcon} alt="search" />
@@ -147,7 +145,7 @@ export default function TopBar() {
             isActive ? "nav-link-active" : "nav-link"
           }
         >
-          <img src={discoverLogo} alt="discover-button" />
+          Discover
         </NavLink>
         <NavLink
           to="/statistics"
@@ -155,7 +153,7 @@ export default function TopBar() {
             isActive ? "nav-link-active" : "nav-link"
           }
         >
-          <img src={statisticsLogo} alt="statistics-button" />
+          Stats
         </NavLink>
         <NavLink
           to="/library"
@@ -163,7 +161,7 @@ export default function TopBar() {
             isActive ? "nav-link-active" : "nav-link"
           }
         >
-          <img src={libraryLogo} alt="library-button" />
+          Library
         </NavLink>
         <NavLink
           to="/settings"
@@ -171,7 +169,7 @@ export default function TopBar() {
             isActive ? "nav-link-active" : "nav-link"
           }
         >
-          <img src={settingLogo} alt="setting-button" />
+          Settings
         </NavLink>
       </div>
     </div>
