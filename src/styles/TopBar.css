@@ -1,5 +1,5 @@
 .top-bar {
-  background-color: #16122c;
+  background-color: rgba(22, 18, 44, 0.75);
   height: 65px;
   position: fixed;
   width: 100%;
@@ -9,6 +9,7 @@
   justify-content: space-between;
   align-items: center;
   z-index: 100;
+  backdrop-filter: blur(8px);
 }
 
 .top-bar p {
