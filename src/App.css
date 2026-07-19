@@ -51,9 +51,22 @@ h3{
 .anime-title {
   margin-top: 10px;
   font-weight: 600;
-  font-size: 16px;
+  font-size: 14px;
   padding: 0 5px 0 5px;
+  line-height: 1.3;
+
+  /* Clamp to exactly 2 lines with ellipsis */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2; /* Standard property for compatibility */
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  
+  /* Fixed height so all cards align perfectly */
+  height: 36px;
 }
+
 
 .anime-card > img {
   width: 100%;
@@ -206,4 +219,165 @@ h3{
   text-align: center;
   color: #959595;
   font-size: 18px;
+}
+
+/* Card wrapper to position preview tooltips */
+.anime-card-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+/* Dynamic Hover Color text highlight */
+.card-link:hover .anime-title {
+  color: var(--hover-color) !important;
+}
+
+/* Floating Hover Preview Card (Delayed Modal) */
+.card-hover-preview {
+  position: absolute;
+  top: 25%;
+  left: 105%;
+  transform: translateY(-50%);
+  width: 250px;
+  background-color: #120e25;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 16px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+  z-index: 99;
+  pointer-events: none; /* Mouse movements ignore this modal */
+  animation: fadeInHover 0.2s ease-out forwards;
+}
+
+/* Position tooltip leftwards if card is on the right of screen */
+.anime-grid .anime-card-wrapper:nth-child(6n) .card-hover-preview,
+.anime-grid .anime-card-wrapper:nth-child(6n-1) .card-hover-preview {
+  left: auto;
+  right: 105%;
+}
+
+@keyframes fadeInHover {
+  from {
+    opacity: 0;
+    transform: translateY(-45%) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(-50%) scale(1);
+  }
+}
+
+.hover-preview-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.hover-preview-header h3 {
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0;
+  line-height: 1.3;
+}
+
+.hover-format {
+  background-color: rgba(255, 255, 255, 0.08);
+  color: #e2e8f0;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 6px;
+  border-radius: 4px;
+  text-transform: uppercase;
+}
+
+.hover-preview-meta {
+  display: flex;
+  gap: 8px;
+  color: #7a7690;
+  font-size: 12px;
+  font-weight: 500;
+  margin-bottom: 10px;
+}
+
+.hover-rating {
+  color: #fbbf24;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.hover-rating img {
+  width: 14px;
+  height: 14px;
+}
+
+.hover-preview-desc {
+  color: #959595;
+  font-size: 12px;
+  line-height: 1.4;
+  margin: 0;
+}
+
+/* Hero Section Carousel Additions */
+.hero-section {
+  position: relative;
+}
+
+/* Left-Side Dashes indicators */
+.carousel-indicators {
+  position: absolute;
+  bottom: 25px;
+  left: 45px;
+  display: flex;
+  gap: 8px;
+  z-index: 10;
+}
+
+.indicator-dash {
+  width: 16px;
+  height: 3px;
+  background-color: rgba(255, 255, 255, 0.2);
+  border-radius: 2px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.indicator-dash.active {
+  width: 32px;
+  background-color: #6366f1; /* Active glowing dash */
+  box-shadow: 0 0 8px rgba(99, 102, 241, 0.5);
+}
+
+/* Right-Side Arrows indicators */
+.carousel-arrows {
+  position: absolute;
+  bottom: 25px;
+  right: 45px;
+  display: flex;
+  gap: 12px;
+  z-index: 10;
+}
+
+.arrow-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  font-size: 20px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.arrow-btn:hover {
+  background-color: #6366f1;
+  border-color: #6366f1;
+  box-shadow: 0 0 10px rgba(99, 102, 241, 0.5);
 }

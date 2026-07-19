@@ -1,22 +1,110 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import star from "../assets/star.png";
 
+// SUB-COMPONENT: ANIME CARD WITH DELAYED HOVER CARD PREVIEW
+function AnimeCard({ anime }) {
+  const [showPreview, setShowPreview] = useState(false);
+  const hoverTimer = useRef(null);
+
+  const handleMouseEnter = () => {
+    // 450ms delay before triggering the detailed preview
+    hoverTimer.current = setTimeout(() => {
+      setShowPreview(true);
+    }, 450);
+  };
+
+  const handleMouseLeave = () => {
+    if (hoverTimer.current) {
+      clearTimeout(hoverTimer.current);
+    }
+    setShowPreview(false);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (hoverTimer.current) clearTimeout(hoverTimer.current);
+    };
+  }, []);
+
+  const cleanDescription = anime.description
+    ? anime.description.replace(/<[^>]*>/g, "").substring(0, 120) + "..."
+    : "No synopsis available.";
+
+  const cardColor = anime.coverImage.color || "#6366f1";
+
+  return (
+    <div
+      className="anime-card-wrapper"
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+    >
+      <Link
+        to={`/anime/${anime.id}`}
+        className="card-link"
+        style={{ "--hover-color": cardColor }}
+      >
+        <div className="anime-card">
+          <img
+            src={anime.coverImage.large}
+            alt={anime.title.english || anime.title.romaji}
+          />
+          <div className="anime-title">
+            {anime.title.english || anime.title.romaji}
+          </div>
+          <div className="score">
+            <img src={star} alt="star" />
+            {anime.averageScore ? `${anime.averageScore / 10}` : "N/A"}
+          </div>
+          <div className="extra-info">
+            <p className="format">{anime.format}</p>
+            <p className="episodes">{anime.episodes || "?"} eps</p>
+          </div>
+        </div>
+      </Link>
+
+      {/* FLOATING HOVER PREVIEW CARD */}
+      {showPreview && (
+        <div
+          className="card-hover-preview"
+          style={{ borderTop: `3px solid ${cardColor}` }}
+        >
+          <div className="hover-preview-header">
+            <h3>{anime.title.english || anime.title.romaji}</h3>
+            <span className="hover-format">{anime.format}</span>
+          </div>
+          <div className="hover-preview-meta">
+            <span className="hover-rating">
+              <img src={star} alt="star" /> {anime.averageScore ? `${anime.averageScore / 10}` : "N/A"}
+            </span>
+            <span>•</span>
+            <span>{anime.episodes || "?"} Episodes</span>
+          </div>
+          <p className="hover-preview-desc">{cleanDescription}</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// MAIN PAGE COMPONENT
 export default function Home() {
   const [trending, setTrending] = useState([]);
   const [popular, setPopular] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const slideInterval = useRef(null);
 
+  // Fetch lists with cover image color property
   useEffect(() => {
     const fetchHomeData = async () => {
-      // GraphQL query to get both trending and popular anime
       const query = `
         query {
-          trending: Page(page: 1, perPage: 6) {
+          trending: Page(page: 1, perPage: 10) { # Fetch 10 items for carousel
             media(sort: TRENDING_DESC, type: ANIME) {
               id
               title { english romaji native }
-              coverImage { large }
+              coverImage { large color } # Added color
               bannerImage
               description
               averageScore
@@ -27,8 +115,8 @@ export default function Home() {
           popular: Page(page: 1, perPage: 6) {
             media(sort: POPULARITY_DESC, type: ANIME) {
               id
-              title { english romaji native }
-              coverImage { large }
+              title { english romaji }
+              coverImage { large color } # Added color
               averageScore
               format
               episodes
@@ -56,33 +144,91 @@ export default function Home() {
     fetchHomeData();
   }, []);
 
+  // Slide Cycle Management
+  const startSlideShow = () => {
+    stopSlideShow();
+    slideInterval.current = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % 10);
+    }, 7000); // Cycle every 7 seconds
+  };
+
+  const stopSlideShow = () => {
+    if (slideInterval.current) clearInterval(slideInterval.current);
+  };
+
+  useEffect(() => {
+    if (trending.length > 0) {
+      startSlideShow();
+    }
+    return () => stopSlideShow();
+  }, [trending]);
+
+  const handleNextSlide = () => {
+    stopSlideShow();
+    setCurrentSlide((prev) => (prev + 1) % trending.length);
+    startSlideShow();
+  };
+
+  const handlePrevSlide = () => {
+    stopSlideShow();
+    setCurrentSlide((prev) => (prev - 1 + trending.length) % trending.length);
+    startSlideShow();
+  };
+
   if (loading) return <div className="home-loading">Loading dashboard...</div>;
 
-  // Use the banner image of the #1 trending show for our Hero section
-  const heroAnime = trending[0];
+  const heroAnime = trending[currentSlide];
   const heroDescription = heroAnime?.description
     ? heroAnime.description.replace(/<[^>]*>/g, "").substring(0, 220) + "..."
     : "";
 
   return (
     <div className="home-container">
-      {/* 1. HERO BANNER */}
+      {/* 1. HERO SLIDER BANNER */}
       {heroAnime && (
         <div
           className="hero-section"
           style={{
-            backgroundImage: `linear-gradient(to top, #0b0813 5%, rgba(11, 8, 19, 0.2) 60%, rgba(11, 8, 19, 0.5) 98%, #0b0813 100%), url(${heroAnime.bannerImage})`,
+            marginTop: "1.5rem",
+            backgroundImage: `linear-gradient(to top, #0b0813 5%, rgba(11, 8, 19, 0.2) 60%, rgba(11, 8, 19, 0.5) 98%, #0b0813 100%), url(${heroAnime.bannerImage || heroAnime.coverImage.large})`,
           }}
         >
           <div className="hero-content">
-            <span className="hero-badge">#1 TRENDING</span>
+            <span className="hero-badge">#{currentSlide + 1} TRENDING</span>
             <h1 className="hero-title">
               {heroAnime.title.english || heroAnime.title.romaji}
             </h1>
             <p className="hero-desc">{heroDescription}</p>
-            <Link to={`/anime/${heroAnime.id}`} className="hero-button">
-              View Details
-            </Link>
+            <div className="hero-actions">
+              <Link to={`/anime/${heroAnime.id}`} className="hero-button">
+                View Details
+              </Link>
+            </div>
+          </div>
+
+          {/* Carousel Indicators (Bottom Left) */}
+          <div className="carousel-indicators">
+            {trending.map((_, index) => (
+              <span
+                key={index}
+                className={`indicator-dash ${index === currentSlide ? "active" : ""}`}
+                onClick={() => {
+                  stopSlideShow();
+                  setCurrentSlide(index);
+                  startSlideShow();
+                }}
+              />
+            ))}
+          </div>
+
+          {/* Carousel Arrows (Bottom Right) */}
+          <div className="carousel-arrows">
+            <button className="arrow-btn" onClick={handlePrevSlide}>
+              ‹
+            </button>
+            <button className="arrow-btn" onClick={handleNextSlide}>
+              ›
+            </button>
           </div>
         </div>
       )}
@@ -91,27 +237,8 @@ export default function Home() {
       <section className="home-section">
         <h2>Trending Now</h2>
         <div className="anime-grid">
-          {trending.map((anime) => (
-            <Link
-              to={`/anime/${anime.id}`}
-              key={anime.id}
-              className="card-link"
-            >
-              <div className="anime-card">
-                <img src={anime.coverImage.large} alt={anime.title.english} />
-                <div className="anime-title">
-                  {anime.title.english || anime.title.romaji}
-                </div>
-                <div className="score">
-                  <img src={star} alt="star" />
-                  {anime.averageScore ? `${anime.averageScore / 10}` : "N/A"}
-                </div>
-                <div className="extra-info">
-                  <p className="format">{anime.format}</p>
-                  <p className="episodes">{anime.episodes || "?"} eps</p>
-                </div>
-              </div>
-            </Link>
+          {trending.slice(0, 6).map((anime) => (
+            <AnimeCard key={anime.id} anime={anime} />
           ))}
         </div>
       </section>
@@ -121,26 +248,7 @@ export default function Home() {
         <h2>Popular This Season</h2>
         <div className="anime-grid">
           {popular.map((anime) => (
-            <Link
-              to={`/anime/${anime.id}`}
-              key={anime.id}
-              className="card-link"
-            >
-              <div className="anime-card">
-                <img src={anime.coverImage.large} alt={anime.title.english} />
-                <div className="anime-title">
-                  {anime.title.english || anime.title.romaji}
-                </div>
-                <div className="score">
-                  <img src={star} alt="star" />
-                  {anime.averageScore ? `${anime.averageScore / 10}` : "N/A"}
-                </div>
-                <div className="extra-info">
-                  <p className="format">{anime.format}</p>
-                  <p className="episodes">{anime.episodes || "?"} eps</p>
-                </div>
-              </div>
-            </Link>
+            <AnimeCard key={anime.id} anime={anime} />
           ))}
         </div>
       </section>

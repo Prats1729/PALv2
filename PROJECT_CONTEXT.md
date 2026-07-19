@@ -1,6 +1,6 @@
 # Project Context & Roadmap: PALv2
 
-Welcome! This file serves as your central reference for **PALv2** as you step away to learn React Router. When you return, this document will help you immediately get back up to speed on what we have built, how it works, and what we need to build next.
+Welcome! This file serves as your central reference for **PALv2**. It tracks what we have built, how it works, and what we need to build next.
 
 ---
 
@@ -11,7 +11,7 @@ Welcome! This file serves as your central reference for **PALv2** as you step aw
 ---
 
 ## 🛠️ Technology Stack
-* **Frontend**: React (Vite-based)
+* **Frontend**: React (Vite-based) with React Router v6
 * **Styling**: Custom CSS (Vanilla CSS for maximum control and clean custom UI aesthetics)
 * **Data Fetching**: GraphQL queries targeting the AniList endpoint
 
@@ -22,48 +22,50 @@ Here is how the project is organized currently:
 * 📄 [`package.json`](file:///c:/Users/Prateek/Desktop/PALv2/package.json): Project dependencies.
 * 📄 [`index.html`](file:///c:/Users/Prateek/Desktop/PALv2/index.html): HTML entry point.
 * 📁 `src/`
-  * 📄 [`App.jsx`](file:///c:/Users/Prateek/Desktop/PALv2/src/App.jsx): Parent component managing the active search state (`query`), rendering results, loading/error states, and coordinates with `TopBar`.
-  * 📄 [`App.css`](file:///c:/Users/Prateek/Desktop/PALv2/src/App.css): Layout styles (grid layout for anime cards, animations, dark theme colors).
+  * 📄 [`App.jsx`](file:///c:/Users/Prateek/Desktop/PALv2/src/App.jsx): Main router and layout coordinator.
+  * 📄 [`App.css`](file:///c:/Users/Prateek/Desktop/PALv2/src/App.css): Layout styles (grids, animations, global resets).
   * 📁 `components/layout/`
-    * 📄 [`TopBar.jsx`](file:///c:/Users/Prateek/Desktop/PALv2/src/components/layout/TopBar.jsx): The header search bar. Keeps track of typing input, contains the **debounce logic**, and submits to `App.jsx`.
+    * 📄 [`TopBar.jsx`](file:///c:/Users/Prateek/Desktop/PALv2/src/components/layout/TopBar.jsx): Main navigation header with text links (capsule style), search input, and floating preview dropdown.
   * 📁 `styles/`
-    * 📄 [`TopBar.css`](file:///c:/Users/Prateek/Desktop/PALv2/src/styles/TopBar.css): Styles for the search bar, search buttons, inputs, and positioning.
+    * 📄 [`TopBar.css`](file:///c:/Users/Prateek/Desktop/PALv2/src/styles/TopBar.css): Styles for search bar, links, and dropdown.
+    * 📄 [`Discover.css`](file:///c:/Users/Prateek/Desktop/PALv2/src/styles/Discover.css): Catalog layout, select boxes, and custom multi-select checkbox dropdown styling.
+    * 📄 [`AnimeDetails.css`](file:///c:/Users/Prateek/Desktop/PALv2/src/styles/AnimeDetails.css): Details page aesthetic styles.
+  * 📁 `pages/`
+    * 📄 [`Home.jsx`](file:///c:/Users/Prateek/Desktop/PALv2/src/pages/Home.jsx): Home dashboard with Hero banner, Trending, and Popular grids.
+    * 📄 [`Discover.jsx`](file:///c:/Users/Prateek/Desktop/PALv2/src/pages/Discover.jsx): Catalog browser with multi-select dropdown filters (genres, tags, formats, status) and single-select controls (year, season, sort).
+    * 📄 [`AnimeDetails.jsx`](file:///c:/Users/Prateek/Desktop/PALv2/src/pages/AnimeDetails.jsx): Dynamic anime detailed view with custom fallback gradient banners.
   * 📁 `services/`
-    * 📄 [`anilist.js`](file:///c:/Users/Prateek/Desktop/PALv2/src/services/anilist.js): Handles GraphQL query requests to AniList for searching anime.
-  * 📁 `assets/`
-    * Contains icons and assets (e.g. search icon SVG, star image for scores).
+    * 📄 [`anilist.js`](file:///c:/Users/Prateek/Desktop/PALv2/src/services/anilist.js): Handles search query requests to AniList.
 
 ---
 
 ## ✅ Achieved Goals
-1. **AniList API Service**: Configured GraphQL queries in `anilist.js` to fetch anime details (title, cover image, average score, formats, episode count, next airing episode).
-2. **Dynamic Search UI**: Built a responsive search grid that displays cards with rich aesthetics (glassmorphism effect, hover transformations, score badges, status/episode tracking).
-3. **Debounced Search**: Added automatic debounced searching (`TopBar.jsx`) that triggers 500ms after the user stops typing, and cleans up pending timers if the user types again.
-4. **Auto-Clear Results**: Handled resetting search results to empty when the search query is cleared.
+1. **React Router Core**: Configured dynamic page routes (`/`, `/discover`, `/anime/:id`).
+2. **Dynamic Dashboard Home**: Built a home page with an immersive Hero section highlighting the top trending show, with clean HTML description stripping and dynamic grids.
+3. **Dynamic Catalog Discover**: Developed an advanced Catalog search page with custom multi-select checkbox dropdown filters (Genres, Tags, Format, Status), single dropdown filters (Year, Season, Sort By), and local search with a Clear All filter controller.
+4. **Detail Page fallback**: Constructed the details page with fallback CSS gradient banners for anime missing high-res banner files.
+5. **Modern Header Navigation**: Created a sleek, capsule-button navigation menu for page links and fixed logo alignment.
+6. **Key UX optimizations**: Handled clearing search state via `Esc` key down listeners.
 
 ---
 
 ## 🚀 Future Roadmap & Upcoming Goals
 
-Once you have learned React Router, here is the sequence of goals we will tackle:
-
-### 1. Navigation & Routing (Using React Router)
-* **Home Page (`/`)**: The main search dashboard.
-* **Anime Details Page (`/anime/:id`)**: A dedicated detail view for any anime clicked in the search grid.
-* **Watchlist Page (`/watchlist`)**: A dedicated page displaying the user's saved watchlist.
+### 1. Watchlist / Library Page Operations (`/library`)
+* Create a global context or hook to add/remove/update anime in the user's active watchlist.
+* Design a clean library grid displaying current watch status (e.g. "Plan to Watch", "Watching", "Completed").
 
 ### 2. Local Watchlist Persistence
-* Create a context or state manager to add, delete, and update progress of anime in a personal watchlist.
-* Use `localStorage` to save and read the watchlist so the list survives browser reloads.
+* Save the watchlist state into `localStorage` so user lists survive browser reloads.
 
 ### 3. AniList OAuth Integration
-* Integrate official AniList authentication (OAuth).
-* Allow the application to read and update the user's live list on AniList itself.
+* Integrate official AniList OAuth to authenticate users.
+* Allow saving list operations directly to the user's AniList profile.
 
 ---
 
 ## 🎓 Learning Guidelines
-* **Role**: The assistant will explain architecture, patterns, and provide precise, clean code snippets. The assistant will NOT directly edit the source code files unless explicitly requested by the USER. Otherwise, the USER will write/copy the code themselves to maximize learning.
-* **Brevity**: Code snippets should contain no unnecessary lines of code. Keep implementations as concise as possible while providing complete functionality.
+* **Role**: The assistant will explain architecture, patterns, and provide precise, clean code snippets. The assistant will NOT directly edit source files in `src/` unless explicitly requested.
+* **Brevity**: Snippets should contain no unnecessary lines of code. Keep implementations as concise as possible while providing complete functionality.
 
 

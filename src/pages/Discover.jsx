@@ -121,7 +121,7 @@ export default function Discover() {
             ) {
               id
               title { english romaji native }
-              coverImage { large }
+              coverImage { large color }
               averageScore
               format
               episodes
@@ -331,28 +331,32 @@ export default function Discover() {
 
       {!loading && !error && (
         <div className="anime-grid" style={{ padding: "20px 0 0 0" }}>
-          {results.map((anime) => (
-            <Link
-              to={`/anime/${anime.id}`}
-              key={anime.id}
-              className="card-link"
-            >
-              <div className="anime-card">
-                <img src={anime.coverImage.large} alt={anime.title.english} />
-                <div className="anime-title">
-                  {anime.title.english || anime.title.romaji}
+          {results.map((anime) => {
+            const cardColor = anime.coverImage.color || "#6366f1";
+            return (
+              <Link
+                to={`/anime/${anime.id}`}
+                key={anime.id}
+                className="card-link"
+                style={{ "--hover-color": cardColor }}
+              >
+                <div className="anime-card">
+                  <img src={anime.coverImage.large} alt={anime.title.english} />
+                  <div className="anime-title">
+                    {anime.title.english || anime.title.romaji}
+                  </div>
+                  <div className="score">
+                    <img src={star} alt="star" />
+                    {anime.averageScore ? `${anime.averageScore / 10}` : "N/A"}
+                  </div>
+                  <div className="extra-info">
+                    <p className="format">{anime.format}</p>
+                    <p className="episodes">{anime.episodes || "?"} eps</p>
+                  </div>
                 </div>
-                <div className="score">
-                  <img src={star} alt="star" />
-                  {anime.averageScore ? `${anime.averageScore / 10}` : "N/A"}
-                </div>
-                <div className="extra-info">
-                  <p className="format">{anime.format}</p>
-                  <p className="episodes">{anime.episodes || "?"} eps</p>
-                </div>
-              </div>
-            </Link>
-          ))}
+              </Link>
+            );
+          })}
         </div>
       )}
     </div>

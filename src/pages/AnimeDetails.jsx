@@ -83,6 +83,11 @@ export default function AnimeDetails() {
         <div className="details-banner-wrapper">
           {anime.bannerImage ? (
             <img
+                style={
+                    {marginTop: "15px"}
+                        
+                    
+                }
               src={anime.bannerImage}
               alt="banner"
               className="details-banner"
