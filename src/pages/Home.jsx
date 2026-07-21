@@ -201,6 +201,7 @@ export default function Home() {
       {/* 1. HERO SLIDER BANNER */}
       {heroAnime && (
         <div
+          key={heroAnime.id}
           className="hero-section"
           style={{
             marginTop: "1.5rem",
