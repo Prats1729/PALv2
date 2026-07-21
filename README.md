@@ -10,15 +10,15 @@ To set up PAL locally and view the user interface layouts, please check the plac
 
 | Feature Section | Screenshot Preview Placeholder |
 | :--- | :--- |
-| **Home Dashboard** | ![home-dark](image.png)  |
-| **Discover Catalog** | ![discover-dark](image-1.png) |
-| **Quick Search & Full Page** | ![quickSearch-dark](image-2.png) |
-| **Anime Details** | ![Anime Details](image-3.png) |
-| **Library List Lookup** | ![Library](image-4.png) |
-| **Statistics Console** | ![Statistics](image-5.png) |
-| **Settings Panel** | ![Settings](image-6.png) |
-| **Dark Theme View** | ![Dark Theme](image-7.png) |
-| **Light Theme View** | ![Light Theme](image-8.png) |
+| **Home Dashboard** | ![home-dark](/images/image.png)  |
+| **Discover Catalog** | ![discover-dark](/images/image-1.png) |
+| **Quick Search & Full Page** | ![quickSearch-dark](/images/image-2.png) |
+| **Anime Details** | ![Anime Details](/images/image-3.png) |
+| **Library List Lookup** | ![Library](/images/image-4.png) |
+| **Statistics Console** | ![Statistics](/images/image-5.png) |
+| **Settings Panel** | ![Settings](/images/image-6.png) |
+| **Dark Theme View** | ![Dark Theme](/images/image-7.png) |
+| **Light Theme View** | ![Light Theme](/images/image-8.png) |
 
 ---
 
