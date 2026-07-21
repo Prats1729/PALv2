@@ -1,4 +1,5 @@
 # PAL - Personal Anime Library 🎬
+**Version:** v1.0.0
 
 PAL (Personal Anime Library) is a modern, responsive web application built for anime enthusiasts to search, track, and catalog their favorite shows. Designed as a client-side catalog manager, PAL links directly to the AniList GraphQL API to provide real-time trending recommendations, advanced multi-layered filter configurations, custom search results, and public library summaries alongside calculated watch metrics without requiring a database in its initial release.
 
