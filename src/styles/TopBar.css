@@ -231,3 +231,36 @@
   background-color: rgba(255, 255, 255, 0.1); /* Stronger transparent capsule for active tab */
 }
 
+/* RESPONSIVE TOPBAR MEDIA QUERIES */
+@media (max-width: 768px) {
+  .top-bar {
+    height: 55px;
+  }
+
+  .home-logo {
+    width: 55px;
+    margin-top: -3px;
+  }
+
+  .search-box input {
+    width: 100px;
+    height: 30px;
+    font-size: 12px;
+  }
+
+  .search-box button {
+    height: 30px;
+  }
+
+  .right-section {
+    gap: 8px;
+    padding-right: 10px;
+  }
+
+  .nav-link, .nav-link-active {
+    font-size: 12px;
+    padding: 4px 8px;
+  }
+}
+
+

@@ -16,7 +16,7 @@ h3{
 }
 
 .main-content {
-    margin-top: 40px;
+    margin-top: 65px;
     padding: 20px;
     color: #959595;
 }
@@ -227,6 +227,12 @@ h3{
   width: 100%;
 }
 
+/* Card Link Base Style */
+.card-link {
+  display: block;
+  text-decoration: none;
+}
+
 /* Dynamic Hover Color text highlight */
 .card-link:hover .anime-title {
   color: var(--hover-color) !important;
@@ -381,3 +387,117 @@ h3{
   border-color: #6366f1;
   box-shadow: 0 0 10px rgba(99, 102, 241, 0.5);
 }
+
+/* Pulsing Skeleton Loader Animation */
+@keyframes skeleton-pulse {
+  0% {
+    background-color: #1a1822;
+  }
+  50% {
+    background-color: #2b2838;
+  }
+  100% {
+    background-color: #1a1822;
+  }
+}
+
+/* Skeleton Card Container */
+.skeleton-card {
+  width: 100%;
+  height: 325px; /* Matches exact height of .anime-card */
+  border-radius: 7px;
+  background-color: #1a1822;
+  animation: skeleton-pulse 1.5s ease-in-out infinite;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* Windows 10 style flat rectangular scrollbar */
+::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0d0b18; /* Dark flat track */
+}
+
+::-webkit-scrollbar-thumb {
+  background: #252233; /* Flat rectangular thumb */
+  border-radius: 0;   /* Hard rectangular edges */
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #3c3854; /* Darker gray-purple on hover */
+}
+
+::-webkit-scrollbar-thumb:active {
+  background: #6366f1; /* Glowing indigo active accent */
+}
+
+/* RESPONSIVE MEDIA QUERIES */
+@media (max-width: 768px) {
+  .main-content {
+    margin-top: 55px;
+    padding: 12px;
+  }
+
+  .anime-grid {
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 12px;
+    padding: 10px;
+  }
+
+  .anime-card {
+    height: 250px;
+  }
+
+  .anime-card > img {
+    height: 170px;
+  }
+
+  .anime-title {
+    font-size: 12px;
+    height: 32px;
+    margin-top: 6px;
+  }
+
+  .hero-section {
+    height: 300px;
+    padding: 20px;
+    margin: 0 10px;
+  }
+
+  .hero-title {
+    font-size: 24px;
+    margin: 8px 0;
+  }
+
+  .hero-desc {
+    font-size: 13px;
+    line-height: 1.4;
+  }
+
+  .hero-button {
+    padding: 8px 16px;
+    font-size: 12px;
+  }
+}
+
+/* Skeleton Hero Banner */
+.skeleton-hero {
+  height: 460px;
+  border-radius: 12px;
+  margin: 0 20px;
+  background-color: #1a1822;
+  animation: skeleton-pulse 1.5s ease-in-out infinite;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+@media (max-width: 768px) {
+  .skeleton-hero {
+    height: 300px;
+    margin: 0 10px;
+  }
+}
+
+

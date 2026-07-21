@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
-import { NavLink, useNavigate } from "react-router-dom";
+import { NavLink, useNavigate, useLocation } from "react-router-dom";
+
 import { searchAnime } from "../../services/anilist";
 import "../../styles/TopBar.css";
 import searchIcon from "../../assets/search-button-svgrepo-com.svg";
@@ -8,12 +9,18 @@ import logo from "../../assets/pal-logo.svg";
 
 export default function TopBar() {
   const navigate = useNavigate();
+  const location = useLocation(); // Hook to watch current URL location
   const dropdownRef = useRef(null);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
+
+  // Extract the active user parameter from current URL search
+  const params = new URLSearchParams(location.search);
+  const currentUser = params.get("user");
+  const userSuffix = currentUser ? `?user=${currentUser}` : "";
 
   // Close dropdown if user clicks outside of the search box
   useEffect(() => {
@@ -54,7 +61,7 @@ export default function TopBar() {
     e.preventDefault();
     if (searchQuery.trim() !== "") {
       setIsOpen(false);
-      navigate(`/discover?q=${encodeURIComponent(searchQuery)}`);
+      navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
     }
   };
 
@@ -140,7 +147,7 @@ export default function TopBar() {
 
       <div className="right-section">
         <NavLink
-          to="/discover"
+          to={`/discover${userSuffix}`}
           className={({ isActive }) =>
             isActive ? "nav-link-active" : "nav-link"
           }
@@ -148,7 +155,7 @@ export default function TopBar() {
           Discover
         </NavLink>
         <NavLink
-          to="/statistics"
+          to={`/statistics${userSuffix}`}
           className={({ isActive }) =>
             isActive ? "nav-link-active" : "nav-link"
           }
@@ -156,7 +163,7 @@ export default function TopBar() {
           Stats
         </NavLink>
         <NavLink
-          to="/library"
+          to={`/library${userSuffix}`}
           className={({ isActive }) =>
             isActive ? "nav-link-active" : "nav-link"
           }
@@ -164,7 +171,7 @@ export default function TopBar() {
           Library
         </NavLink>
         <NavLink
-          to="/settings"
+          to={`/settings${userSuffix}`}
           className={({ isActive }) =>
             isActive ? "nav-link-active" : "nav-link"
           }

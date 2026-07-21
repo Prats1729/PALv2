@@ -54,3 +54,56 @@ export async function searchAnime(query, page = 1, perPage = 12){
         throw error;
     }
 }
+
+const ANILIST_API_URL = "https://graphql.anilist.co";
+
+const GET_USER_WATCHLIST_QUERY = `
+  query ($username: String) {
+    MediaListCollection(userName: $username, type: ANIME) {
+      lists {
+        name
+        status
+        entries {
+          id
+          progress
+          score
+          media {
+            id
+            title {
+              userPreferred
+              romaji
+              english
+            }
+            coverImage {
+              medium
+              large
+              color
+            }
+            episodes
+          }
+        }
+      }
+    }
+  }
+`;
+
+export async function fetchUserWatchlist(username) {
+  const response = await fetch(ANILIST_API_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+    body: JSON.stringify({
+      query: GET_USER_WATCHLIST_QUERY,
+      variables: { username },
+    }),
+  });
+
+  const json = await response.json();
+  if (json.errors) {
+    throw new Error(json.errors[0].message);
+  }
+
+  return json.data.MediaListCollection.lists;
+}

@@ -66,20 +66,116 @@ function MultiSelectDropdown({ label, options, selected, onChange }) {
   );
 }
 
+// 1.2 REUSABLE CUSTOM SINGLE-SELECT DROPDOWN COMPONENT
+function SingleSelectDropdown({ label, options, selected, onChange, placeholder = "Any" }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const getDisplayLabel = (val) => {
+    const found = options.find((o) => (typeof o === "object" ? o.value === val : o === val));
+    if (!found || val === "") return placeholder;
+    return typeof found === "object" ? found.label : found.replace(/_/g, " ");
+  };
+
+  return (
+    <div className="filter-group" ref={dropdownRef}>
+      <label>{label}</label>
+      <div className="custom-dropdown">
+        <button
+          type="button"
+          className={`dropdown-trigger ${isOpen ? "open" : ""}`}
+          onClick={() => setIsOpen(!isOpen)}
+        >
+          <span className="dropdown-value">{getDisplayLabel(selected)}</span>
+          <span className="chevron-arrow"></span>
+        </button>
+
+        {isOpen && (
+          <div className="dropdown-options-list">
+            {options.map((opt) => {
+              const val = typeof opt === "object" ? opt.value : opt;
+              const display = typeof opt === "object" ? opt.label : opt.replace(/_/g, " ");
+              const isSelected = selected === val;
+
+              return (
+                <div
+                  key={val}
+                  className={`dropdown-option-item ${isSelected ? "checked" : ""}`}
+                  style={{ cursor: "pointer", padding: "8px 12px" }}
+                  onClick={() => {
+                    onChange(val);
+                    setIsOpen(false);
+                  }}
+                >
+                  <span>{display}</span>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // 2. MAIN CATALOG PAGE
 export default function Discover() {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const urlQuery = searchParams.get("q") || "";
 
   // Filter States
-  const [searchQuery, setSearchQuery] = useState(urlQuery);
-  const [selectedGenres, setSelectedGenres] = useState([]);
-  const [selectedTags, setSelectedTags] = useState([]);
-  const [selectedFormats, setSelectedFormats] = useState([]);
-  const [season, setSeason] = useState("");
-  const [selectedStatus, setSelectedStatus] = useState([]);
-  const [year, setYear] = useState(""); // Single string state
-  const [sortBy, setSortBy] = useState("POPULARITY_DESC");
+  // Read values directly from searchParams
+  const [searchQuery, setSearchQuery] = useState(
+    searchParams.get("search") || "",
+  );
+  const [year, setYear] = useState(searchParams.get("year") || "");
+  const [season, setSeason] = useState(searchParams.get("season") || "");
+  const [sortBy, setSortBy] = useState(
+    searchParams.get("sort") || "POPULARITY_DESC",
+  );
+
+  // For multi-select (comma separated like ?genres=Action,Drama)
+  const [selectedGenres, setSelectedGenres] = useState(
+    searchParams.get("genres") ? searchParams.get("genres").split(",") : [],
+  );
+  const [selectedTags, setSelectedTags] = useState(
+    searchParams.get("tags") ? searchParams.get("tags").split(",") : [],
+  );
+  const [selectedFormats, setSelectedFormats] = useState(
+    searchParams.get("formats") ? searchParams.get("formats").split(",") : [],
+  );
+  const [selectedStatus, setSelectedStatus] = useState(
+    searchParams.get("status") ? searchParams.get("status").split(",") : [],
+  );
+
+  const updateParam = (key, value) => {
+    const newParams = new URLSearchParams(searchParams);
+
+    if (
+      !value ||
+      value === "Any" ||
+      (Array.isArray(value) && value.length === 0)
+    ) {
+      newParams.delete(key); // Cleans up empty filters from URL bar
+    } else if (Array.isArray(value)) {
+      newParams.set(key, value.join(",")); // Turns ["Action", "Drama"] into "Action,Drama"
+    } else {
+      newParams.set(key, value);
+    }
+
+    setSearchParams(newParams); // Pushes new URL without losing other filters
+  };
+
 
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -88,6 +184,26 @@ export default function Discover() {
   useEffect(() => {
     setSearchQuery(urlQuery);
   }, [urlQuery]);
+
+  useEffect(() => {
+    setSearchQuery(searchParams.get("search") || "");
+    setYear(searchParams.get("year") || "");
+    setSeason(searchParams.get("season") || "");
+    setSortBy(searchParams.get("sort") || "POPULARITY_DESC");
+    setSelectedGenres(
+      searchParams.get("genres") ? searchParams.get("genres").split(",") : [],
+    );
+    setSelectedTags(
+      searchParams.get("tags") ? searchParams.get("tags").split(",") : [],
+    );
+    setSelectedFormats(
+      searchParams.get("formats") ? searchParams.get("formats").split(",") : [],
+    );
+    setSelectedStatus(
+      searchParams.get("status") ? searchParams.get("status").split(",") : [],
+    );
+  }, [searchParams]);
+
 
   // Fetch from AniList API on filter changes
   useEffect(() => {
@@ -221,9 +337,16 @@ export default function Discover() {
   const yearsList = Array.from({ length: 30 }, (_, i) =>
     (new Date().getFullYear() - i).toString(),
   );
+  const sortsList = [
+    { value: "POPULARITY_DESC", label: "Popularity" },
+    { value: "SCORE_DESC", label: "Score" },
+    { value: "TRENDING_DESC", label: "Trending Now" },
+    { value: "START_DATE_DESC", label: "Release Date" },
+    { value: "TITLE_ENGLISH_DESC", label: "Title" },
+  ];
 
   return (
-    <div className="main-content">
+    <div className="discover-container">
       <h1 className="catalog-title">Catalog</h1>
 
       {/* FILTER BAR GRID */}
@@ -233,77 +356,72 @@ export default function Discover() {
             label="Genre"
             options={genresList}
             selected={selectedGenres}
-            onChange={setSelectedGenres}
+            onChange={(val) => {
+              setSelectedGenres(val);
+              updateParam("genres", val);
+            }}
           />
           <MultiSelectDropdown
             label="Tags"
             options={tagsList}
             selected={selectedTags}
-            onChange={setSelectedTags}
+            onChange={(val) => {
+              setSelectedTags(val);
+              updateParam("tags", val);
+            }}
           />
           <MultiSelectDropdown
             label="Format"
             options={formatsList}
             selected={selectedFormats}
-            onChange={setSelectedFormats}
+            onChange={(val) => {
+              setSelectedFormats(val);
+              updateParam("formats", val);
+            }}
           />
 
-          {/* Year Selector (Single Select Dropdown) */}
-          <div className="filter-group">
-            <label>Year</label>
-            <select
-              value={year}
-              onChange={(e) => setYear(e.target.value)}
-              className="standard-select"
-            >
-              <option value="">Any</option>
-              {yearsList.map((y) => (
-                <option key={y} value={y}>
-                  {y}
-                </option>
-              ))}
-            </select>
-          </div>
+          {/* Year Selector (Custom Single Select Dropdown) */}
+          <SingleSelectDropdown
+            label="Year"
+            options={yearsList}
+            selected={year}
+            onChange={(val) => {
+              setYear(val);
+              updateParam("year", val);
+            }}
+          />
 
-          {/* Season Selector (Single Select Dropdown) */}
-          <div className="filter-group">
-            <label>Season</label>
-            <select
-              value={season}
-              onChange={(e) => setSeason(e.target.value)}
-              className="standard-select"
-            >
-              <option value="">Any</option>
-              {seasonsList.map((s) => (
-                <option key={s} value={s}>
-                  {s}
-                </option>
-              ))}
-            </select>
-          </div>
+          {/* Season Selector (Custom Single Select Dropdown) */}
+          <SingleSelectDropdown
+            label="Season"
+            options={seasonsList}
+            selected={season}
+            onChange={(val) => {
+              setSeason(val);
+              updateParam("season", val);
+            }}
+          />
 
           <MultiSelectDropdown
             label="Status"
             options={statusList}
             selected={selectedStatus}
-            onChange={setSelectedStatus}
+            onChange={(val) => {
+              setSelectedStatus(val);
+              updateParam("status", val);
+            }}
           />
 
-          <div className="filter-group">
-            <label>Sort By</label>
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-              className="standard-select"
-            >
-              <option value="POPULARITY_DESC">Popularity</option>
-              <option value="SCORE_DESC">Score</option>
-              <option value="TRENDING_DESC">Trending Now</option>
-              <option value="START_DATE_DESC">Release Date</option>
-              <option value="END_DATE_DESC">Completed Date</option>
-              <option value="TITLE_ENGLISH_DESC">Title</option>
-            </select>
-          </div>
+          {/* Sort By Selector (Custom Single Select Dropdown) */}
+          <SingleSelectDropdown
+            label="Sort By"
+            options={sortsList}
+            selected={sortBy}
+            onChange={(val) => {
+              setSortBy(val);
+              updateParam("sort", val);
+            }}
+          />
         </div>
 
         <div className="filter-grid-row bottom-row">
@@ -326,8 +444,15 @@ export default function Discover() {
       </div>
 
       {/* RENDER GRID */}
-      {loading && <p className="home-loading">Filtering catalog...</p>}
       {error && <p style={{ color: "red" }}>Error: {error}</p>}
+
+      {loading && (
+        <div className="anime-grid" style={{ padding: "20px 0 0 0" }}>
+          {Array.from({ length: 12 }).map((_, idx) => (
+            <div key={idx} className="skeleton-card" />
+          ))}
+        </div>
+      )}
 
       {!loading && !error && (
         <div className="anime-grid" style={{ padding: "20px 0 0 0" }}>

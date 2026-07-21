@@ -1,0 +1,67 @@
+.library-container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.library-title {
+  color: #ffffff;
+  font-size: 28px;
+  font-weight: 700;
+  margin-top: 0;
+  margin-bottom: 8px;
+  letter-spacing: 0.5px;
+}
+
+.library-subtitle {
+  color: #7a7690;
+  font-size: 14px;
+  margin-bottom: 24px;
+}
+
+.library-tabs {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.library-tab-btn {
+  padding: 8px 18px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  cursor: pointer;
+  background-color: rgba(255, 255, 255, 0.05);
+  color: #959595;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease-in-out;
+}
+
+.library-tab-btn:hover {
+  color: #ffffff;
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.library-tab-btn.active {
+  background: #6366f1;
+  color: #ffffff;
+  border-color: #6366f1;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+}
+
+.library-content-card {
+  background-color: #120e25;
+  padding: 30px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.library-empty-text {
+  color: #7a7690;
+  font-size: 15px;
+  margin: 0;
+}
+
+.library-empty-text strong {
+  color: #6366f1;
+}

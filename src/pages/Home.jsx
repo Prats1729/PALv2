@@ -175,7 +175,21 @@ export default function Home() {
     startSlideShow();
   };
 
-  if (loading) return <div className="home-loading">Loading dashboard...</div>;
+  if (loading) {
+    return (
+      <div className="home-container" style={{ marginTop: "1.5rem" }}>
+        <div className="skeleton-hero" />
+        <div className="home-section" style={{ marginTop: "40px" }}>
+          <h2>Trending Now</h2>
+          <div className="anime-grid" style={{ padding: "0 20px" }}>
+            {Array.from({ length: 6 }).map((_, idx) => (
+              <div key={idx} className="skeleton-card" />
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const heroAnime = trending[currentSlide];
   const heroDescription = heroAnime?.description

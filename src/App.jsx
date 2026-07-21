@@ -6,6 +6,8 @@ import Discover from "./pages/Discover.jsx";
 import Settings from "./pages/Settings.jsx";
 import Statistics from "./pages/Statistics.jsx";
 import AnimeDetails from "./pages/AnimeDetails.jsx";
+import Search from "./pages/Search.jsx";
+
 import "./App.css";
 
 
@@ -25,6 +27,7 @@ export default function App() {
             <Route path="/settings" element={<Settings />} />
             <Route path="/statistics" element={<Statistics />} />
             <Route path="/anime/:id" element={<AnimeDetails />} />
+            <Route path="/search" element={<Search />} />
           </Routes>
         </main>
       </div>
