@@ -4,6 +4,49 @@ import { fetchUserWatchlist } from "../services/anilist";
 import { getSavedUsernames } from "../services/storage";
 import "../styles/Statistics.css";
 
+// Animated Count-Up Component
+function AnimatedCounter({ value }) {
+  const [displayValue, setDisplayValue] = useState("0");
+
+  useEffect(() => {
+    const target = parseFloat(value);
+    if (isNaN(target)) {
+      setDisplayValue(value);
+      return;
+    }
+
+    const isInt = Number.isInteger(target) && value.toString().indexOf(".") === -1;
+    const duration = 600; // Animation duration in milliseconds
+    const startTime = performance.now();
+
+    let frameId;
+    const animate = (now) => {
+      const elapsed = now - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      
+      const ease = progress * (2 - progress); // easeOutQuad
+      const current = target * ease;
+
+      if (isInt) {
+        setDisplayValue(Math.floor(current).toString());
+      } else {
+        setDisplayValue(current.toFixed(1));
+      }
+
+      if (progress < 1) {
+        frameId = requestAnimationFrame(animate);
+      } else {
+        setDisplayValue(value.toString());
+      }
+    };
+
+    frameId = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(frameId);
+  }, [value]);
+
+  return <span>{displayValue}</span>;
+}
+
 export default function Statistics() {
   const [searchParams, setSearchParams] = useSearchParams();
   const username = searchParams.get("user") || "";
@@ -49,17 +92,6 @@ export default function Statistics() {
         ).toFixed(1)
       : "N/A";
 
-  // 6. Build final stats array
-  const stats = [
-    { label: "Total Anime", value: totalAnime },
-    { label: "Episodes Watched", value: totalEpisodes },
-    { label: "Days Watched", value: daysWatched },
-    {
-      label: "Mean Score",
-      value: meanScore !== "N/A" ? `${meanScore} / 10` : "N/A",
-    },
-  ];
-
   return (
     <div className="stats-container">
       <h2 className="stats-title">Anime Statistics</h2>
@@ -104,12 +136,36 @@ export default function Statistics() {
       )}
 
       <div className="stats-grid">
-        {stats.map((s) => (
-          <div key={s.label} className="stats-card">
-            <h3 className="stats-value">{s.value}</h3>
-            <span className="stats-label">{s.label}</span>
-          </div>
-        ))}
+        <div className="stats-card">
+          <h3 className="stats-value">
+            <AnimatedCounter value={totalAnime} />
+          </h3>
+          <span className="stats-label">Total Anime</span>
+        </div>
+        <div className="stats-card">
+          <h3 className="stats-value">
+            <AnimatedCounter value={totalEpisodes} />
+          </h3>
+          <span className="stats-label">Episodes Watched</span>
+        </div>
+        <div className="stats-card">
+          <h3 className="stats-value">
+            <AnimatedCounter value={daysWatched} />
+          </h3>
+          <span className="stats-label">Days Watched</span>
+        </div>
+        <div className="stats-card">
+          <h3 className="stats-value">
+            {meanScore !== "N/A" ? (
+              <>
+                <AnimatedCounter value={meanScore} /> <span style={{ fontSize: "16px", opacity: 0.6 }}>/ 10</span>
+              </>
+            ) : (
+              "N/A"
+            )}
+          </h3>
+          <span className="stats-label">Mean Score</span>
+        </div>
       </div>
     </div>
   );

@@ -7,6 +7,7 @@ import {
   saveUsername,
   removeSavedUsername,
 } from "../services/storage";
+import { showToast } from "../services/toast";
 
 export default function Library() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -28,12 +29,14 @@ export default function Library() {
     if (!username.trim()) return;
     const updated = saveUsername(username.trim());
     setSavedUsers([...updated]);
+    showToast(`Saved user profile "${username.trim()}"`, "success");
   };
 
   const handleRemoveUser = (nameToRemove, e) => {
     if (e) e.stopPropagation();
     const updated = removeSavedUsername(nameToRemove);
     setSavedUsers([...updated]);
+    showToast(`Removed user profile "${nameToRemove}"`, "info");
   };
 
 
@@ -50,8 +53,10 @@ export default function Library() {
       const lists = await fetchUserWatchlist(username.trim());
       setRawLists(lists);
     } catch (err) {
-      setError(err.message || "User not found or list is private.");
+      const errMsg = err.message || "User not found or list is private.";
+      setError(errMsg);
       setRawLists([]);
+      showToast(errMsg, "error");
     } finally {
       setLoading(false);
     }
@@ -60,9 +65,14 @@ export default function Library() {
   useEffect(() => {
     const userParam = searchParams.get("user");
     if (userParam) {
+      setLoading(true);
       fetchUserWatchlist(userParam)
         .then((lists) => setRawLists(lists))
-        .catch((err) => setError(err.message));
+        .catch((err) => {
+          setError(err.message);
+          showToast(err.message, "error");
+        })
+        .finally(() => setLoading(false));
     }
   }, [searchParams]);
 
@@ -192,6 +202,7 @@ export default function Library() {
                   <img
                     src={media.coverImage?.large || media.coverImage?.medium}
                     alt={title}
+                    loading="lazy"
                   />
                   <div className="anime-title">{title}</div>
                   <div className="extra-info">

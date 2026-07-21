@@ -466,7 +466,7 @@ export default function Discover() {
                 style={{ "--hover-color": cardColor }}
               >
                 <div className="anime-card">
-                  <img src={anime.coverImage.large} alt={anime.title.english} />
+                  <img src={anime.coverImage.large} alt={anime.title.english} loading="lazy" />
                   <div className="anime-title">
                     {anime.title.english || anime.title.romaji}
                   </div>

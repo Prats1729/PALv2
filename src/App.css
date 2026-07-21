@@ -500,4 +500,121 @@ h3{
   }
 }
 
+/* Animated Global Toast Notification Popup */
+.toast-notification {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  padding: 12px 20px;
+  border-radius: 6px;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 500;
+  z-index: 9999;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+  animation: toast-slide-in 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.toast-success {
+  background-color: #10b981;
+  border-left: 4px solid #059669;
+}
+
+.toast-error {
+  background-color: #ef4444;
+  border-left: 4px solid #dc2626;
+}
+
+.toast-info {
+  background-color: #6366f1;
+  border-left: 4px solid #4f46e5;
+}
+
+@keyframes toast-slide-in {
+  from {
+    transform: translateY(20px) scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+/* LIGHT THEME OVERRIDES */
+body.light-theme {
+  background-color: #f6f5f9;
+  color: #1e1e2d;
+}
+
+body.light-theme .top-bar {
+  background-color: #ffffff;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+body.light-theme .nav-link {
+  color: #6c6a85;
+}
+
+body.light-theme .nav-link:hover,
+body.light-theme .nav-link-active {
+  color: #0b0813;
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+body.light-theme .search-box input {
+  background-color: #f0edf5;
+  color: #0b0813;
+  border-color: rgba(0, 0, 0, 0.1);
+}
+
+body.light-theme .search-dropdown {
+  background-color: #ffffff;
+  border-color: rgba(0, 0, 0, 0.1);
+}
+
+body.light-theme .dropdown-item {
+  border-bottom-color: #f0edf5;
+}
+
+body.light-theme .dropdown-item:hover,
+body.light-theme .dropdown-item.active {
+  background-color: #f5f3f7;
+}
+
+body.light-theme .dropdown-title {
+  color: #0b0813;
+}
+
+body.light-theme .anime-card {
+  background-color: #ffffff;
+  border-color: rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+}
+
+body.light-theme .anime-title {
+  color: #1e1e2d;
+}
+
+body.light-theme .skeleton-card,
+body.light-theme .skeleton-hero {
+  background-color: #e4e1eb;
+  animation: skeleton-pulse-light 1.5s ease-in-out infinite;
+  border-color: rgba(0, 0, 0, 0.05);
+}
+
+@keyframes skeleton-pulse-light {
+  0% {
+    background-color: #e4e1eb;
+  }
+  50% {
+    background-color: #d1cbdc;
+  }
+  100% {
+    background-color: #e4e1eb;
+  }
+}
+
+
+
 

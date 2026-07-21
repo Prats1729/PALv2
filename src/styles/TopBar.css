@@ -141,8 +141,9 @@
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-.dropdown-item:hover {
-  background-color: rgba(255, 255, 255, 0.08);
+.dropdown-item:hover,
+.dropdown-item.active {
+  background-color: rgba(99, 102, 241, 0.2);
 }
 
 /* Thumbnail image */

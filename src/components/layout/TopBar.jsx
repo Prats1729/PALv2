@@ -22,6 +22,8 @@ export default function TopBar() {
   const currentUser = params.get("user");
   const userSuffix = currentUser ? `?user=${currentUser}` : "";
 
+  const [selectedIndex, setSelectedIndex] = useState(-1);
+
   // Close dropdown if user clicks outside of the search box
   useEffect(() => {
     function handleClickOutside(event) {
@@ -35,6 +37,7 @@ export default function TopBar() {
 
   // Debounced search logic inside the TopBar
   useEffect(() => {
+    setSelectedIndex(-1); // Reset keyboard focus on text change
     if (searchQuery.trim() === "") {
       setResults([]);
       setIsOpen(false);
@@ -71,6 +74,22 @@ export default function TopBar() {
     navigate(`/anime/${id}`);
   };
 
+  const handleKeyDown = (e) => {
+    if (e.key === "Escape") {
+      setSearchQuery("");
+      setIsOpen(false);
+    } else if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setSelectedIndex((prev) => (prev < results.length - 1 ? prev + 1 : prev));
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setSelectedIndex((prev) => (prev > 0 ? prev - 1 : -1));
+    } else if (e.key === "Enter" && selectedIndex !== -1) {
+      e.preventDefault();
+      handleItemClick(results[selectedIndex].id);
+    }
+  };
+
   return (
     <div className="top-bar">
       <div className="left-section">
@@ -89,12 +108,7 @@ export default function TopBar() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onFocus={() => searchQuery.trim() !== "" && setIsOpen(true)}
-              onKeyDown={(e) => {
-                if (e.key === "Escape") {
-                  setSearchQuery("");
-                  setIsOpen(false);
-                }
-              }}
+              onKeyDown={handleKeyDown}
             />
             <button type="submit">
               <img src={searchIcon} alt="search" />
@@ -110,10 +124,10 @@ export default function TopBar() {
               )}
 
               {!loading &&
-                results.map((anime) => (
+                results.map((anime, idx) => (
                   <div
                     key={anime.id}
-                    className="dropdown-item"
+                    className={`dropdown-item ${idx === selectedIndex ? "active" : ""}`}
                     onClick={() => handleItemClick(anime.id)}
                   >
                     <img

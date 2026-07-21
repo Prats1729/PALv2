@@ -10,6 +10,9 @@ export default function Settings() {
     const checked = e.target.checked;
     setDarkMode(checked);
     localStorage.setItem("pal_dark_mode", checked);
+    
+    // Dispatch custom event to let App.jsx catch theme change instantly
+    window.dispatchEvent(new CustomEvent("pal-theme-change", { detail: checked }));
   };
 
   return (

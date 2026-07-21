@@ -126,6 +126,18 @@
   z-index: 10;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
   padding: 6px 0;
+  animation: dropdown-slide-in 0.15s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes dropdown-slide-in {
+  from {
+    transform: translateY(-8px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 
 /* Dropdown Checkbox list item styling */

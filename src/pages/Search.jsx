@@ -50,7 +50,7 @@ export default function Search() {
                 style={{ "--hover-color": cardColor }}
               >
                 <div className="anime-card">
-                  <img src={anime.coverImage?.large} alt={title} />
+                  <img src={anime.coverImage?.large} alt={title} loading="lazy" />
                   <div className="anime-title">{title}</div>
                   <div className="extra-info">
                     <p className="format">{anime.format || "TV"}</p>
