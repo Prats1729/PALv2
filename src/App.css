@@ -562,10 +562,21 @@ body.light-theme .nav-link-active {
   background-color: rgba(0, 0, 0, 0.05);
 }
 
+body.light-theme .search-box {
+  border-color: rgba(0, 0, 0, 0.12);
+}
+
 body.light-theme .search-box input {
   background-color: #f0edf5;
   color: #0b0813;
-  border-color: rgba(0, 0, 0, 0.1);
+}
+
+body.light-theme .search-box button {
+  background-color: #f0edf5;
+}
+
+body.light-theme .search-box button img {
+  filter: invert(1);
 }
 
 body.light-theme .search-dropdown {
@@ -614,6 +625,210 @@ body.light-theme .skeleton-hero {
     background-color: #e4e1eb;
   }
 }
+
+/* GLOBAL LIGHT THEME SUBPAGE OVERRIDES */
+
+/* 1. Discover / Catalog Page */
+body.light-theme .catalog-title,
+body.light-theme .filter-group label {
+  color: #0b0813 !important;
+}
+
+body.light-theme .filter-bar {
+  background-color: #ffffff;
+  border-color: rgba(0, 0, 0, 0.08);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+}
+
+body.light-theme .dropdown-trigger,
+body.light-theme .standard-select,
+body.light-theme .search-input-wrapper input {
+  background-color: #ffffff;
+  color: #0b0813;
+  border-color: rgba(0, 0, 0, 0.15);
+}
+
+body.light-theme .dropdown-options-list {
+  background-color: #ffffff;
+  border-color: rgba(0, 0, 0, 0.12);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+}
+
+body.light-theme .dropdown-option-item {
+  color: #2b2838;
+}
+
+body.light-theme .dropdown-option-item:hover,
+body.light-theme .dropdown-option-item.checked {
+  background-color: #f0edf5;
+  color: #6366f1;
+}
+
+body.light-theme .clear-all-btn {
+  background-color: #e4e1eb;
+  color: #2b2838;
+  border-color: rgba(0, 0, 0, 0.08);
+}
+
+body.light-theme .clear-all-btn:hover {
+  background-color: #d2cbdc;
+}
+
+/* 2. Library Page */
+body.light-theme .library-title,
+body.light-theme .library-subtitle,
+body.light-theme .library-empty-text {
+  color: #0b0813 !important;
+}
+
+body.light-theme .library-container form input {
+  background-color: #ffffff !important;
+  color: #0b0813 !important;
+  border-color: rgba(0, 0, 0, 0.15) !important;
+}
+
+body.light-theme .library-tab-btn {
+  background-color: #ffffff !important;
+  color: #5b5870 !important;
+  border-color: rgba(0, 0, 0, 0.1) !important;
+}
+
+body.light-theme .library-tab-btn:hover {
+  background-color: #f0edf5 !important;
+}
+
+body.light-theme .library-tab-btn.active {
+  background-color: #6366f1 !important;
+  color: #ffffff !important;
+  border-color: #6366f1 !important;
+}
+
+body.light-theme .library-content-card {
+  background-color: #ffffff;
+  border-color: rgba(0, 0, 0, 0.08);
+}
+
+/* 3. Settings Page */
+body.light-theme .settings-title,
+body.light-theme .settings-subtitle,
+body.light-theme .settings-card-title,
+body.light-theme .settings-checkbox-label {
+  color: #0b0813 !important;
+}
+
+body.light-theme .settings-card-desc {
+  color: #4b4860 !important;
+}
+
+body.light-theme .settings-card {
+  background-color: #ffffff !important;
+  border-color: rgba(0, 0, 0, 0.08) !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+}
+
+body.light-theme .settings-auth-btn {
+  background-color: #f0edf5;
+  color: #0b0813;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+body.light-theme .settings-auth-btn:hover {
+  background-color: #6366f1;
+  color: #ffffff;
+}
+
+/* 4. Statistics Page */
+body.light-theme .stats-title,
+body.light-theme .stats-subtitle,
+body.light-theme .stats-value {
+  color: #0b0813 !important;
+}
+
+body.light-theme .stats-label {
+  color: #5b5870 !important;
+}
+
+body.light-theme .stats-card {
+  background-color: #ffffff;
+  border-color: rgba(0, 0, 0, 0.08);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+}
+
+body.light-theme .stats-container button {
+  background-color: #e4e1eb !important;
+  color: #2b2838 !important;
+}
+
+body.light-theme .stats-container button:hover {
+  background-color: #6366f1 !important;
+  color: #ffffff !important;
+}
+
+/* 5. Anime Details Page */
+body.light-theme .details-title,
+body.light-theme .synopsis-text,
+body.light-theme .details-section-title,
+body.light-theme .info-item-val {
+  color: #0b0813 !important;
+}
+
+body.light-theme .info-item-label {
+  color: #5b5870 !important;
+}
+
+body.light-theme .info-sidebar {
+  background-color: #ffffff !important;
+  border-color: rgba(0, 0, 0, 0.08) !important;
+}
+
+body.light-theme .stat-row {
+  border-bottom-color: rgba(0, 0, 0, 0.08) !important;
+}
+
+/* 6. Light Theme Flat Scrollbars */
+body.light-theme::-webkit-scrollbar-track,
+body.light-theme *::-webkit-scrollbar-track {
+  background: #f0edf5;
+}
+
+body.light-theme::-webkit-scrollbar-thumb,
+body.light-theme *::-webkit-scrollbar-thumb {
+  background: #d8d3e2;
+}
+
+body.light-theme::-webkit-scrollbar-thumb:hover,
+body.light-theme *::-webkit-scrollbar-thumb:hover {
+  background: #c3bcca;
+}
+
+body.light-theme::-webkit-scrollbar-thumb:active,
+body.light-theme *::-webkit-scrollbar-thumb:active {
+  background: #6366f1;
+}
+
+/* Global Page Slide-Fade Transitions */
+.home-container,
+.discover-container,
+.library-container,
+.stats-container,
+.settings-container,
+.search-container {
+  animation: page-slide-fade 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes page-slide-fade {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+
+
 
 
 

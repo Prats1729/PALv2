@@ -12,8 +12,8 @@ import { showToast } from "../services/toast";
 export default function Library() {
   const [searchParams, setSearchParams] = useSearchParams();
 
-  // Read initial values from URL (e.g. /library?user=Takagi&status=COMPLETED)
-  const initialUser = searchParams.get("user") || "";
+  // Read initial values from URL or fallback to cached active user
+  const initialUser = searchParams.get("user") || localStorage.getItem("pal_active_user") || "";
   const initialStatus = searchParams.get("status") || "CURRENT";
 
   const [username, setUsername] = useState(initialUser);
@@ -52,6 +52,7 @@ export default function Library() {
     try {
       const lists = await fetchUserWatchlist(username.trim());
       setRawLists(lists);
+      localStorage.setItem("pal_active_user", username.trim());
     } catch (err) {
       const errMsg = err.message || "User not found or list is private.";
       setError(errMsg);
@@ -67,12 +68,21 @@ export default function Library() {
     if (userParam) {
       setLoading(true);
       fetchUserWatchlist(userParam)
-        .then((lists) => setRawLists(lists))
+        .then((lists) => {
+          setRawLists(lists);
+          localStorage.setItem("pal_active_user", userParam);
+        })
         .catch((err) => {
           setError(err.message);
           showToast(err.message, "error");
         })
         .finally(() => setLoading(false));
+    } else {
+      const cachedUser = localStorage.getItem("pal_active_user");
+      if (cachedUser) {
+        setSearchParams({ user: cachedUser, status: activeTab });
+        setUsername(cachedUser);
+      }
     }
   }, [searchParams]);
 
