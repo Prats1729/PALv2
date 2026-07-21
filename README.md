@@ -10,15 +10,15 @@ To set up PAL locally and view the user interface layouts, please check the plac
 
 | Feature Section | Screenshot Preview Placeholder |
 | :--- | :--- |
-| **Home Dashboard** | `![Home Dashboard](https://placehold.co/800x450/120e25/ffffff/png?text=PAL+Home+Dashboard)` |
-| **Discover Catalog** | `![Discover Filters](https://placehold.co/800x450/120e25/ffffff/png?text=PAL+Discover+Catalog)` |
-| **Quick Search & Full Page** | `![Search suggestions](https://placehold.co/800x450/120e25/ffffff/png?text=PAL+Search+Results)` |
-| **Anime Details** | `![Anime Details](https://placehold.co/800x450/120e25/ffffff/png?text=PAL+Anime+Details)` |
-| **Library List Lookup** | `![Library Panel](https://placehold.co/800x450/120e25/ffffff/png?text=PAL+Library)` |
-| **Statistics Console** | `![Stats Engine](https://placehold.co/800x450/120e25/ffffff/png?text=PAL+Statistics)` |
-| **Settings Panel** | `![Settings preferences](https://placehold.co/800x450/120e25/ffffff/png?text=PAL+Settings)` |
-| **Dark Theme View** | `![Dark Theme](https://placehold.co/800x450/0b0813/ffffff/png?text=PAL+Dark+Theme)` |
-| **Light Theme View** | `![Light Theme](https://placehold.co/800x450/f6f5f9/1e1e2d/png?text=PAL+Light+Theme)` |
+| **Home Dashboard** | ![home-dark](image.png)  |
+| **Discover Catalog** | ![discover-dark](image-1.png) |
+| **Quick Search & Full Page** | ![quickSearch-dark](image-2.png) |
+| **Anime Details** | ![Anime Details](image-3.png) |
+| **Library List Lookup** | ![Library](image-4.png) |
+| **Statistics Console** | ![Statistics](image-5.png) |
+| **Settings Panel** | ![Settings](image-6.png) |
+| **Dark Theme View** | ![Dark Theme](image-7.png) |
+| **Light Theme View** | ![Light Theme](image-8.png) |
 
 ---
 
