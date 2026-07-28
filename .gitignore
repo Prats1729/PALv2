@@ -24,3 +24,5 @@ dist-ssr
 *.sw?
 
 AGENTS.md
+PROJECT_CONTEXT.md
+FeatuesNBugs.md
