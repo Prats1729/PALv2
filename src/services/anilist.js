@@ -55,7 +55,7 @@ export async function searchAnime(query, page = 1, perPage = 12){
     }
 }
 
-const ANILIST_API_URL = "https://graphql.anilist.co";
+const ANILIST_API_URL = "https://graphql.anilist.co/";
 
 const GET_USER_WATCHLIST_QUERY = `
   query ($username: String) {

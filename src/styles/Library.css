@@ -65,3 +65,26 @@
 .library-empty-text strong {
   color: #6366f1;
 }
+
+@media (max-width: 1024px) {
+  .library-title {
+    font-size: 22px;
+  }
+
+  .library-tabs {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .library-tab-btn {
+    padding: 6px 12px;
+    font-size: 13px;
+    flex: 1;
+    text-align: center;
+  }
+
+  .library-content-card {
+    padding: 16px;
+  }
+}
+

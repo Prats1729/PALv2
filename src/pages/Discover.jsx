@@ -259,7 +259,7 @@ export default function Discover() {
       if (year !== "") variables.year = parseInt(year); // Single Int variable
 
       try {
-        const response = await fetch("https://graphql.anilist.co", {
+        const response = await fetch("https://graphql.anilist.co/", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ query: queryStr, variables }),
