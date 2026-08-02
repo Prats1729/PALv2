@@ -836,6 +836,86 @@ body.light-theme *::-webkit-scrollbar-thumb:active {
   }
 }
 
+/* MOBILE COMPATIBILITY STYLES */
+@media (max-width: 1024px) {
+  .main-content {
+    margin-top: 55px;
+    padding: 12px;
+    padding-bottom: 80px; /* Safe space for bottom navigation bar */
+  }
+
+  /* Grid Layout: beautiful 2 columns for mobile devices */
+  .anime-grid {
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 12px;
+    padding: 10px 5px;
+  }
+
+  /* Card styling scaling */
+  .anime-card {
+    height: 250px;
+    border-radius: 6px;
+  }
+
+  .anime-card > img {
+    height: 160px;
+    border-radius: 6px 6px 0 0;
+  }
+
+  .anime-title {
+    margin-top: 6px;
+    font-size: 12px;
+    padding: 0 4px;
+    height: 32px;
+    line-height: 1.25;
+  }
+
+  .score {
+    right: 6px;
+    top: 6px;
+    padding: 2px 6px;
+    font-size: 10px;
+    border-radius: 4px;
+  }
+
+  .extra-info {
+    left: 6px;
+    top: 6px;
+    padding: 2px 6px;
+    font-size: 10px;
+    border-radius: 4px;
+  }
+
+  /* Hero Section adjustments */
+  .hero-section {
+    height: 240px;
+    padding: 20px;
+    margin: 0 5px;
+  }
+
+  .hero-title {
+    font-size: 22px;
+    margin: 8px 0 6px 0;
+  }
+
+  .hero-desc {
+    font-size: 12px;
+    margin-bottom: 12px;
+    line-clamp: 3;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .hero-button {
+    padding: 8px 16px;
+    font-size: 12px;
+    border-radius: 6px;
+  }
+}
+
+
 
 
 

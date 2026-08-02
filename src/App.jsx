@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import TopBar from "./components/layout/TopBar.jsx";
+import BottomNavBar from "./components/layout/BottomNavBar.jsx";
 import Home from "./pages/Home.jsx";
 import Library from "./pages/Library.jsx";
 import Discover from "./pages/Discover.jsx";
@@ -68,6 +69,8 @@ export default function App() {
             <Route path="/search" element={<Search />} />
           </Routes>
         </main>
+        
+        <BottomNavBar />
 
         {/* Global Toast Alert */}
         {toast && (

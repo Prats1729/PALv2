@@ -233,9 +233,10 @@
 }
 
 /* RESPONSIVE TOPBAR MEDIA QUERIES */
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
   .top-bar {
     height: 55px;
+    padding: 0 10px;
   }
 
   .home-logo {
@@ -244,23 +245,17 @@
   }
 
   .search-box input {
-    width: 100px;
-    height: 30px;
-    font-size: 12px;
+    width: 150px;
+    height: 32px;
+    font-size: 13px;
   }
 
   .search-box button {
-    height: 30px;
+    height: 32px;
   }
 
   .right-section {
-    gap: 8px;
-    padding-right: 10px;
-  }
-
-  .nav-link, .nav-link-active {
-    font-size: 12px;
-    padding: 4px 8px;
+    display: none;
   }
 }
 

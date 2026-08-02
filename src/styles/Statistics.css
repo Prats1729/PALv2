@@ -53,3 +53,18 @@
   text-transform: uppercase;
   letter-spacing: 0.8px;
 }
+
+@media (max-width: 1024px) {
+  .stats-title {
+    font-size: 22px;
+  }
+
+  .stats-card {
+    padding: 16px;
+  }
+
+  .stats-value {
+    font-size: 1.75rem;
+  }
+}
+

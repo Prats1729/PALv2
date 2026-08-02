@@ -124,3 +124,61 @@
   background: linear-gradient(135deg, #16122c 0%, #0b0813 100%);
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
+
+@media (max-width: 1024px) {
+  .details-banner-wrapper {
+    height: 180px;
+  }
+
+  .details-content {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    margin-top: -100px;
+    gap: 20px;
+    padding: 0 16px;
+  }
+
+  .details-cover {
+    width: 150px;
+    height: 215px;
+  }
+
+  .details-main-info {
+    padding-top: 0;
+    width: 100%;
+  }
+
+  .details-title {
+    font-size: 22px;
+    margin-bottom: 10px;
+  }
+
+  .details-meta {
+    justify-content: center;
+    flex-wrap: wrap;
+    font-size: 13px;
+    gap: 8px;
+  }
+
+  .genres-container {
+    justify-content: center;
+    gap: 6px;
+    margin-bottom: 20px;
+  }
+
+  .genre-badge {
+    padding: 4px 10px;
+    font-size: 12px;
+  }
+
+  .details-synopsis-section h2 {
+    font-size: 18px;
+  }
+
+  .details-synopsis {
+    font-size: 14px;
+    text-align: left;
+  }
+}
+
