@@ -1,5 +1,5 @@
-# PAL - Personal Anime Library 🎬
-**Version:** v1.0.0
+# PAL - Personal Anime Library (PALv2) 🎬
+**Version:** v1.1.0
 
 PAL (Personal Anime Library) is a modern, responsive web application built for anime enthusiasts to search, track, and catalog their favorite shows. Designed as a client-side catalog manager, PAL links directly to the AniList GraphQL API to provide real-time trending recommendations, advanced multi-layered filter configurations, custom search results, and public library summaries alongside calculated watch metrics without requiring a database in its initial release.
 
@@ -10,6 +10,8 @@ PALv2 is a complete rewrite of my original Personal Anime List project, rebuilt 
 ## Screenshots
 
 To set up PAL locally and view the user interface layouts, please check the placeholders below:
+
+### Desktop Layouts
 
 | Feature Section | Screenshot Preview Placeholder |
 | :--- | :--- |
@@ -22,6 +24,10 @@ To set up PAL locally and view the user interface layouts, please check the plac
 | **Settings Panel** | ![Settings](/images/image-6.png) |
 | **Dark Theme View** | ![Dark Theme](/images/image-7.png) |
 | **Light Theme View** | ![Light Theme](/images/image-8.png) |
+
+### Mobile Layouts
+
+| **Home Dashboard (Mobile)** | ![home-mobile](images/image-9.png) |
 
 ---
 
@@ -48,9 +54,13 @@ To set up PAL locally and view the user interface layouts, please check the plac
 ### Statistics
 - **Computed Indicators**: Evaluates profile records to calculate total entries, total episodes watched, mean rating, and watch time converted into days.
 - **Profile Quick-Selector**: Change statistics views instantly via saved profile buttons.
+- **Profile Caching & Fallback**: Automatically reads and syncs the last active username stored in browser local storage if no user context is provided in the URL.
 
 ### UI & UX
 - **Theme Preferences**: Fully supported Light/Dark layout switches synced to browser memory.
+- **Theme Consistency**: Dynamic stylesheet updates to ensure all elements (including search dropdown footers, card hover previews, lists, and statistics panels) remain perfectly visible in both modes.
+- **Mobile First & Responsive Breakpoints**: Tailored viewport scaling and element positioning (such as relocating slider indicators and hiding previous/next controls) to prevent overlay clutter on mobile phones.
+- **Bottom Navigation Layout**: A floating frosted bottom navigation bar (`BottomNavBar`) for easy touch-based navigation on mobile devices.
 - **Loading Skeletons**: Fluid pulsing loaders that occupy empty grid spaces during loading states.
 - **Scrollbar Aesthetics**: Custom Windows 10 flat rectangular scrollbar modules matching dark/light themes.
 
