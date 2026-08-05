@@ -49,11 +49,20 @@ function AnimatedCounter({ value }) {
 
 export default function Statistics() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const username = searchParams.get("user") || "";
+  const username = searchParams.get("user") || localStorage.getItem("pal_active_user") || "";
   const [savedUsers] = useState(() => getSavedUsernames());
   const [rawLists, setRawLists] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  useEffect(() => {
+    if (!searchParams.get("user")) {
+      const cachedUser = localStorage.getItem("pal_active_user");
+      if (cachedUser) {
+        setSearchParams({ user: cachedUser });
+      }
+    }
+  }, [searchParams, setSearchParams]);
 
   useEffect(() => {
     if (!username) return;

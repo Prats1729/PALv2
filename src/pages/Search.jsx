@@ -26,7 +26,7 @@ export default function Search() {
 
   return (
     <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
-      <h2 style={{ color: "#fff", fontSize: "28px", marginBottom: "8px" }}>
+      <h2 className="search-title">
         Search Results {query && `for "${query}"`}
       </h2>
 
