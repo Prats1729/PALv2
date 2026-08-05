@@ -21,6 +21,12 @@ h3{
     color: #959595;
 }
 
+.search-title {
+  color: #fff;
+  font-size: 28px;
+  margin-bottom: 8px;
+}
+
 .anime-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
@@ -547,6 +553,10 @@ body.light-theme {
   color: #1e1e2d;
 }
 
+body.light-theme .search-title {
+  color: #0b0813;
+}
+
 body.light-theme .top-bar {
   background-color: #ffffff;
   border-bottom: 1px solid rgba(0, 0, 0, 0.08);
@@ -597,6 +607,16 @@ body.light-theme .dropdown-title {
   color: #0b0813;
 }
 
+body.light-theme .dropdown-footer {
+  background-color: #f0edf5;
+  color: #6366f1;
+}
+
+body.light-theme .dropdown-footer:hover {
+  background-color: #6366f1;
+  color: #ffffff;
+}
+
 body.light-theme .anime-card {
   background-color: #ffffff;
   border-color: rgba(0, 0, 0, 0.1);
@@ -606,6 +626,35 @@ body.light-theme .anime-card {
 body.light-theme .anime-title {
   color: #1e1e2d;
 }
+
+body.light-theme .home-section h2 {
+  color: #0b0813;
+}
+
+/* Light Theme Card Hover Preview */
+body.light-theme .card-hover-preview {
+  background-color: #ffffff;
+  border-color: rgba(0, 0, 0, 0.1);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+}
+
+body.light-theme .hover-preview-header h3 {
+  color: #0b0813;
+}
+
+body.light-theme .hover-format {
+  background-color: rgba(0, 0, 0, 0.05);
+  color: #5b5870;
+}
+
+body.light-theme .hover-preview-meta {
+  color: #5b5870;
+}
+
+body.light-theme .hover-preview-desc {
+  color: #5b5870;
+}
+
 
 body.light-theme .skeleton-card,
 body.light-theme .skeleton-hero {
@@ -748,6 +797,36 @@ body.light-theme .stats-label {
   color: #5b5870 !important;
 }
 
+/* 5. Anime Details Page */
+body.light-theme .details-container {
+  background-color: #f6f5f9;
+  color: #1e1e2d;
+}
+
+body.light-theme .details-banner-wrapper::after {
+  background: linear-gradient(to top, #f6f5f9, transparent);
+}
+
+body.light-theme .details-rating {
+  background-color: rgba(0, 0, 0, 0.05);
+  color: #1e1e2d;
+}
+
+body.light-theme .genre-badge {
+  background-color: rgba(99, 102, 241, 0.1);
+  color: #4f46e5;
+}
+
+body.light-theme .details-synopsis,
+body.light-theme .details-sypnosis,
+body.light-theme .details-meta {
+  color: #5b5870;
+}
+
+body.light-theme .details-banner-placeholder {
+  background: linear-gradient(135deg, #e4e1eb 0%, #f6f5f9 100%);
+}
+
 body.light-theme .stats-card {
   background-color: #ffffff;
   border-color: rgba(0, 0, 0, 0.08);
@@ -804,6 +883,21 @@ body.light-theme *::-webkit-scrollbar-thumb:hover {
 body.light-theme::-webkit-scrollbar-thumb:active,
 body.light-theme *::-webkit-scrollbar-thumb:active {
   background: #6366f1;
+}
+
+/* Light Theme Bottom Navigation Bar */
+body.light-theme .bottom-nav-bar {
+  background-color: rgba(255, 255, 255, 0.95);
+  border-top-color: rgba(0, 0, 0, 0.08);
+}
+
+body.light-theme .bottom-nav-link {
+  color: #6c6a85;
+}
+
+body.light-theme .bottom-nav-link:hover,
+body.light-theme .bottom-nav-link.active {
+  color: #6366f1;
 }
 
 /* Global Page Slide-Fade Transitions */
@@ -912,6 +1006,19 @@ body.light-theme *::-webkit-scrollbar-thumb:active {
     padding: 8px 16px;
     font-size: 12px;
     border-radius: 6px;
+  }
+
+  /* Hide carousel navigation arrows on mobile */
+  .carousel-arrows {
+    display: none;
+  }
+
+  /* Move carousel indicators to the top right on mobile */
+  .carousel-indicators {
+    bottom: auto;
+    top: 20px;
+    left: auto;
+    right: 20px;
   }
 }
 
