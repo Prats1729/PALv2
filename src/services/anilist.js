@@ -9,6 +9,11 @@ const endpoint = "https://graphql.anilist.co/";
 const SEARCH_QUERY = gql`
     query ($search: String, $page: Int, $perPage: Int) {
         Page(page: $page, perPage: $perPage){
+            pageInfo {
+                total
+                hasNextPage
+                currentPage
+            }
             media(search: $search, type: ANIME){
              id
              title{
@@ -47,7 +52,7 @@ export async function searchAnime(query, page = 1, perPage = 12){
 
     try{
         const data = await request(endpoint, SEARCH_QUERY, variables);
-        return data.Page.media;
+        return { media: data.Page.media, pageInfo: data.Page.pageInfo };
     
     } catch (error){
         console.error("Error fetching data:", error);

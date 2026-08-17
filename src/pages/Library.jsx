@@ -22,6 +22,9 @@ export default function Library() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   
+  const ITEMS_PER_PAGE = 25;
+  const page = parseInt(searchParams.get("page")) || 1;
+  
   const [savedUsers, setSavedUsers] = useState(() => getSavedUsernames());
 
   const handleSaveUser = (e) => {
@@ -44,8 +47,8 @@ export default function Library() {
     if (e) e.preventDefault();
     if (!username.trim()) return;
 
-    // 1. Update the URL parameters
-    setSearchParams({ user: username.trim(), status: activeTab });
+    // 1. Update the URL parameters (reset page to 1 on new search)
+    setSearchParams({ user: username.trim(), status: activeTab, page: 1 });
 
     setLoading(true);
     setError(null);
@@ -87,10 +90,28 @@ export default function Library() {
   }, [searchParams]);
 
 
-  const currentList = rawLists.find(
-    (l) => l.status === activeTab || l.name.toUpperCase() === activeTab,
-  );
-  const entries = currentList?.entries || [];
+  let entries = [];
+  const matchingLists = activeTab === "ALL" 
+    ? rawLists 
+    : rawLists.filter((l) => l.status === activeTab || l.name.toUpperCase() === activeTab);
+  
+  const allEntries = matchingLists.flatMap(l => l.entries || []);
+  const seen = new Set();
+  entries = allEntries.filter(e => {
+    if (seen.has(e.media.id)) return false;
+    seen.add(e.media.id);
+    return true;
+  });
+
+  const totalPages = Math.ceil(entries.length / ITEMS_PER_PAGE);
+  const paginatedEntries = entries.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
+
+  const handlePageChange = (newPage) => {
+    if (newPage >= 1 && newPage <= totalPages) {
+      setSearchParams({ user: username, status: activeTab, page: newPage });
+      window.scrollTo(0, 0);
+    }
+  };
 
   return (
     <div className="library-container">
@@ -137,7 +158,7 @@ export default function Library() {
         key={u}
         onClick={() => {
           setUsername(u);
-          setSearchParams({ user: u, status: activeTab });
+          setSearchParams({ user: u, status: activeTab, page: 1 });
         }}
         className={`library-tab-btn ${username.toLowerCase() === u.toLowerCase() ? "active" : ""}`}
         style={{ padding: "4px 10px", fontSize: "12px", display: "flex", alignItems: "center", gap: "6px" }}
@@ -161,6 +182,7 @@ export default function Library() {
       {/* Status Filter Tabs */}
       <div className="library-tabs">
         {[
+          { label: "All Anime", key: "ALL" },
           { label: "Watching", key: "CURRENT" },
           { label: "Completed", key: "COMPLETED" },
           { label: "Plan to Watch", key: "PLANNING" },
@@ -171,7 +193,7 @@ export default function Library() {
             onClick={() => {
               setActiveTab(tab.key);
               if (username.trim()) {
-                setSearchParams({ user: username.trim(), status: tab.key });
+                setSearchParams({ user: username.trim(), status: tab.key, page: 1 });
               }
             }}
             className={`library-tab-btn ${activeTab === tab.key ? "active" : ""}`}
@@ -180,6 +202,12 @@ export default function Library() {
           </button>
         ))}
       </div>
+
+      {!loading && !error && entries.length > 0 && (
+        <p style={{ color: "#aaa", marginBottom: "15px", marginTop: "-5px" }}>
+          Found {entries.length} anime in this category
+        </p>
+      )}
 
       {/* Main Page Style Anime Card Grid */}
       {loading ? (
@@ -194,7 +222,7 @@ export default function Library() {
         </div>
       ) : (
         <div className="anime-grid" style={{ padding: 0 }}>
-          {entries.map(({ id, progress, media }) => {
+          {paginatedEntries.map(({ id, progress, media }) => {
             const cardColor = media.coverImage?.color || "#6366f1";
             const title =
               media.title.userPreferred ||
@@ -224,6 +252,26 @@ export default function Library() {
               </Link>
             );
           })}
+        </div>
+      )}
+
+      {!loading && totalPages > 1 && (
+        <div className="pagination-controls" style={{ display: 'flex', justifyContent: 'center', gap: '10px', marginTop: '30px', marginBottom: '20px' }}>
+          <button 
+            onClick={() => handlePageChange(page - 1)} 
+            disabled={page === 1}
+            style={{ padding: '8px 16px', cursor: page === 1 ? 'not-allowed' : 'pointer', background: '#333', color: '#fff', border: 'none', borderRadius: '4px' }}
+          >
+            Previous
+          </button>
+          <span style={{ padding: '8px 16px', background: '#222', borderRadius: '4px' }}>Page {page} of {totalPages}</span>
+          <button 
+            onClick={() => handlePageChange(page + 1)} 
+            disabled={page >= totalPages}
+            style={{ padding: '8px 16px', cursor: page >= totalPages ? 'not-allowed' : 'pointer', background: '#333', color: '#fff', border: 'none', borderRadius: '4px' }}
+          >
+            Next
+          </button>
         </div>
       )}
     </div>

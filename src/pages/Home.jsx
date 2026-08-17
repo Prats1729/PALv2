@@ -87,10 +87,39 @@ function AnimeCard({ anime }) {
   );
 }
 
+// SUB-COMPONENT: AIRING CARD FOR VERTICAL LIST
+function AiringCard({ anime }) {
+  const title = anime.title.english || anime.title.romaji;
+  const cardColor = anime.coverImage?.color || "#6366f1";
+  
+  return (
+    <Link
+      to={`/anime/${anime.id}`}
+      className="airing-card"
+      style={{ "--hover-color": cardColor }}
+    >
+      <div className="airing-card-inner">
+        <img src={anime.coverImage.large} alt={title} loading="lazy" />
+        <div className="airing-info">
+          <div className="airing-title" title={title}>{title}</div>
+          <div className="airing-meta">
+            <span>{anime.format || "TV"}</span>
+            <span className="dot">•</span>
+            <span className="airing-ep">Ep {anime.nextAiringEpisode?.episode || anime.episodes || "?"}</span>
+            <span className="dot">•</span>
+            <span className="airing-score"><img src={star} alt="star" /> {anime.averageScore ? `${anime.averageScore / 10}` : "N/A"}</span>
+          </div>
+        </div>
+      </div>
+    </Link>
+  );
+}
+
 // MAIN PAGE COMPONENT
 export default function Home() {
   const [trending, setTrending] = useState([]);
   const [popular, setPopular] = useState([]);
+  const [topAiring, setTopAiring] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentSlide, setCurrentSlide] = useState(0);
   const slideInterval = useRef(null);
@@ -122,6 +151,17 @@ export default function Home() {
               episodes
             }
           }
+          topAiring: Page(page: 1, perPage: 7) {
+            media(sort: SCORE_DESC, status: RELEASING, type: ANIME) {
+              id
+              title { english romaji }
+              coverImage { large color }
+              averageScore
+              format
+              episodes
+              nextAiringEpisode { episode }
+            }
+          }
         }
       `;
 
@@ -134,6 +174,7 @@ export default function Home() {
         const json = await response.json();
         setTrending(json.data.trending.media);
         setPopular(json.data.popular.media);
+        setTopAiring(json.data.topAiring.media);
       } catch (err) {
         console.error("Failed to load home content:", err);
       } finally {
@@ -248,25 +289,44 @@ export default function Home() {
         </div>
       )}
 
-      {/* 2. TRENDING NOW SECTION */}
-      <section className="home-section">
-        <h2>Trending Now</h2>
-        <div className="anime-grid">
-          {trending.slice(0, 6).map((anime) => (
-            <AnimeCard key={anime.id} anime={anime} />
-          ))}
-        </div>
-      </section>
+      {/* BOTTOM SECTIONS SPLIT LAYOUT */}
+      <div className="home-content-split">
+        <div className="home-main-col">
+          {/* 2. TRENDING NOW SECTION */}
+          <section className="home-section">
+            <h2>Trending Now</h2>
+            <div className="anime-grid">
+              {trending.slice(0, 6).map((anime) => (
+                <AnimeCard key={anime.id} anime={anime} />
+              ))}
+            </div>
+          </section>
 
-      {/* 3. POPULAR THIS SEASON SECTION */}
-      <section className="home-section">
-        <h2>Popular This Season</h2>
-        <div className="anime-grid">
-          {popular.map((anime) => (
-            <AnimeCard key={anime.id} anime={anime} />
-          ))}
+          {/* 3. POPULAR THIS SEASON SECTION */}
+          <section className="home-section">
+            <h2>Popular This Season</h2>
+            <div className="anime-grid">
+              {popular.map((anime) => (
+                <AnimeCard key={anime.id} anime={anime} />
+              ))}
+            </div>
+          </section>
         </div>
-      </section>
+
+        {/* 4. TOP AIRING SIDEBAR */}
+        <aside className="home-sidebar">
+          <div className="home-section">
+            <h2 className="sidebar-title">
+              <span className="caret">›</span> TOP AIRING
+            </h2>
+            <div className="airing-list">
+              {topAiring.map((anime) => (
+                <AiringCard key={anime.id} anime={anime} />
+              ))}
+            </div>
+          </div>
+        </aside>
+      </div>
     </div>
   );
 }
