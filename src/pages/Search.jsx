@@ -3,10 +3,12 @@ import { useSearchParams, Link } from "react-router-dom";
 import { searchAnime } from "../services/anilist";
 
 export default function Search() {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const query = searchParams.get("q") || "";
+  const page = parseInt(searchParams.get("page")) || 1;
 
   const [results, setResults] = useState([]);
+  const [pageInfo, setPageInfo] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -18,17 +20,32 @@ export default function Search() {
 
     setLoading(true);
     setError(null);
-    searchAnime(query)
-      .then((data) => setResults(data))
+    searchAnime(query, page)
+      .then((data) => {
+        setResults(data.media);
+        setPageInfo(data.pageInfo);
+      })
       .catch((err) => setError(err.message || "Failed to search anime."))
       .finally(() => setLoading(false));
-  }, [query]);
+  }, [query, page]);
+
+  const handlePageChange = (newPage) => {
+    const newParams = new URLSearchParams(searchParams);
+    newParams.set("page", newPage);
+    setSearchParams(newParams);
+    window.scrollTo(0, 0);
+  };
 
   return (
     <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
       <h2 className="search-title">
         Search Results {query && `for "${query}"`}
       </h2>
+      {!loading && !error && pageInfo?.total !== undefined && (
+        <p style={{ color: "#aaa", marginTop: "-10px", marginBottom: "20px" }}>
+          Found {pageInfo.total} anime
+        </p>
+      )}
 
       {loading ? (
         <div className="anime-grid" style={{ padding: 0, marginTop: "20px" }}>
@@ -59,6 +76,26 @@ export default function Search() {
               </Link>
             );
           })}
+        </div>
+      )}
+
+      {!loading && !error && results.length > 0 && pageInfo && (
+        <div className="pagination-controls" style={{ display: 'flex', justifyContent: 'center', gap: '10px', marginTop: '30px', marginBottom: '20px' }}>
+          <button 
+            onClick={() => handlePageChange(page - 1)} 
+            disabled={page === 1}
+            style={{ padding: '8px 16px', cursor: page === 1 ? 'not-allowed' : 'pointer', background: '#333', color: '#fff', border: 'none', borderRadius: '4px' }}
+          >
+            Previous
+          </button>
+          <span style={{ padding: '8px 16px', background: '#222', borderRadius: '4px' }}>Page {page}</span>
+          <button 
+            onClick={() => handlePageChange(page + 1)} 
+            disabled={!pageInfo.hasNextPage}
+            style={{ padding: '8px 16px', cursor: !pageInfo.hasNextPage ? 'not-allowed' : 'pointer', background: '#333', color: '#fff', border: 'none', borderRadius: '4px' }}
+          >
+            Next
+          </button>
         </div>
       )}
 

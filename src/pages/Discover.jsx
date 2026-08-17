@@ -143,6 +143,7 @@ export default function Discover() {
   const [sortBy, setSortBy] = useState(
     searchParams.get("sort") || "POPULARITY_DESC",
   );
+  const [page, setPage] = useState(parseInt(searchParams.get("page")) || 1);
 
   // For multi-select (comma separated like ?genres=Action,Drama)
   const [selectedGenres, setSelectedGenres] = useState(
@@ -173,11 +174,22 @@ export default function Discover() {
       newParams.set(key, value);
     }
 
+    if (key !== "page") {
+      newParams.delete("page");
+      setPage(1);
+    }
+
     setSearchParams(newParams); // Pushes new URL without losing other filters
+  };
+
+  const handlePageChange = (newPage) => {
+    updateParam("page", newPage);
+    window.scrollTo(0, 0);
   };
 
 
   const [results, setResults] = useState([]);
+  const [pageInfo, setPageInfo] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -202,6 +214,7 @@ export default function Discover() {
     setSelectedStatus(
       searchParams.get("status") ? searchParams.get("status").split(",") : [],
     );
+    setPage(parseInt(searchParams.get("page")) || 1);
   }, [searchParams]);
 
 
@@ -221,9 +234,15 @@ export default function Discover() {
           $season: MediaSeason,
           $status: [MediaStatus], 
           $year: Int, 
-          $sort: [MediaSort]
+          $sort: [MediaSort],
+          $page: Int
         ) {
-          Page(page: 1, perPage: 24) {
+          Page(page: $page, perPage: 24) {
+            pageInfo {
+              total
+              hasNextPage
+              currentPage
+            }
             media(
               search: $search,
               genre_in: $genres,
@@ -257,6 +276,7 @@ export default function Discover() {
       if (season !== "") variables.season = season;
       if (selectedStatus.length > 0) variables.status = selectedStatus;
       if (year !== "") variables.year = parseInt(year); // Single Int variable
+      variables.page = page;
 
       try {
         const response = await fetch("https://graphql.anilist.co/", {
@@ -270,6 +290,7 @@ export default function Discover() {
           throw new Error(json.errors[0].message);
         }
         setResults(json.data.Page.media);
+        setPageInfo(json.data.Page.pageInfo);
       } catch (err) {
         setError(err.message);
       } finally {
@@ -287,6 +308,7 @@ export default function Discover() {
     selectedStatus,
     year,
     sortBy,
+    page,
   ]);
 
   // Clear All Filters
@@ -299,6 +321,8 @@ export default function Discover() {
     setSelectedStatus([]);
     setYear("");
     setSortBy("POPULARITY_DESC");
+    setPage(1);
+    setSearchParams(new URLSearchParams());
   };
 
   // Option Lists
@@ -446,6 +470,12 @@ export default function Discover() {
       {/* RENDER GRID */}
       {error && <p style={{ color: "red" }}>Error: {error}</p>}
 
+      {!loading && !error && pageInfo?.total !== undefined && (
+        <p style={{ color: "#aaa", marginBottom: "10px" }}>
+          Found {pageInfo.total} anime
+        </p>
+      )}
+
       {loading && (
         <div className="anime-grid" style={{ padding: "20px 0 0 0" }}>
           {Array.from({ length: 12 }).map((_, idx) => (
@@ -482,6 +512,26 @@ export default function Discover() {
               </Link>
             );
           })}
+        </div>
+      )}
+
+      {!loading && !error && results.length > 0 && pageInfo && (
+        <div className="pagination-controls" style={{ display: 'flex', justifyContent: 'center', gap: '10px', marginTop: '30px', marginBottom: '20px' }}>
+          <button 
+            onClick={() => handlePageChange(page - 1)} 
+            disabled={page === 1}
+            style={{ padding: '8px 16px', cursor: page === 1 ? 'not-allowed' : 'pointer', background: '#333', color: '#fff', border: 'none', borderRadius: '4px' }}
+          >
+            Previous
+          </button>
+          <span style={{ padding: '8px 16px', background: '#222', borderRadius: '4px' }}>Page {page}</span>
+          <button 
+            onClick={() => handlePageChange(page + 1)} 
+            disabled={!pageInfo.hasNextPage}
+            style={{ padding: '8px 16px', cursor: !pageInfo.hasNextPage ? 'not-allowed' : 'pointer', background: '#333', color: '#fff', border: 'none', borderRadius: '4px' }}
+          >
+            Next
+          </button>
         </div>
       )}
     </div>

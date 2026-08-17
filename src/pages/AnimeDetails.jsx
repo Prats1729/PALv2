@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams } from "react-router-dom";
 import star from "../assets/star.png";
 import "../styles/AnimeDetails.css";
@@ -8,6 +8,14 @@ export default function AnimeDetails() {
   const [anime, setAnime] = useState(null);
   const [loading, setLoading] = useState(null);
   const [error, setError] = useState(null);
+  const charactersListRef = useRef(null);
+
+  const scrollCharacters = (direction) => {
+    if (charactersListRef.current) {
+      const scrollAmount = direction === 'left' ? -300 : 300;
+      charactersListRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+    }
+  };
 
   useEffect(() => {
     if (!id) return;
@@ -37,6 +45,41 @@ export default function AnimeDetails() {
                         genres
                         averageScore
                         seasonYear
+                        characters(sort: [ROLE, RELEVANCE], perPage: 15) {
+                            edges {
+                                role
+                                node {
+                                    id
+                                    name {
+                                        full
+                                    }
+                                    image {
+                                        large
+                                    }
+                                }
+                                voiceActors(language: JAPANESE, sort: [RELEVANCE]) {
+                                    id
+                                    name {
+                                        full
+                                    }
+                                }
+                            }
+                        }
+                        relations {
+                            edges {
+                                relationType
+                                node {
+                                    id
+                                    title {
+                                        english
+                                        romaji
+                                    }
+                                    type
+                                    format
+                                    status
+                                }
+                            }
+                        }
                     }
                 }
             `;
@@ -72,10 +115,8 @@ export default function AnimeDetails() {
     );
   if (!anime) return <div className="details-status">No anime found.</div>;
 
-  //clean description
-  const cleanedDescription = anime.description
-    ? anime.description.replace(/<br\s*\/?>/gi, " ")
-    : "No description available";
+  // AniList returns HTML in the description, so we can render it directly
+  const descriptionHtml = anime.description || "No description available";
 
   return (
     <div className="details-container">
@@ -125,9 +166,81 @@ export default function AnimeDetails() {
             ))}
           </div>
           <div className="details-sypnosis-section">
-            <h2>Sypnosis</h2>
-            <p className="details-sypnosis">{cleanedDescription}</p>
+            <h2>Synopsis</h2>
+            <p className="details-sypnosis" dangerouslySetInnerHTML={{ __html: descriptionHtml }}></p>
           </div>
+
+          {/* Cast & Characters Section */}
+          {anime.characters?.edges?.length > 0 && (
+            <div className="details-section">
+              <h2>Cast & Characters</h2>
+              <div className="characters-carousel-container">
+                <button 
+                  className="scroll-arrow left-arrow" 
+                  onClick={() => scrollCharacters('left')}
+                  aria-label="Scroll left"
+                >
+                  ‹
+                </button>
+                <div className="characters-list" ref={charactersListRef}>
+                  {anime.characters.edges.map((edge, index) => {
+                    const char = edge.node;
+                    const va = edge.voiceActors?.[0]; // Get the primary Japanese VA
+                    return (
+                      <div key={`${char.id}-${index}`} className="character-card">
+                        <img src={char.image?.large} alt={char.name.full} loading="lazy" />
+                        <div className="character-info">
+                          <div className="char-name">{char.name.full}</div>
+                          <div className="char-role">{edge.role}</div>
+                          {va && (
+                            <div className="va-name">
+                              VA: {va.name.full}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                <button 
+                  className="scroll-arrow right-arrow" 
+                  onClick={() => scrollCharacters('right')}
+                  aria-label="Scroll right"
+                >
+                  ›
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Related Anime Section */}
+          {anime.relations?.edges?.length > 0 && (
+            <div className="details-section">
+              <h2>Related Media</h2>
+              <div className="relations-container">
+                {anime.relations.edges
+                  // Optionally filter to only show Anime (not Manga), or show all.
+                  // For now we'll show all but indicate the format.
+                  .map((edge, index) => {
+                    const related = edge.node;
+                    const relationType = edge.relationType.replace(/_/g, ' ');
+                    return (
+                      <a 
+                        href={related.type === "ANIME" ? `/anime/${related.id}` : '#'} 
+                        key={`${related.id}-${index}`} 
+                        className="relation-item"
+                      >
+                        <div className="relation-info">
+                          <div className="relation-type">{relationType}</div>
+                          <div className="relation-title">{related.title.english || related.title.romaji}</div>
+                        </div>
+                        <div className="relation-arrow">›</div>
+                      </a>
+                    );
+                  })}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

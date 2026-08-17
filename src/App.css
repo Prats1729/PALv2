@@ -262,6 +262,7 @@ h3{
 }
 
 /* Position tooltip leftwards if card is on the right of screen */
+.home-main-col .anime-grid .anime-card-wrapper:nth-child(even) .card-hover-preview,
 .anime-grid .anime-card-wrapper:nth-child(6n) .card-hover-preview,
 .anime-grid .anime-card-wrapper:nth-child(6n-1) .card-hover-preview {
   left: auto;
@@ -394,6 +395,127 @@ h3{
   box-shadow: 0 0 10px rgba(99, 102, 241, 0.5);
 }
 
+/* --- HOME PAGE SPLIT LAYOUT --- */
+.home-content-split {
+  display: flex;
+  gap: 30px;
+  margin: 0 20px;
+  align-items: flex-start;
+}
+
+.home-main-col {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+}
+
+.home-sidebar {
+  width: 320px;
+  flex-shrink: 0;
+}
+
+.sidebar-title {
+  color: #fff;
+  font-size: 16px !important;
+  font-weight: 700 !important;
+  text-transform: uppercase;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-left: 0 !important;
+}
+
+.sidebar-title .caret {
+  color: #6366f1;
+  font-size: 20px;
+}
+
+.airing-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.airing-card {
+  text-decoration: none;
+  display: block;
+}
+
+.airing-card-inner {
+  display: flex;
+  background-color: #1a1822;
+  border-radius: 8px;
+  overflow: hidden;
+  height: 100px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  transition: transform 0.2s, background-color 0.2s;
+}
+
+.airing-card:hover .airing-card-inner {
+  background-color: #242131;
+  transform: translateX(5px);
+  border-color: var(--hover-color);
+}
+
+.airing-card-inner img {
+  width: 75px;
+  height: 100%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.airing-info {
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  flex: 1;
+  min-width: 0;
+}
+
+.airing-title {
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.airing-card:hover .airing-title {
+  color: var(--hover-color);
+}
+
+.airing-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #7a7690;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.airing-meta .dot {
+  font-size: 8px;
+  opacity: 0.5;
+}
+
+.airing-score {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  color: #fbbf24;
+}
+
+.airing-score img {
+  width: 10px;
+  height: 10px;
+}
+
 /* Pulsing Skeleton Loader Animation */
 @keyframes skeleton-pulse {
   0% {
@@ -441,16 +563,45 @@ h3{
 }
 
 /* RESPONSIVE MEDIA QUERIES */
+@media (max-width: 1024px) {
+  .home-content-split {
+    flex-direction: column;
+  }
+  .home-sidebar {
+    width: 100%;
+    margin-top: 20px;
+  }
+  
+  /* Disable hover previews on mobile/tablet since tap triggers it awkwardly */
+  .card-hover-preview {
+    display: none !important;
+  }
+
+  .airing-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 15px;
+  }
+}
+
 @media (max-width: 768px) {
   .main-content {
     margin-top: 55px;
     padding: 12px;
   }
 
+  .home-content-split {
+    margin: 0;
+  }
+
   .anime-grid {
     grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
     gap: 12px;
-    padding: 10px;
+    padding: 10px 0;
+  }
+
+  .home-section h2 {
+    padding-left: 10px;
   }
 
   .anime-card {
