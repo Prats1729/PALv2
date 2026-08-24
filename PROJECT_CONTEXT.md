@@ -51,14 +51,18 @@ Here is how the project is organized currently:
 
 ## 🚀 Future Roadmap & Upcoming Goals
 
-### 1. Watchlist / Library Page Operations (`/library`)
+### 1. Backend Integration (Phase 1-3)
+* Set up a basic Node.js + Express backend and create a simple test route.
+* Learn backend routing, controllers, and JSON responses.
+* Connect the backend to MongoDB and design data models for PAL.
+
+### 2. Watchlist / Library Page Operations & Persistence (Phase 4)
 * Create a global context or hook to add/remove/update anime in the user's active watchlist.
-* Design a clean library grid displaying current watch status (e.g. "Plan to Watch", "Watching", "Completed").
+* Move LocalStorage-based persistence to the new backend database.
+* Design a clean library grid displaying current watch status.
 
-### 2. Local Watchlist Persistence
-* Save the watchlist state into `localStorage` so user lists survive browser reloads.
-
-### 3. AniList OAuth Integration
+### 3. Authentication & AniList OAuth (Phase 5)
+* Learn authentication (sessions vs JWT).
 * Integrate official AniList OAuth to authenticate users.
 * Allow saving list operations directly to the user's AniList profile.
 

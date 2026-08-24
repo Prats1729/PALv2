@@ -10,6 +10,8 @@ import Statistics from "./pages/Statistics.jsx";
 import AnimeDetails from "./pages/AnimeDetails.jsx";
 import Search from "./pages/Search.jsx";
 
+import { WatchlistProvider } from "./context/WatchlistContext.jsx";
+
 import "./App.css";
 
 export default function App() {
@@ -54,8 +56,9 @@ export default function App() {
   }, []);
 
   return (
-    <BrowserRouter>
-      <div className="app-container">
+    <WatchlistProvider>
+      <BrowserRouter>
+        <div className="app-container">
         <TopBar />
 
         <main className="main-content">
@@ -80,5 +83,6 @@ export default function App() {
         )}
       </div>
     </BrowserRouter>
+    </WatchlistProvider>
   );
 }
