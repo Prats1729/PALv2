@@ -1,94 +1,16 @@
 import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import star from "../assets/star.png";
+import { useWatchlist } from "../context/WatchlistContext";
 
-// SUB-COMPONENT: ANIME CARD WITH DELAYED HOVER CARD PREVIEW
-function AnimeCard({ anime }) {
-  const [showPreview, setShowPreview] = useState(false);
-  const hoverTimer = useRef(null);
-
-  const handleMouseEnter = () => {
-    // 450ms delay before triggering the detailed preview
-    hoverTimer.current = setTimeout(() => {
-      setShowPreview(true);
-    }, 450);
-  };
-
-  const handleMouseLeave = () => {
-    if (hoverTimer.current) {
-      clearTimeout(hoverTimer.current);
-    }
-    setShowPreview(false);
-  };
-
-  useEffect(() => {
-    return () => {
-      if (hoverTimer.current) clearTimeout(hoverTimer.current);
-    };
-  }, []);
-
-  const cleanDescription = anime.description
-    ? anime.description.replace(/<[^>]*>/g, "").substring(0, 120) + "..."
-    : "No synopsis available.";
-
-  const cardColor = anime.coverImage.color || "#6366f1";
-
-  return (
-    <div
-      className="anime-card-wrapper"
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
-    >
-      <Link
-        to={`/anime/${anime.id}`}
-        className="card-link"
-        style={{ "--hover-color": cardColor }}
-      >
-        <div className="anime-card">
-          <img
-            src={anime.coverImage.large}
-            alt={anime.title.english || anime.title.romaji}
-          />
-          <div className="anime-title">
-            {anime.title.english || anime.title.romaji}
-          </div>
-          <div className="score">
-            <img src={star} alt="star" />
-            {anime.averageScore ? `${anime.averageScore / 10}` : "N/A"}
-          </div>
-          <div className="extra-info">
-            <p className="format">{anime.format}</p>
-            <p className="episodes">{anime.episodes || "?"} eps</p>
-          </div>
-        </div>
-      </Link>
-
-      {/* FLOATING HOVER PREVIEW CARD */}
-      {showPreview && (
-        <div
-          className="card-hover-preview"
-          style={{ borderTop: `3px solid ${cardColor}` }}
-        >
-          <div className="hover-preview-header">
-            <h3>{anime.title.english || anime.title.romaji}</h3>
-            <span className="hover-format">{anime.format}</span>
-          </div>
-          <div className="hover-preview-meta">
-            <span className="hover-rating">
-              <img src={star} alt="star" /> {anime.averageScore ? `${anime.averageScore / 10}` : "N/A"}
-            </span>
-            <span>•</span>
-            <span>{anime.episodes || "?"} Episodes</span>
-          </div>
-          <p className="hover-preview-desc">{cleanDescription}</p>
-        </div>
-      )}
-    </div>
-  );
-}
+import AnimeCard from "../components/common/AnimeCard";
 
 // SUB-COMPONENT: AIRING CARD FOR VERTICAL LIST
 function AiringCard({ anime }) {
+  const { watchlist, addToWatchlist } = useWatchlist();
+  const [isAdding, setIsAdding] = useState(false);
+  const isSaved = watchlist.some(w => w.animeId === anime.id);
+
   const title = anime.title.english || anime.title.romaji;
   const cardColor = anime.coverImage?.color || "#6366f1";
   
@@ -96,10 +18,11 @@ function AiringCard({ anime }) {
     <Link
       to={`/anime/${anime.id}`}
       className="airing-card"
-      style={{ "--hover-color": cardColor }}
+      style={{ "--hover-color": cardColor, position: "relative" }}
     >
       <div className="airing-card-inner">
         <img src={anime.coverImage.large} alt={title} loading="lazy" />
+        
         <div className="airing-info">
           <div className="airing-title" title={title}>{title}</div>
           <div className="airing-meta">
@@ -110,7 +33,62 @@ function AiringCard({ anime }) {
             <span className="airing-score"><img src={star} alt="star" /> {anime.averageScore ? `${anime.averageScore / 10}` : "N/A"}</span>
           </div>
         </div>
+        
+        {!isSaved && !isAdding && (
+          <div style={{ display: "flex", alignItems: "center", paddingRight: "12px" }}>
+            <button 
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setIsAdding(true);
+              }}
+              style={{
+                background: "rgba(99, 102, 241, 0.9)",
+                color: "white",
+                border: "none",
+                borderRadius: "50%",
+                width: "24px",
+                height: "24px",
+                fontSize: "16px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                cursor: "pointer",
+                boxShadow: "0 2px 5px rgba(0,0,0,0.5)"
+              }}
+              title="Quick Add to Watchlist"
+            >
+              +
+            </button>
+          </div>
+        )}
       </div>
+
+      {/* Floating custom dropdown overlay for AiringCard */}
+      {!isSaved && isAdding && (
+        <div style={{ position: "absolute", right: "8px", top: "50%", transform: "translateY(-50%)", zIndex: 20 }}>
+          <div 
+            className="airing-quick-add-menu" 
+            onMouseLeave={() => setIsAdding(false)}
+          >
+            {["Watching", "Plan to Watch", "Completed", "Dropped"].map(status => (
+              <button
+                key={status}
+                className="quick-add-option"
+                style={{ padding: "8px 12px", fontSize: "12px" }}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  addToWatchlist(anime, status);
+                  setIsAdding(false);
+                }}
+              >
+                {status}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
     </Link>
   );
 }
@@ -135,7 +113,7 @@ export default function Home() {
               title { english romaji native }
               coverImage { large color } # Added color
               bannerImage
-              description
+              description(asHtml: false)
               averageScore
               format
               episodes
@@ -146,6 +124,7 @@ export default function Home() {
               id
               title { english romaji }
               coverImage { large color } # Added color
+              description(asHtml: false)
               averageScore
               format
               episodes
@@ -156,6 +135,7 @@ export default function Home() {
               id
               title { english romaji }
               coverImage { large color }
+              description(asHtml: false)
               averageScore
               format
               episodes

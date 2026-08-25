@@ -37,97 +37,96 @@ h3{
 .anime-card {
   position: relative;
   width: 100%;
-  height: 325px;
   background-color: #1a1822;
-  border: 1px solid rgba(255, 255, 255, 0.15); /* Soft border for separation */
+  border: 1px solid rgba(255, 255, 255, 0.05);
   display: flex;
   flex-direction: column;
-  align-items: center;
-  border-radius: 7px;
-  text-align: center;
-  transition: all 0.2s ease-in-out;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+  border-radius: 10px;
+  transition: all 0.3s ease;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+  /* Removed overflow: hidden so the dropdown menu can bleed out */
 }
 
 .anime-card:hover {
-  transform: scale(1.02);
+  transform: translateY(-5px);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.6);
+  border-color: rgba(99, 102, 241, 0.3);
   cursor: pointer;
 }
 
-.anime-title {
-  margin-top: 10px;
-  font-weight: 600;
-  font-size: 14px;
-  padding: 0 5px 0 5px;
-  line-height: 1.3;
+.anime-card > img {
+  width: 100%;
+  height: 250px;
+  object-fit: cover;
+  border-radius: 10px 10px 0 0; /* Keeps the top corners rounded */
+}
 
+.anime-info {
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  background: #1a1822; /* Cover any gaps */
+  position: relative;
+  z-index: 2; /* To sit above the zoomed image */
+  height: 65px;
+  border-radius: 0 0 10px 10px; /* Keeps the bottom corners rounded */
+}
+
+.anime-title {
+  font-weight: 700;
+  font-size: 14px;
+  line-height: 1.3;
+  color: #fff;
+  text-align: left;
+  margin: 0;
   /* Clamp to exactly 2 lines with ellipsis */
   display: -webkit-box;
   -webkit-line-clamp: 2;
-  line-clamp: 2; /* Standard property for compatibility */
+  line-clamp: 2; 
   -webkit-box-orient: vertical;
   overflow: hidden;
   text-overflow: ellipsis;
-  
-  /* Fixed height so all cards align perfectly */
-  height: 36px;
+  transition: color 0.2s ease;
 }
 
-
-.anime-card > img {
-  width: 100%;
-  height: 220px;
-  object-fit: cover;
-  border-radius: 7px 7px 0 0;
+.anime-card-wrapper:hover .anime-title,
+.card-link:hover .anime-title {
+  color: var(--hover-color, #fff);
 }
 
-.score {
+.anime-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #a0a0a0;
+  font-weight: 500;
+  margin-top: auto; /* Push to bottom of the info box */
+}
+
+.anime-meta .dot {
+  font-size: 8px;
+  opacity: 0.5;
+}
+
+.anime-score {
   display: flex;
   align-items: center;
   gap: 3px;
-  white-space: nowrap;
-  position: absolute;
-  right: 10px;
-  top: 10px;
-  background-color: rgba(11, 8, 19, 0.75); /* Deep dark background */
-  backdrop-filter: blur(12px); /* Frosted glass effect */
-  border: 1px solid rgba(255, 255, 255, 0.15); /* Soft border for separation */
-  color: #f8fafc;
+  color: #fbbf24;
   font-weight: 700;
-  font-size: 12px;
-  padding: 4px 8px;
-  border-radius: 6px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-  z-index: 5;
 }
 
-.score img {
+.anime-score img {
   height: 12px;
   width: 12px;
   object-fit: contain;
-  flex-shrink: 0;
 }
 
-.extra-info {
-  position: absolute;
-  top: 10px;
-  left: 10px;
-  background-color: rgba(11, 8, 19, 0.75); /* Deep dark background */
-  backdrop-filter: blur(8px); /* Frosted glass effect */
-  border: 1px solid rgba(255, 255, 255, 0.15); /* Soft border for separation */
-  color: #f8fafc;
-  font-weight: 700;
-  font-size: 12px;
-  padding: 4px 8px;
-  border-radius: 6px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-  z-index: 5;
-}
-
-.extra-info p {
-  margin: 0;
-  line-height: 1.2;
-}
+/* Kept for any old code that still uses it, but being phased out for these cards */
+.extra-info { display: none; }
+.score { display: none; }
 
 
 /* Home layout spacing */
@@ -136,6 +135,124 @@ h3{
   flex-direction: column;
   gap: 40px;
   padding-bottom: 50px;
+}
+
+/* Glassmorphic Quick Add Menu */
+.quick-add-container {
+  position: absolute;
+  top: 210px; /* Aligned near the bottom of the 250px image */
+  left: 0;
+  width: 100%;
+  padding: 0 10px;
+  box-sizing: border-box;
+  z-index: 15;
+}
+
+.quick-add-trigger {
+  width: 100%;
+  padding: 8px 0;
+  background: rgba(11, 8, 19, 0.4);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s, opacity 0.2s;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+  opacity: 0; /* Hidden by default until hovered */
+}
+
+/* Show trigger on card hover */
+.anime-card-wrapper:hover .quick-add-trigger,
+.anime-card:hover .quick-add-trigger {
+  opacity: 1;
+}
+
+.quick-add-trigger:hover {
+  background: rgba(99, 102, 241, 0.6);
+}
+
+.quick-add-menu {
+  position: absolute;
+  top: 210px;
+  left: 10px;
+  right: 10px;
+  background: rgba(11, 8, 19, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(99, 102, 241, 0.5);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  z-index: 20;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+  transform-origin: top center;
+  animation: dropdown-expand 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes dropdown-expand {
+  from {
+    opacity: 0;
+    transform: scaleY(0.9) translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: scaleY(1) translateY(0);
+  }
+}
+
+.quick-add-option {
+  padding: 8px 12px;
+  color: #e2e8f0;
+  font-size: 13px;
+  font-weight: 500;
+  text-align: left;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.quick-add-option:last-child {
+  border-bottom: none;
+}
+
+.quick-add-option:hover {
+  background: rgba(99, 102, 241, 0.3);
+  color: #fff;
+}
+
+.airing-quick-add-menu {
+  background: rgba(11, 8, 19, 0.95);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(99, 102, 241, 0.5);
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+  animation: fade-in-scale 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  min-width: 110px;
+}
+
+@keyframes fade-in-scale {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 .home-section h2 {
@@ -251,14 +368,16 @@ h3{
   left: 105%;
   transform: translateY(-50%);
   width: 250px;
-  background-color: #120e25;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 8px;
+  background-color: rgba(11, 8, 19, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(99, 102, 241, 0.4);
+  border-radius: 12px;
   padding: 16px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.7);
   z-index: 99;
   pointer-events: none; /* Mouse movements ignore this modal */
-  animation: fadeInHover 0.2s ease-out forwards;
+  animation: fadeInHover 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 /* Position tooltip leftwards if card is on the right of screen */

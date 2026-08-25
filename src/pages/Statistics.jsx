@@ -1,7 +1,5 @@
 import { useState, useEffect } from "react";
-import { useSearchParams } from "react-router-dom";
-import { fetchUserWatchlist } from "../services/anilist";
-import { getSavedUsernames } from "../services/storage";
+import { useWatchlist } from "../context/WatchlistContext";
 import "../styles/Statistics.css";
 
 // Animated Count-Up Component
@@ -48,55 +46,26 @@ function AnimatedCounter({ value }) {
 }
 
 export default function Statistics() {
-  const [searchParams, setSearchParams] = useSearchParams();
-  const username = searchParams.get("user") || localStorage.getItem("pal_active_user") || "";
-  const [savedUsers] = useState(() => getSavedUsernames());
-  const [rawLists, setRawLists] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const { watchlist } = useWatchlist();
 
-  useEffect(() => {
-    if (!searchParams.get("user")) {
-      const cachedUser = localStorage.getItem("pal_active_user");
-      if (cachedUser) {
-        setSearchParams({ user: cachedUser });
-      }
-    }
-  }, [searchParams, setSearchParams]);
+  // 1. Count total anime titles
+  const totalAnime = watchlist.length;
 
-  useEffect(() => {
-    if (!username) return;
-    setLoading(true);
-    setError(null);
-    fetchUserWatchlist(username)
-      .then((data) => setRawLists(data))
-      .catch((err) =>
-        setError(err.message || "Failed to load user statistics."),
-      )
-      .finally(() => setLoading(false));
-  }, [username]);
-
-  // 1. Flatten all entries across all lists (Watching, Completed, Dropped, etc.)
-  const allEntries = rawLists.flatMap((l) => l.entries || []);
-
-  // 2. Count total anime titles
-  const totalAnime = allEntries.length;
-
-  // 3. Sum up total watched episodes
-  const totalEpisodes = allEntries.reduce(
+  // 2. Sum up total watched episodes
+  const totalEpisodes = watchlist.reduce(
     (sum, e) => sum + (e.progress || 0),
-    0,
+    0
   );
 
-  // 4. Calculate total days watched (assuming 24 mins average per episode)
+  // 3. Calculate total days watched (assuming 24 mins average per episode)
   const daysWatched = ((totalEpisodes * 24) / (60 * 24)).toFixed(1);
 
-  // 5. Calculate average score (only for items with score > 0)
-  const scoredEntries = allEntries.filter((e) => e.score > 0);
+  // 4. Calculate average score (only for items with score > 0)
+  const scoredEntries = watchlist.filter((e) => e.rating > 0);
   const meanScore =
     scoredEntries.length > 0
       ? (
-          scoredEntries.reduce((sum, e) => sum + e.score, 0) /
+          scoredEntries.reduce((sum, e) => sum + e.rating, 0) /
           scoredEntries.length
         ).toFixed(1)
       : "N/A";
@@ -105,75 +74,38 @@ export default function Statistics() {
     <div className="stats-container">
       <h2 className="stats-title">Anime Statistics</h2>
       <p className="stats-subtitle">
-        Your personal watching metrics will calculate here once linked.
+        Your personal watching metrics synced directly with your database.
       </p>
-      {/* Saved User Selector Pills */}
-      {savedUsers.length > 0 && (
-        <div
-          style={{
-            display: "flex",
-            gap: "8px",
-            alignItems: "center",
-            marginBottom: "20px",
-            flexWrap: "wrap",
-          }}
-        >
-          <span style={{ color: "#7a7690", fontSize: "13px" }}>
-            Select Profile:
-          </span>
-          {savedUsers.map((u) => (
-            <button
-              key={u}
-              onClick={() => setSearchParams({ user: u })}
-              style={{
-                padding: "5px 12px",
-                borderRadius: "6px",
-                border: "none",
-                cursor: "pointer",
-                background:
-                  username.toLowerCase() === u.toLowerCase()
-                    ? "#6366f1"
-                    : "#181825",
-                color: "#fff",
-                fontSize: "13px",
-              }}
-            >
-              {u}
-            </button>
-          ))}
-        </div>
-      )}
 
+      {/* METRICS GRID */}
       <div className="stats-grid">
         <div className="stats-card">
-          <h3 className="stats-value">
+          <div className="stats-value" style={{ color: "#6366f1" }}>
             <AnimatedCounter value={totalAnime} />
-          </h3>
-          <span className="stats-label">Total Anime</span>
+          </div>
+          <div className="stats-label">TOTAL ANIME</div>
         </div>
+
         <div className="stats-card">
-          <h3 className="stats-value">
+          <div className="stats-value" style={{ color: "#a855f7" }}>
             <AnimatedCounter value={totalEpisodes} />
-          </h3>
-          <span className="stats-label">Episodes Watched</span>
+          </div>
+          <div className="stats-label">EPISODES WATCHED</div>
         </div>
+
         <div className="stats-card">
-          <h3 className="stats-value">
+          <div className="stats-value" style={{ color: "#ec4899" }}>
             <AnimatedCounter value={daysWatched} />
-          </h3>
-          <span className="stats-label">Days Watched</span>
+          </div>
+          <div className="stats-label">DAYS WATCHED</div>
         </div>
+
         <div className="stats-card">
-          <h3 className="stats-value">
-            {meanScore !== "N/A" ? (
-              <>
-                <AnimatedCounter value={meanScore} /> <span style={{ fontSize: "16px", opacity: 0.6 }}>/ 10</span>
-              </>
-            ) : (
-              "N/A"
-            )}
-          </h3>
-          <span className="stats-label">Mean Score</span>
+          <div className="stats-value" style={{ color: "#10b981" }}>
+            <AnimatedCounter value={meanScore} />
+            <span style={{ fontSize: "16px", opacity: 0.6 }}> /10</span>
+          </div>
+          <div className="stats-label">MEAN SCORE</div>
         </div>
       </div>
     </div>
