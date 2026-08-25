@@ -3,12 +3,35 @@ import { useParams } from "react-router-dom";
 import star from "../assets/star.png";
 import "../styles/AnimeDetails.css";
 
+import { useWatchlist } from "../context/WatchlistContext"; // <-- Import the new context hook
+
 export default function AnimeDetails() {
   const { id } = useParams(); // get id from the url path
+  
+  // <-- Grab all our new PA system functions
+  const { watchlist, addToWatchlist, updateWatchlistItem, removeFromWatchlist } = useWatchlist(); 
+
   const [anime, setAnime] = useState(null);
   const [loading, setLoading] = useState(null);
   const [error, setError] = useState(null);
+  const [isStatusMenuOpen, setIsStatusMenuOpen] = useState(false);
   const charactersListRef = useRef(null);
+  const statusMenuRef = useRef(null);
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (statusMenuRef.current && !statusMenuRef.current.contains(event.target)) {
+        setIsStatusMenuOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  // Check if the current anime on the page is already saved in our database!
+  const savedAnime = anime ? watchlist.find(item => item.animeId === anime.id) : null;
 
   const scrollCharacters = (direction) => {
     if (charactersListRef.current) {
@@ -138,15 +161,82 @@ export default function AnimeDetails() {
           )}
         </div>
       <div className="details-content">
-        <img
-          src={anime.coverImage.large}
-          alt={anime.title.english}
-          className="details-cover"
-        />
+        <div className="details-left-col">
+          <img
+            src={anime.coverImage.large}
+            alt={anime.title.english}
+            className="details-cover"
+          />
+          {savedAnime ? (
+            <div className="details-ops-panel">
+              <div 
+                className="ops-status-wrapper" 
+                ref={statusMenuRef}
+              >
+                <button 
+                  className="ops-status-trigger"
+                  onClick={() => setIsStatusMenuOpen(!isStatusMenuOpen)}
+                >
+                  <span>{savedAnime.status}</span>
+                  <span style={{ fontSize: '10px' }}>▼</span>
+                </button>
+                {isStatusMenuOpen && (
+                  <div className="ops-status-menu">
+                    {["Watching", "Plan to Watch", "Completed", "Dropped"].map(status => (
+                      <button
+                        key={status}
+                        className="quick-add-option"
+                        onClick={() => {
+                          updateWatchlistItem(savedAnime.animeId, { status });
+                          setIsStatusMenuOpen(false);
+                        }}
+                      >
+                        {status}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="ops-row">
+                <div className="ops-progress">
+                  <span>Ep {savedAnime.progress} / {savedAnime.totalEpisodes || "?"}</span>
+                  <button 
+                    className="ops-progress-btn"
+                    onClick={() => updateWatchlistItem(savedAnime.animeId, { progress: savedAnime.progress + 1 })}
+                    disabled={savedAnime.progress >= savedAnime.totalEpisodes}
+                    title="Watched another episode"
+                  >
+                    +
+                  </button>
+                </div>
+                <button 
+                  className="ops-drop-btn"
+                  onClick={() => {
+                    if (window.confirm("Are you sure you want to drop this anime?")) {
+                      updateWatchlistItem(savedAnime.animeId, { status: "Dropped" });
+                    }
+                  }}
+                >
+                  Drop
+                </button>
+              </div>
+            </div>
+          ) : (
+            <button 
+              className="ops-add-btn"
+              onClick={() => addToWatchlist(anime)}
+            >
+              + Add to Watchlist
+            </button>
+          )}
+        </div>
+
         <div className="details-main-info">
           <h1>
             {anime.title.english || anime.title.romaji || anime.title.native}
           </h1>
+
           <div className="details-meta">
             <span>{anime.format}</span>
             <span>•</span>

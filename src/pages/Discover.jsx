@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import { useSearchParams, Link } from "react-router-dom";
-import star from "../assets/star.png";
+import { searchAnime } from "../services/anilist";
+import Pagination from "../components/common/Pagination";
+import AnimeCard from "../components/common/AnimeCard";
 import "../styles/Discover.css";
 
 // 1. REUSABLE CUSTOM MULTI-SELECT DROPDOWN COMPONENT
@@ -257,6 +259,7 @@ export default function Discover() {
               id
               title { english romaji native }
               coverImage { large color }
+              description(asHtml: false)
               averageScore
               format
               episodes
@@ -486,53 +489,18 @@ export default function Discover() {
 
       {!loading && !error && (
         <div className="anime-grid" style={{ padding: "20px 0 0 0" }}>
-          {results.map((anime) => {
-            const cardColor = anime.coverImage.color || "#6366f1";
-            return (
-              <Link
-                to={`/anime/${anime.id}`}
-                key={anime.id}
-                className="card-link"
-                style={{ "--hover-color": cardColor }}
-              >
-                <div className="anime-card">
-                  <img src={anime.coverImage.large} alt={anime.title.english} loading="lazy" />
-                  <div className="anime-title">
-                    {anime.title.english || anime.title.romaji}
-                  </div>
-                  <div className="score">
-                    <img src={star} alt="star" />
-                    {anime.averageScore ? `${anime.averageScore / 10}` : "N/A"}
-                  </div>
-                  <div className="extra-info">
-                    <p className="format">{anime.format}</p>
-                    <p className="episodes">{anime.episodes || "?"} eps</p>
-                  </div>
-                </div>
-              </Link>
-            );
-          })}
+          {results.map((anime) => (
+            <AnimeCard key={anime.id} anime={anime} />
+          ))}
         </div>
       )}
 
       {!loading && !error && results.length > 0 && pageInfo && (
-        <div className="pagination-controls" style={{ display: 'flex', justifyContent: 'center', gap: '10px', marginTop: '30px', marginBottom: '20px' }}>
-          <button 
-            onClick={() => handlePageChange(page - 1)} 
-            disabled={page === 1}
-            style={{ padding: '8px 16px', cursor: page === 1 ? 'not-allowed' : 'pointer', background: '#333', color: '#fff', border: 'none', borderRadius: '4px' }}
-          >
-            Previous
-          </button>
-          <span style={{ padding: '8px 16px', background: '#222', borderRadius: '4px' }}>Page {page}</span>
-          <button 
-            onClick={() => handlePageChange(page + 1)} 
-            disabled={!pageInfo.hasNextPage}
-            style={{ padding: '8px 16px', cursor: !pageInfo.hasNextPage ? 'not-allowed' : 'pointer', background: '#333', color: '#fff', border: 'none', borderRadius: '4px' }}
-          >
-            Next
-          </button>
-        </div>
+        <Pagination
+          currentPage={pageInfo.currentPage}
+          totalPages={Math.ceil(pageInfo.total / 24)}
+          onPageChange={handlePageChange}
+        />
       )}
     </div>
   );

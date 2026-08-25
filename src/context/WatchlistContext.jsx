@@ -27,7 +27,7 @@ export function WatchlistProvider({ children }) {
   };
 
   // Function to add a new anime to the backend
-  const addToWatchlist = async (anime) => {
+  const addToWatchlist = async (anime, status = "Plan to Watch") => {
     try {
       const response = await fetch('http://localhost:5000/api/watchlist', {
         method: 'POST',
@@ -35,7 +35,12 @@ export function WatchlistProvider({ children }) {
         body: JSON.stringify({
           id: anime.id,
           title: anime.title?.userPreferred || anime.title?.english || anime.title?.romaji || "Unknown",
-          status: "Plan to Watch"
+          coverImage: anime.coverImage?.large || anime.coverImage?.medium || "",
+          color: anime.coverImage?.color || "#6366f1",
+          totalEpisodes: anime.episodes || null,
+          status: status,
+          progress: status === "Completed" ? (anime.episodes || 0) : 0,
+          rating: anime.averageScore ? (anime.averageScore / 10) : null
         })
       });
 
@@ -58,8 +63,65 @@ export function WatchlistProvider({ children }) {
     }
   };
 
+  const updateWatchlistItem = async (id, updates) => {
+    try {
+      // Auto-fill progress if status is set to Completed
+      if (updates.status === "Completed") {
+        const item = watchlist.find(w => w.animeId === id || w._id === id);
+        if (item && item.totalEpisodes) {
+          updates.progress = item.totalEpisodes;
+        }
+      }
+
+      const response = await fetch(`http://localhost:5000/api/watchlist/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates)
+      });
+      if (response.ok) {
+        fetchWatchlist(); // Refresh to show the updated data
+      } else {
+        const errorData = await response.json();
+        window.dispatchEvent(new CustomEvent("pal-toast", { 
+          detail: { message: errorData.error || "Failed to update", type: "error" } 
+        }));
+      }
+    } catch (error) {
+      console.error("Error updating watchlist item", error);
+    }
+  };
+
+  // Function to remove an anime from the backend
+  const removeFromWatchlist = async (id) => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/watchlist/${id}`, {
+        method: 'DELETE'
+      });
+      if (response.ok) {
+        fetchWatchlist(); // Refresh to remove it from the UI
+        window.dispatchEvent(new CustomEvent("pal-toast", { 
+          detail: { message: "Removed from Watchlist", type: "info" } 
+        }));
+      } else {
+        const errorData = await response.json();
+        window.dispatchEvent(new CustomEvent("pal-toast", { 
+          detail: { message: errorData.error || "Failed to delete", type: "error" } 
+        }));
+      }
+    } catch (error) {
+      console.error("Error removing from watchlist", error);
+    }
+  };
+
   return (
-    <WatchlistContext.Provider value={{ watchlist, loading, addToWatchlist, fetchWatchlist }}>
+    <WatchlistContext.Provider value={{ 
+      watchlist, 
+      loading, 
+      addToWatchlist, 
+      fetchWatchlist,
+      updateWatchlistItem,
+      removeFromWatchlist
+    }}>
       {children}
     </WatchlistContext.Provider>
   );

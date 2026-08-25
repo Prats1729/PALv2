@@ -24,7 +24,7 @@ const SEARCH_QUERY = gql`
             coverImage {
                 large
             }
-            description
+            description(asHtml: false)
             averageScore
             episodes
             format

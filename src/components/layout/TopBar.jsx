@@ -16,12 +16,6 @@ export default function TopBar() {
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
-
-  // Extract the active user parameter from current URL search
-  const params = new URLSearchParams(location.search);
-  const currentUser = params.get("user");
-  const userSuffix = currentUser ? `?user=${currentUser}` : "";
-
   const [selectedIndex, setSelectedIndex] = useState(-1);
 
   // Close dropdown if user clicks outside of the search box
@@ -161,7 +155,7 @@ export default function TopBar() {
 
       <div className="right-section">
         <NavLink
-          to={`/discover${userSuffix}`}
+          to="/discover"
           className={({ isActive }) =>
             isActive ? "nav-link-active" : "nav-link"
           }
@@ -169,7 +163,7 @@ export default function TopBar() {
           Discover
         </NavLink>
         <NavLink
-          to={`/statistics${userSuffix}`}
+          to={`/statistics`}
           className={({ isActive }) =>
             isActive ? "nav-link-active" : "nav-link"
           }
@@ -177,7 +171,7 @@ export default function TopBar() {
           Stats
         </NavLink>
         <NavLink
-          to={`/library${userSuffix}`}
+          to={`/library`}
           className={({ isActive }) =>
             isActive ? "nav-link-active" : "nav-link"
           }
@@ -185,13 +179,38 @@ export default function TopBar() {
           Library
         </NavLink>
         <NavLink
-          to={`/settings${userSuffix}`}
+          to={`/settings`}
           className={({ isActive }) =>
             isActive ? "nav-link-active" : "nav-link"
           }
         >
           Settings
         </NavLink>
+
+        {/* --- Profile Picture Placeholder --- */}
+        <div 
+          style={{ 
+            marginLeft: "15px", 
+            display: "flex", 
+            alignItems: "center",
+            paddingLeft: "15px",
+            borderLeft: "1px solid rgba(255,255,255,0.1)"
+          }}
+          title="Logged in via PAL Backend"
+        >
+          <img 
+            src="https://api.dicebear.com/7.x/avataaars/svg?seed=PALUser&backgroundColor=6366f1" 
+            alt="My Profile" 
+            style={{ 
+              width: "36px", 
+              height: "36px", 
+              borderRadius: "50%", 
+              border: "2px solid #6366f1",
+              boxShadow: "0 0 10px rgba(99, 102, 241, 0.3)",
+              cursor: "pointer" 
+            }}
+          />
+        </div>
       </div>
     </div>
   );

@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 import { searchAnime } from "../services/anilist";
+import Pagination from "../components/common/Pagination";
+import AnimeCard from "../components/common/AnimeCard";
 
 export default function Search() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -55,48 +57,18 @@ export default function Search() {
         </div>
       ) : (
         <div className="anime-grid" style={{ padding: 0, marginTop: "20px" }}>
-          {results.map((anime) => {
-            const cardColor = anime.coverImage?.color || "#6366f1";
-            const title = anime.title.english || anime.title.romaji;
-
-            return (
-              <Link
-                key={anime.id}
-                to={`/anime/${anime.id}`}
-                className="card-link"
-                style={{ "--hover-color": cardColor }}
-              >
-                <div className="anime-card">
-                  <img src={anime.coverImage?.large} alt={title} loading="lazy" />
-                  <div className="anime-title">{title}</div>
-                  <div className="extra-info">
-                    <p className="format">{anime.format || "TV"}</p>
-                  </div>
-                </div>
-              </Link>
-            );
-          })}
+          {results.map((anime) => (
+            <AnimeCard key={anime.id} anime={anime} />
+          ))}
         </div>
       )}
 
       {!loading && !error && results.length > 0 && pageInfo && (
-        <div className="pagination-controls" style={{ display: 'flex', justifyContent: 'center', gap: '10px', marginTop: '30px', marginBottom: '20px' }}>
-          <button 
-            onClick={() => handlePageChange(page - 1)} 
-            disabled={page === 1}
-            style={{ padding: '8px 16px', cursor: page === 1 ? 'not-allowed' : 'pointer', background: '#333', color: '#fff', border: 'none', borderRadius: '4px' }}
-          >
-            Previous
-          </button>
-          <span style={{ padding: '8px 16px', background: '#222', borderRadius: '4px' }}>Page {page}</span>
-          <button 
-            onClick={() => handlePageChange(page + 1)} 
-            disabled={!pageInfo.hasNextPage}
-            style={{ padding: '8px 16px', cursor: !pageInfo.hasNextPage ? 'not-allowed' : 'pointer', background: '#333', color: '#fff', border: 'none', borderRadius: '4px' }}
-          >
-            Next
-          </button>
-        </div>
+        <Pagination
+          currentPage={pageInfo.currentPage}
+          totalPages={Math.ceil(pageInfo.total / 12)}
+          onPageChange={handlePageChange}
+        />
       )}
 
       {error && <p style={{ color: "#ef4444" }}>{error}</p>}
