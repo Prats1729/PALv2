@@ -140,6 +140,8 @@ export default function Discover() {
   const [searchQuery, setSearchQuery] = useState(
     searchParams.get("search") || "",
   );
+  const [localSearch, setLocalSearch] = useState(searchQuery);
+
   const [year, setYear] = useState(searchParams.get("year") || "");
   const [season, setSeason] = useState(searchParams.get("season") || "");
   const [sortBy, setSortBy] = useState(
@@ -197,10 +199,13 @@ export default function Discover() {
 
   useEffect(() => {
     setSearchQuery(urlQuery);
+    setLocalSearch(urlQuery);
   }, [urlQuery]);
 
   useEffect(() => {
-    setSearchQuery(searchParams.get("search") || "");
+    const val = searchParams.get("search") || "";
+    setSearchQuery(val);
+    setLocalSearch(val);
     setYear(searchParams.get("year") || "");
     setSeason(searchParams.get("season") || "");
     setSortBy(searchParams.get("sort") || "POPULARITY_DESC");
@@ -218,6 +223,17 @@ export default function Discover() {
     );
     setPage(parseInt(searchParams.get("page")) || 1);
   }, [searchParams]);
+
+  // Debounce search input
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (searchQuery !== localSearch) {
+        setSearchQuery(localSearch);
+        updateParam("search", localSearch);
+      }
+    }, 500); // 500ms debounce
+    return () => clearTimeout(timer);
+  }, [localSearch]);
 
 
   // Fetch from AniList API on filter changes
@@ -317,6 +333,7 @@ export default function Discover() {
   // Clear All Filters
   const handleClearAll = () => {
     setSearchQuery("");
+    setLocalSearch("");
     setSelectedGenres([]);
     setSelectedTags([]);
     setSelectedFormats([]);
@@ -458,8 +475,8 @@ export default function Discover() {
               <input
                 type="text"
                 placeholder="Search anime..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                value={localSearch}
+                onChange={(e) => setLocalSearch(e.target.value)}
               />
             </div>
           </div>

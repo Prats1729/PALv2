@@ -6,7 +6,7 @@ import Home from "./pages/Home.jsx";
 import Library from "./pages/Library.jsx";
 import Discover from "./pages/Discover.jsx";
 import Settings from "./pages/Settings.jsx";
-import Statistics from "./pages/Statistics.jsx";
+import Profile from "./pages/Profile.jsx";
 import AnimeDetails from "./pages/AnimeDetails.jsx";
 import Search from "./pages/Search.jsx";
 
@@ -90,7 +90,7 @@ export default function App() {
               <Route path="/library" element={<ProtectedRoute><Library /></ProtectedRoute>} />
               <Route path="/discover" element={<ProtectedRoute><Discover /></ProtectedRoute>} />
               <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-              <Route path="/statistics" element={<ProtectedRoute><Statistics /></ProtectedRoute>} />
+              <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
               <Route path="/anime/:id" element={<ProtectedRoute><AnimeDetails /></ProtectedRoute>} />
               <Route path="/search" element={<ProtectedRoute><Search /></ProtectedRoute>} />
             </Routes>

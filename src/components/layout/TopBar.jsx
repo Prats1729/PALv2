@@ -50,7 +50,7 @@ export default function TopBar() {
       setIsOpen(true);
       try {
         const data = await searchAnime(searchQuery, 1, 5); // Limit to 5 quick results
-        setResults(data);
+        setResults(data.media || []);
       } catch (err) {
         console.error("Search failed:", err);
       } finally {
@@ -175,14 +175,6 @@ export default function TopBar() {
           Discover
         </NavLink>
         <NavLink
-          to={`/statistics`}
-          className={({ isActive }) =>
-            isActive ? "nav-link-active" : "nav-link"
-          }
-        >
-          Stats
-        </NavLink>
-        <NavLink
           to={`/library`}
           className={({ isActive }) =>
             isActive ? "nav-link-active" : "nav-link"
@@ -192,45 +184,52 @@ export default function TopBar() {
         </NavLink>
 
         {/* --- Profile Picture & Dropdown --- */}
-        <div 
-          className="profile-menu-container" 
-          ref={profileDropdownRef}
-          style={{ 
-            marginLeft: "15px", 
-            paddingLeft: "15px",
-            borderLeft: "1px solid rgba(255,255,255,0.1)",
-            position: "relative"
-          }}
-        >
-          <img 
-            src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.username || 'PALUser'}&backgroundColor=6366f1`} 
-            alt="My Profile" 
-            onClick={() => setIsProfileOpen(!isProfileOpen)}
+        {user ? (
+          <div 
+            className="profile-menu-container" 
+            ref={profileDropdownRef}
             style={{ 
-              width: "36px", 
-              height: "36px", 
-              borderRadius: "50%", 
-              border: "2px solid #6366f1",
-              boxShadow: "0 0 10px rgba(99, 102, 241, 0.3)",
-              cursor: "pointer",
-              display: "block"
+              marginLeft: "15px", 
+              paddingLeft: "15px",
+              borderLeft: "1px solid rgba(255,255,255,0.1)",
+              position: "relative"
             }}
-          />
-          
-          {isProfileOpen && (
-            <div className="profile-dropdown">
-              <div className="profile-dropdown-item" onClick={() => { setIsProfileOpen(false); navigate('/settings'); }}>
-                Profile
+          >
+            <img 
+              src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}&backgroundColor=6366f1`} 
+              alt="My Profile" 
+              onClick={() => setIsProfileOpen(!isProfileOpen)}
+              style={{ 
+                width: "36px", 
+                height: "36px", 
+                borderRadius: "50%", 
+                border: "2px solid #6366f1",
+                boxShadow: "0 0 10px rgba(99, 102, 241, 0.3)",
+                cursor: "pointer",
+                display: "block"
+              }}
+            />
+            
+            {isProfileOpen && (
+              <div className="profile-dropdown">
+                <div className="profile-dropdown-item" onClick={() => { setIsProfileOpen(false); navigate('/profile'); }}>
+                  Profile
+                </div>
+                <div className="profile-dropdown-item" onClick={() => { setIsProfileOpen(false); navigate('/settings'); }}>
+                  Settings
+                </div>
+                <div className="profile-dropdown-item logout" onClick={handleLogout}>
+                  Logout
+                </div>
               </div>
-              <div className="profile-dropdown-item" onClick={() => { setIsProfileOpen(false); navigate('/settings'); }}>
-                Settings
-              </div>
-              <div className="profile-dropdown-item logout" onClick={handleLogout}>
-                Logout
-              </div>
-            </div>
-          )}
-        </div>
+            )}
+          </div>
+        ) : (
+          <div style={{ marginLeft: "15px", paddingLeft: "15px", borderLeft: "1px solid rgba(255,255,255,0.1)", display: 'flex', gap: '10px' }}>
+            <NavLink to="/login" className="nav-link" style={{ fontSize: '14px', fontWeight: 'bold' }}>Login</NavLink>
+            <NavLink to="/register" className="nav-link" style={{ fontSize: '14px', fontWeight: 'bold', color: '#6366f1' }}>Sign Up</NavLink>
+          </div>
+        )}
       </div>
     </div>
   );

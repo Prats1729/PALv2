@@ -134,8 +134,137 @@ app.delete('/api/watchlist/:id', authMiddleware, async (req, res) => {
   }
 });
 
+// 5. POST: Import entire AniList watchlist into PALv2
+const { decrypt } = require('./utils/crypto');
+
+const ANILIST_STATUS_MAP = {
+  CURRENT: "Watching",
+  COMPLETED: "Completed",
+  PAUSED: "On Hold",
+  DROPPED: "Dropped",
+  PLANNING: "Plan to Watch",
+  REPEATING: "Watching",
+};
+
+app.post('/api/watchlist/import-anilist', authMiddleware, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user || !user.anilistToken) {
+      return res.status(400).json({ error: "No AniList account linked" });
+    }
+
+    const anilistToken = decrypt(user.anilistToken);
+
+    // Query AniList for the authenticated user's full anime list
+    const query = `
+      query {
+        Viewer {
+          id
+          mediaListOptions { scoreFormat }
+        }
+      }
+    `;
+    const viewerRes = await fetch("https://graphql.anilist.co", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${anilistToken}`,
+      },
+      body: JSON.stringify({ query }),
+    });
+    const viewerJson = await viewerRes.json();
+    if (viewerJson.errors) {
+      return res.status(400).json({ error: "AniList token expired or invalid" });
+    }
+    const viewerId = viewerJson.data.Viewer.id;
+
+    // Now fetch the full list
+    const listQuery = `
+      query ($userId: Int) {
+        MediaListCollection(userId: $userId, type: ANIME) {
+          lists {
+            status
+            entries {
+              progress
+              score(format: POINT_10_DECIMAL)
+              media {
+                id
+                title { english romaji }
+                coverImage { large color }
+                episodes
+              }
+            }
+          }
+        }
+      }
+    `;
+    const listRes = await fetch("https://graphql.anilist.co", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${anilistToken}`,
+      },
+      body: JSON.stringify({ query: listQuery, variables: { userId: viewerId } }),
+    });
+    const listJson = await listRes.json();
+    if (listJson.errors) {
+      return res.status(400).json({ error: "Failed to fetch AniList data" });
+    }
+
+    const lists = listJson.data.MediaListCollection.lists;
+    let imported = 0;
+    let updated = 0;
+    const activeAniListIds = [];
+
+    for (const list of lists) {
+      const palStatus = ANILIST_STATUS_MAP[list.status] || "Plan to Watch";
+      
+      for (const entry of list.entries) {
+        const media = entry.media;
+        activeAniListIds.push(media.id);
+        
+        const updateData = {
+          userId: req.user.id,
+          animeId: media.id,
+          title: media.title.english || media.title.romaji || "Unknown",
+          coverImage: media.coverImage.large,
+          color: media.coverImage.color || "#6366f1",
+          status: palStatus,
+          progress: entry.progress || 0,
+          totalEpisodes: media.episodes || null,
+          rating: entry.score || null,
+        };
+
+        const result = await Watchlist.findOneAndUpdate(
+          { animeId: media.id, userId: req.user.id },
+          { $set: updateData },
+          { upsert: true, new: false } // 'new: false' means it returns the old document if it existed
+        );
+
+        if (result) {
+          updated++;
+        } else {
+          imported++;
+        }
+      }
+    }
+
+    // Delete any anime in PALv2 that are no longer in AniList
+    const deleteResult = await Watchlist.deleteMany({
+      userId: req.user.id,
+      animeId: { $nin: activeAniListIds }
+    });
+
+    res.json({ 
+      message: `Sync complete! Added ${imported}, updated ${updated}, and removed ${deleteResult.deletedCount} deleted anime.` 
+    });
+  } catch (err) {
+    console.error("Import AniList error:", err);
+    res.status(500).json({ error: "Failed to import AniList watchlist" });
+  }
+});
+
 // --- Start the Server ---
-// This makes the server actively listen for incoming requests on the specified port.
 app.listen(PORT, () => {
   console.log(`🚀 Server is running on http://localhost:${PORT}`);
 });
