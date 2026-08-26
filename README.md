@@ -119,8 +119,8 @@ Follow these steps to run PAL on your local machine:
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/your-username/pal.git
-   cd pal
+   git clone https://github.com/Prats1729/PALv2.git
+   cd PALv2
    ```
 
 2. Install dependencies:
