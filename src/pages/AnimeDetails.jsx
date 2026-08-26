@@ -315,8 +315,8 @@ export default function AnimeDetails() {
                     const related = edge.node;
                     const relationType = edge.relationType.replace(/_/g, ' ');
                     return (
-                      <a 
-                        href={related.type === "ANIME" ? `/anime/${related.id}` : '#'} 
+                      <Link 
+                        to={related.type === "ANIME" ? `/anime/${related.id}` : '#'} 
                         key={`${related.id}-${index}`} 
                         className="relation-item"
                       >
@@ -325,7 +325,7 @@ export default function AnimeDetails() {
                           <div className="relation-title">{related.title.english || related.title.romaji}</div>
                         </div>
                         <div className="relation-arrow">›</div>
-                      </a>
+                      </Link>
                     );
                   })}
               </div>
