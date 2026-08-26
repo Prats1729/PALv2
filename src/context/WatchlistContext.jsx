@@ -1,22 +1,33 @@
-import React, { createContext, useState, useEffect, useContext } from 'react';
+import React, { createContext, useState, useEffect, useContext, useCallback } from 'react';
+import { useAuth } from './AuthContext';
 
 // 1. Create the Context (The empty box)
 const WatchlistContext = createContext();
 
 // 2. Create the Provider (The component that fills the box and shares it)
 export function WatchlistProvider({ children }) {
+  const { token, user } = useAuth();
   const [watchlist, setWatchlist] = useState([]);
   const [loading, setLoading] = useState(true);
 
   // When the app starts, fetch our list from the backend!
   useEffect(() => {
-    fetchWatchlist();
-  }, []);
+    if (token && user) {
+      fetchWatchlist();
+    } else if (!token) {
+      setWatchlist([]);
+      setLoading(false);
+    }
+  }, [token, user]);
 
   // Function to ask the backend for the latest watchlist
-  const fetchWatchlist = async () => {
+  const fetchWatchlist = useCallback(async () => {
+    if (!token) return;
     try {
-      const response = await fetch('http://localhost:5000/api/watchlist');
+      setLoading(true);
+      const response = await fetch('http://localhost:5000/api/watchlist', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
       const data = await response.json();
       setWatchlist(data); // Save it to React State
     } catch (error) {
@@ -24,14 +35,18 @@ export function WatchlistProvider({ children }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [token]);
 
   // Function to add a new anime to the backend
   const addToWatchlist = async (anime, status = "Plan to Watch") => {
+    if (!token) return;
     try {
       const response = await fetch('http://localhost:5000/api/watchlist', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}` 
+        },
         body: JSON.stringify({
           id: anime.id,
           title: anime.title?.userPreferred || anime.title?.english || anime.title?.romaji || "Unknown",
@@ -64,6 +79,7 @@ export function WatchlistProvider({ children }) {
   };
 
   const updateWatchlistItem = async (id, updates) => {
+    if (!token) return;
     try {
       // Auto-fill progress if status is set to Completed
       if (updates.status === "Completed") {
@@ -75,7 +91,10 @@ export function WatchlistProvider({ children }) {
 
       const response = await fetch(`http://localhost:5000/api/watchlist/${id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}` 
+        },
         body: JSON.stringify(updates)
       });
       if (response.ok) {
@@ -93,9 +112,13 @@ export function WatchlistProvider({ children }) {
 
   // Function to remove an anime from the backend
   const removeFromWatchlist = async (id) => {
+    if (!token) return;
     try {
       const response = await fetch(`http://localhost:5000/api/watchlist/${id}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
       });
       if (response.ok) {
         fetchWatchlist(); // Refresh to remove it from the UI

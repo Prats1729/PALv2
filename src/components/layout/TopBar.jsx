@@ -1,28 +1,35 @@
 import { useState, useEffect, useRef } from "react";
 import { NavLink, useNavigate, useLocation } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
 
 import { searchAnime } from "../../services/anilist";
 import "../../styles/TopBar.css";
 import searchIcon from "../../assets/search-button-svgrepo-com.svg";
 import logo from "../../assets/pal-logo.svg";
 
-
 export default function TopBar() {
   const navigate = useNavigate();
   const location = useLocation(); // Hook to watch current URL location
+  const { logout, user } = useAuth();
+  
   const dropdownRef = useRef(null);
+  const profileDropdownRef = useRef(null);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
 
-  // Close dropdown if user clicks outside of the search box
+  // Close dropdowns if user clicks outside
   useEffect(() => {
     function handleClickOutside(event) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setIsOpen(false);
+      }
+      if (profileDropdownRef.current && !profileDropdownRef.current.contains(event.target)) {
+        setIsProfileOpen(false);
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
@@ -82,6 +89,11 @@ export default function TopBar() {
       e.preventDefault();
       handleItemClick(results[selectedIndex].id);
     }
+  };
+
+  const handleLogout = () => {
+    logout();
+    navigate("/login");
   };
 
   return (
@@ -178,38 +190,46 @@ export default function TopBar() {
         >
           Library
         </NavLink>
-        <NavLink
-          to={`/settings`}
-          className={({ isActive }) =>
-            isActive ? "nav-link-active" : "nav-link"
-          }
-        >
-          Settings
-        </NavLink>
 
-        {/* --- Profile Picture Placeholder --- */}
+        {/* --- Profile Picture & Dropdown --- */}
         <div 
+          className="profile-menu-container" 
+          ref={profileDropdownRef}
           style={{ 
             marginLeft: "15px", 
-            display: "flex", 
-            alignItems: "center",
             paddingLeft: "15px",
-            borderLeft: "1px solid rgba(255,255,255,0.1)"
+            borderLeft: "1px solid rgba(255,255,255,0.1)",
+            position: "relative"
           }}
-          title="Logged in via PAL Backend"
         >
           <img 
-            src="https://api.dicebear.com/7.x/avataaars/svg?seed=PALUser&backgroundColor=6366f1" 
+            src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.username || 'PALUser'}&backgroundColor=6366f1`} 
             alt="My Profile" 
+            onClick={() => setIsProfileOpen(!isProfileOpen)}
             style={{ 
               width: "36px", 
               height: "36px", 
               borderRadius: "50%", 
               border: "2px solid #6366f1",
               boxShadow: "0 0 10px rgba(99, 102, 241, 0.3)",
-              cursor: "pointer" 
+              cursor: "pointer",
+              display: "block"
             }}
           />
+          
+          {isProfileOpen && (
+            <div className="profile-dropdown">
+              <div className="profile-dropdown-item" onClick={() => { setIsProfileOpen(false); navigate('/settings'); }}>
+                Profile
+              </div>
+              <div className="profile-dropdown-item" onClick={() => { setIsProfileOpen(false); navigate('/settings'); }}>
+                Settings
+              </div>
+              <div className="profile-dropdown-item logout" onClick={handleLogout}>
+                Logout
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

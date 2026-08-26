@@ -24,8 +24,16 @@ app.get('/api/health', (req, res) => {
 });
 
 // --- Database Model (Schema) ---
+const userSchema = new mongoose.Schema({
+  username: { type: String, required: true, unique: true },
+  password: { type: String, required: true }, // Hashed password
+  anilistToken: { type: String, default: null } // Encrypted token
+});
+const User = mongoose.model('User', userSchema);
+
 // A Schema defines what a Watchlist Item should look like in the database.
 const watchlistSchema = new mongoose.Schema({
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   animeId: { type: Number, required: true },
   title: { type: String, required: true },
   coverImage: { type: String, required: true },
@@ -39,14 +47,23 @@ const watchlistSchema = new mongoose.Schema({
 // Create the Model based on the Schema
 const Watchlist = mongoose.model('Watchlist', watchlistSchema);
 
+// --- Database Connection ---
+mongoose.connect(process.env.MONGODB_URI)
+  .then(() => console.log('✅ Connected to MongoDB Atlas!'))
+  .catch((err) => console.error('❌ Failed to connect to MongoDB:', err));
+
+// --- Routes Import ---
+const authRoutes = require('./routes/auth');
+const authMiddleware = require('./middleware/auth');
+
+app.use('/api/auth', authRoutes);
+
 // --- PAL API Routes (Now connected to MongoDB!) ---
 
 // 1. GET Request: Fetch the real watchlist from MongoDB
-// We use 'async' because talking to a database takes time (it returns a Promise).
-app.get('/api/watchlist', async (req, res) => {
+app.get('/api/watchlist', authMiddleware, async (req, res) => {
   try {
-    // Watchlist.find() asks MongoDB for all items in this collection
-    const list = await Watchlist.find(); 
+    const list = await Watchlist.find({ userId: req.user.id }); 
     res.json(list);
   } catch (err) {
     res.status(500).json({ error: "Failed to fetch watchlist" });
@@ -54,50 +71,45 @@ app.get('/api/watchlist', async (req, res) => {
 });
 
 // 2. POST Request: Save a new anime to MongoDB
-app.post('/api/watchlist', async (req, res) => {
+app.post('/api/watchlist', authMiddleware, async (req, res) => {
   const { id, title, coverImage, color, status, totalEpisodes, progress, rating } = req.body;
   
   if (!id || !title || !coverImage) {
-    return res.status(400).json({ error: "Missing anime id, title, or cover image" });
+    return res.status(400).json({ error: "Missing required fields (id, title, coverImage)" });
   }
 
   try {
-    // Check if it already exists so we don't add duplicates
-    const existingAnime = await Watchlist.findOne({ animeId: id });
+    const existingAnime = await Watchlist.findOne({ animeId: id, userId: req.user.id });
     if (existingAnime) {
       return res.status(400).json({ error: "Anime is already in your watchlist!" });
     }
 
-    // Create and save directly to MongoDB
-    const newAnime = await Watchlist.create({
+    const newItem = new Watchlist({
+      userId: req.user.id,
       animeId: id,
-      title: title,
-      coverImage: coverImage,
-      color: color || "#6366f1",
-      status: status || "Plan to Watch",
-      totalEpisodes: totalEpisodes || null,
-      progress: progress !== undefined ? progress : 0,
-      rating: rating || null
+      title,
+      coverImage,
+      color,
+      status,
+      totalEpisodes,
+      progress,
+      rating
     });
     
-    // Send back success and the newly created document
-    res.status(201).json({ 
-      message: "Anime added successfully!",
-      anime: newAnime 
-    });
+    await newItem.save();
+    res.status(201).json({ message: "Anime added successfully!", anime: newItem });
   } catch (err) {
-    res.status(500).json({ error: "Failed to save to database" });
+    res.status(500).json({ error: "Failed to save anime" });
   }
 });
 
-// 3. PUT Request: Update an existing anime (e.g., change status or progress)
-app.put('/api/watchlist/:id', async (req, res) => {
+// 3. PUT Request: Update an existing anime
+app.put('/api/watchlist/:id', authMiddleware, async (req, res) => {
   try {
-    // Find by animeId (not the MongoDB _id) and update it with whatever is in req.body
     const updatedAnime = await Watchlist.findOneAndUpdate(
-      { animeId: Number(req.params.id) },
+      { animeId: Number(req.params.id), userId: req.user.id },
       { $set: req.body },
-      { returnDocument: 'after' } // This tells MongoDB to return the updated document, not the old one
+      { returnDocument: 'after' }
     );
     
     if (!updatedAnime) {
@@ -110,9 +122,9 @@ app.put('/api/watchlist/:id', async (req, res) => {
 });
 
 // 4. DELETE Request: Remove an anime from the database
-app.delete('/api/watchlist/:id', async (req, res) => {
+app.delete('/api/watchlist/:id', authMiddleware, async (req, res) => {
   try {
-    const deletedAnime = await Watchlist.findOneAndDelete({ animeId: Number(req.params.id) });
+    const deletedAnime = await Watchlist.findOneAndDelete({ animeId: Number(req.params.id), userId: req.user.id });
     if (!deletedAnime) {
       return res.status(404).json({ error: "Anime not found in your watchlist" });
     }
@@ -122,13 +134,8 @@ app.delete('/api/watchlist/:id', async (req, res) => {
   }
 });
 
-// --- Database Connection ---
-mongoose.connect(process.env.MONGODB_URI)
-  .then(() => console.log('✅ Connected to MongoDB Atlas!'))
-  .catch((err) => console.error('❌ Failed to connect to MongoDB:', err));
-
 // --- Start the Server ---
 // This makes the server actively listen for incoming requests on the specified port.
 app.listen(PORT, () => {
-  console.log(`PAL Backend Server is running on http://localhost:${PORT}`);
+  console.log(`🚀 Server is running on http://localhost:${PORT}`);
 });
