@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams, Link } from "react-router-dom";
+import { invoke } from "@tauri-apps/api/core";
 import star from "../assets/star.png";
 import "../styles/AnimeDetails.css";
 
@@ -221,14 +222,75 @@ export default function AnimeDetails() {
                   Drop
                 </button>
               </div>
+
+              {/* Tauri Desktop Companion Integration */}
+              {('__TAURI_INTERNALS__' in window) && (
+                <button 
+                  className="ops-play-btn"
+                  style={{ width: "100%", marginTop: "10px", padding: "12px", backgroundColor: "#ff5252", color: "white", border: "none", borderRadius: "8px", cursor: "pointer", fontWeight: "bold" }}
+                  onClick={async () => {
+                    try {
+                      // Determine the episode to play (progress + 1)
+                      const targetEp = savedAnime.progress + 1;
+                      const title = anime.title.english || anime.title.romaji;
+                      
+                      alert(`Attempting to launch ${title} Episode ${targetEp} via ani-cli...`);
+                      
+                      const response = await invoke('play_anime', { title: title, episode: targetEp });
+                      console.log(response);
+                      
+                      // Auto-update progress when finished
+                      if (window.confirm(`Playback finished! Did you complete Episode ${targetEp}?`)) {
+                        updateWatchlistItem(savedAnime.animeId, { progress: targetEp });
+                      }
+                    } catch (err) {
+                      console.error("Tauri playback failed:", err);
+                      alert("Failed to launch ani-cli. Ensure it is installed in WSL.");
+                    }
+                  }}
+                >
+                  ▶ Play Episode {savedAnime.progress + 1} with Companion
+                </button>
+              )}
             </div>
           ) : (
-            <button 
-              className="ops-add-btn"
-              onClick={() => addToWatchlist(anime)}
-            >
-              + Add to Watchlist
-            </button>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <button 
+                className="ops-add-btn"
+                onClick={() => addToWatchlist(anime)}
+              >
+                + Add to Watchlist
+              </button>
+              
+              {/* Tauri Desktop Companion Integration (for non-saved anime) */}
+              {('__TAURI_INTERNALS__' in window) && (
+                <button 
+                  className="ops-play-btn"
+                  style={{ width: "100%", padding: "12px", backgroundColor: "#ff5252", color: "white", border: "none", borderRadius: "8px", cursor: "pointer", fontWeight: "bold" }}
+                  onClick={async () => {
+                    try {
+                      const title = anime.title.english || anime.title.romaji;
+                      alert(`Attempting to launch ${title} Episode 1 via ani-cli...`);
+                      
+                      const response = await invoke('play_anime', { title: title, episode: 1 });
+                      console.log(response);
+                      
+                      // Auto-add and update progress when finished
+                      if (window.confirm(`Playback finished! Did you complete Episode 1?`)) {
+                         addToWatchlist(anime);
+                         // Note: addToWatchlist doesn't easily return the newly created object in this scope, 
+                         // so they might need to refresh or click again. But this works for MVP!
+                      }
+                    } catch (err) {
+                      console.error("Tauri playback failed:", err);
+                      alert("Failed to launch ani-cli. Ensure it is installed in WSL.");
+                    }
+                  }}
+                >
+                  ▶ Play Episode 1 with Companion
+                </button>
+              )}
+            </div>
           )}
         </div>
 
