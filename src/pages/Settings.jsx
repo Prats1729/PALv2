@@ -6,6 +6,7 @@ import "../styles/Settings.css";
 
 const CLIENT_ID = import.meta.env.VITE_ANILIST_CLIENT_ID;
 const REDIRECT_URI = window.location.origin + "/settings";
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
 export default function Settings() {
   const { token, user, setUser } = useAuth();
@@ -34,7 +35,7 @@ export default function Settings() {
 
     // Send to backend for encrypted storage
     setLinkingStatus("linking");
-    fetch("http://localhost:5000/api/auth/link-anilist", {
+    fetch(`${API_URL}/api/auth/link-anilist`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -70,7 +71,7 @@ export default function Settings() {
 
   const handleDisconnectAniList = async () => {
     try {
-      const res = await fetch("http://localhost:5000/api/auth/unlink-anilist", {
+      const res = await fetch(`${API_URL}/api/auth/unlink-anilist`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -95,7 +96,7 @@ export default function Settings() {
     setImportStatus('importing');
     setImportMessage('');
     try {
-      const res = await fetch('http://localhost:5000/api/watchlist/import-anilist', {
+      const res = await fetch(`${API_URL}/api/watchlist/import-anilist`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` },
       });

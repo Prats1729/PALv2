@@ -4,6 +4,8 @@ import { syncToAniList, deleteFromAniList } from '../services/anilistSync';
 
 const WatchlistContext = createContext();
 
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+
 export function WatchlistProvider({ children }) {
   const { token, user } = useAuth();
   const [watchlist, setWatchlist] = useState([]);
@@ -14,7 +16,7 @@ export function WatchlistProvider({ children }) {
     if (!token) return;
     try {
       setLoading(true);
-      const response = await fetch('http://localhost:5000/api/watchlist', {
+      const response = await fetch(`${API_URL}/api/watchlist`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (response.ok) {
@@ -31,7 +33,7 @@ export function WatchlistProvider({ children }) {
   // Fetch AniList token once on login (cached in ref to avoid re-renders)
   useEffect(() => {
     if (token && user?.hasAnilistToken) {
-      fetch('http://localhost:5000/api/auth/anilist-token', {
+      fetch(`${API_URL}/api/auth/anilist-token`, {
         headers: { 'Authorization': `Bearer ${token}` }
       })
         .then(res => res.json())
@@ -39,7 +41,7 @@ export function WatchlistProvider({ children }) {
           anilistTokenRef.current = data.anilistToken; 
           // Silently trigger two-way sync in the background
           if (data.anilistToken) {
-            fetch('http://localhost:5000/api/watchlist/import-anilist', {
+            fetch(`${API_URL}/api/watchlist/import-anilist`, {
               method: 'POST',
               headers: { 'Authorization': `Bearer ${token}` }
             })
@@ -72,7 +74,7 @@ export function WatchlistProvider({ children }) {
       const progress = status === "Completed" ? (anime.episodes || 0) : 0;
       const rating = anime.averageScore ? (anime.averageScore / 10) : null;
 
-      const response = await fetch('http://localhost:5000/api/watchlist', {
+      const response = await fetch(`${API_URL}/api/watchlist`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -129,7 +131,7 @@ export function WatchlistProvider({ children }) {
         }
       }
 
-      const response = await fetch(`http://localhost:5000/api/watchlist/${id}`, {
+      const response = await fetch(`${API_URL}/api/watchlist/${id}`, {
         method: 'PUT',
         headers: { 
           'Content-Type': 'application/json',
@@ -176,7 +178,7 @@ export function WatchlistProvider({ children }) {
     const animeId = item?.animeId || id;
 
     try {
-      const response = await fetch(`http://localhost:5000/api/watchlist/${id}`, {
+      const response = await fetch(`${API_URL}/api/watchlist/${id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });
