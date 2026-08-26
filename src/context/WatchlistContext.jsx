@@ -1,26 +1,15 @@
-import React, { createContext, useState, useEffect, useContext, useCallback } from 'react';
+import React, { createContext, useState, useEffect, useContext, useCallback, useRef } from 'react';
 import { useAuth } from './AuthContext';
+import { syncToAniList, deleteFromAniList } from '../services/anilistSync';
 
-// 1. Create the Context (The empty box)
 const WatchlistContext = createContext();
 
-// 2. Create the Provider (The component that fills the box and shares it)
 export function WatchlistProvider({ children }) {
   const { token, user } = useAuth();
   const [watchlist, setWatchlist] = useState([]);
   const [loading, setLoading] = useState(true);
+  const anilistTokenRef = useRef(null);
 
-  // When the app starts, fetch our list from the backend!
-  useEffect(() => {
-    if (token && user) {
-      fetchWatchlist();
-    } else if (!token) {
-      setWatchlist([]);
-      setLoading(false);
-    }
-  }, [token, user]);
-
-  // Function to ask the backend for the latest watchlist
   const fetchWatchlist = useCallback(async () => {
     if (!token) return;
     try {
@@ -28,8 +17,10 @@ export function WatchlistProvider({ children }) {
       const response = await fetch('http://localhost:5000/api/watchlist', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
-      const data = await response.json();
-      setWatchlist(data); // Save it to React State
+      if (response.ok) {
+        const data = await response.json();
+        setWatchlist(data);
+      }
     } catch (error) {
       console.error("Failed to fetch watchlist from backend", error);
     } finally {
@@ -37,10 +28,50 @@ export function WatchlistProvider({ children }) {
     }
   }, [token]);
 
-  // Function to add a new anime to the backend
+  // Fetch AniList token once on login (cached in ref to avoid re-renders)
+  useEffect(() => {
+    if (token && user?.hasAnilistToken) {
+      fetch('http://localhost:5000/api/auth/anilist-token', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+        .then(res => res.json())
+        .then(data => { 
+          anilistTokenRef.current = data.anilistToken; 
+          // Silently trigger two-way sync in the background
+          if (data.anilistToken) {
+            fetch('http://localhost:5000/api/watchlist/import-anilist', {
+              method: 'POST',
+              headers: { 'Authorization': `Bearer ${token}` }
+            })
+            .then(res => res.json())
+            .then(syncData => {
+              console.log("Background sync complete:", syncData.message);
+              fetchWatchlist(); // Refresh local list after sync
+            })
+            .catch(err => console.error("Background sync failed", err));
+          }
+        })
+        .catch(() => { anilistTokenRef.current = null; });
+    } else {
+      anilistTokenRef.current = null;
+    }
+  }, [token, user?.hasAnilistToken, fetchWatchlist]);
+
+  useEffect(() => {
+    if (token && user) {
+      fetchWatchlist();
+    } else if (!token) {
+      setWatchlist([]);
+      setLoading(false);
+    }
+  }, [token, user, fetchWatchlist]);
+
   const addToWatchlist = async (anime, status = "Plan to Watch") => {
     if (!token) return;
     try {
+      const progress = status === "Completed" ? (anime.episodes || 0) : 0;
+      const rating = anime.averageScore ? (anime.averageScore / 10) : null;
+
       const response = await fetch('http://localhost:5000/api/watchlist', {
         method: 'POST',
         headers: { 
@@ -53,20 +84,29 @@ export function WatchlistProvider({ children }) {
           coverImage: anime.coverImage?.large || anime.coverImage?.medium || "",
           color: anime.coverImage?.color || "#6366f1",
           totalEpisodes: anime.episodes || null,
-          status: status,
-          progress: status === "Completed" ? (anime.episodes || 0) : 0,
-          rating: anime.averageScore ? (anime.averageScore / 10) : null
+          status,
+          progress,
+          rating
         })
       });
 
       if (response.ok) {
-        // If the backend saved it successfully, refresh our React state!
-        fetchWatchlist();
-        
-        // Use our existing toast system
+        const result = await response.json();
+        // Optimistically add to state to avoid DB race condition and extra network request
+        if (result.anime) {
+          setWatchlist(prev => [...prev, result.anime]);
+        } else {
+          fetchWatchlist(); // Fallback
+        }
+
         window.dispatchEvent(new CustomEvent("pal-toast", { 
-          detail: { message: "Added to PAL Backend!", type: "success" } 
+          detail: { message: "Added to Watchlist!", type: "success" } 
         }));
+
+        // Background sync to AniList
+        if (anilistTokenRef.current) {
+          syncToAniList(anilistTokenRef.current, anime.id, status, progress, rating);
+        }
       } else {
         const errorData = await response.json();
         window.dispatchEvent(new CustomEvent("pal-toast", { 
@@ -97,8 +137,26 @@ export function WatchlistProvider({ children }) {
         },
         body: JSON.stringify(updates)
       });
+
       if (response.ok) {
-        fetchWatchlist(); // Refresh to show the updated data
+        const data = await response.json();
+        if (data.anime) {
+          setWatchlist(prev => prev.map(item => item.animeId === id ? { ...item, ...data.anime } : item));
+        } else {
+          fetchWatchlist();
+        }
+
+        // Background sync to AniList
+        if (anilistTokenRef.current && data.anime) {
+          const anime = data.anime;
+          syncToAniList(
+            anilistTokenRef.current,
+            anime.animeId,
+            anime.status,
+            anime.progress,
+            anime.rating
+          );
+        }
       } else {
         const errorData = await response.json();
         window.dispatchEvent(new CustomEvent("pal-toast", { 
@@ -110,21 +168,29 @@ export function WatchlistProvider({ children }) {
     }
   };
 
-  // Function to remove an anime from the backend
   const removeFromWatchlist = async (id) => {
     if (!token) return;
+
+    // Grab animeId before deleting (for AniList sync)
+    const item = watchlist.find(w => w.animeId === id);
+    const animeId = item?.animeId || id;
+
     try {
       const response = await fetch(`http://localhost:5000/api/watchlist/${id}`, {
         method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+        headers: { 'Authorization': `Bearer ${token}` }
       });
+
       if (response.ok) {
-        fetchWatchlist(); // Refresh to remove it from the UI
+        setWatchlist(prev => prev.filter(w => w.animeId !== animeId));
         window.dispatchEvent(new CustomEvent("pal-toast", { 
           detail: { message: "Removed from Watchlist", type: "info" } 
         }));
+
+        // Background sync: remove from AniList too
+        if (anilistTokenRef.current) {
+          deleteFromAniList(anilistTokenRef.current, animeId);
+        }
       } else {
         const errorData = await response.json();
         window.dispatchEvent(new CustomEvent("pal-toast", { 
@@ -150,7 +216,6 @@ export function WatchlistProvider({ children }) {
   );
 }
 
-// 3. Create a custom Hook (A shortcut to open the box from any component)
 export function useWatchlist() {
   return useContext(WatchlistContext);
 }

@@ -73,4 +73,66 @@ router.post('/login', async (req, res) => {
   }
 });
 
+// Link AniList Token (encrypt and save)
+const { encrypt, decrypt } = require('../utils/crypto');
+
+router.post('/link-anilist', async (req, res) => {
+  try {
+    const authHeader = req.header('Authorization');
+    if (!authHeader) return res.status(401).json({ error: 'No token' });
+
+    const jwt = require('jsonwebtoken');
+    const decoded = jwt.verify(authHeader.replace('Bearer ', ''), process.env.JWT_SECRET);
+
+    const { anilistToken } = req.body;
+    if (!anilistToken) return res.status(400).json({ error: 'No AniList token provided' });
+
+    const encryptedToken = encrypt(anilistToken);
+    await User.findByIdAndUpdate(decoded.id, { anilistToken: encryptedToken });
+
+    res.json({ message: 'AniList account linked successfully!', hasAnilistToken: true });
+  } catch (err) {
+    console.error('Link AniList error:', err);
+    res.status(500).json({ error: 'Failed to link AniList account' });
+  }
+});
+
+// Get decrypted AniList token (for frontend sync calls)
+router.get('/anilist-token', async (req, res) => {
+  try {
+    const authHeader = req.header('Authorization');
+    if (!authHeader) return res.status(401).json({ error: 'No token' });
+
+    const jwt = require('jsonwebtoken');
+    const decoded = jwt.verify(authHeader.replace('Bearer ', ''), process.env.JWT_SECRET);
+
+    const user = await User.findById(decoded.id);
+    if (!user || !user.anilistToken) {
+      return res.json({ anilistToken: null });
+    }
+
+    const decryptedToken = decrypt(user.anilistToken);
+    res.json({ anilistToken: decryptedToken });
+  } catch (err) {
+    console.error('Get AniList token error:', err);
+    res.status(500).json({ error: 'Failed to retrieve AniList token' });
+  }
+});
+
+// Unlink AniList account
+router.delete('/unlink-anilist', async (req, res) => {
+  try {
+    const authHeader = req.header('Authorization');
+    if (!authHeader) return res.status(401).json({ error: 'No token' });
+
+    const jwt = require('jsonwebtoken');
+    const decoded = jwt.verify(authHeader.replace('Bearer ', ''), process.env.JWT_SECRET);
+
+    await User.findByIdAndUpdate(decoded.id, { anilistToken: null });
+    res.json({ message: 'AniList account unlinked', hasAnilistToken: false });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to unlink AniList' });
+  }
+});
+
 module.exports = router;
