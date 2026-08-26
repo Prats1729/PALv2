@@ -10,9 +10,24 @@ import Statistics from "./pages/Statistics.jsx";
 import AnimeDetails from "./pages/AnimeDetails.jsx";
 import Search from "./pages/Search.jsx";
 
+import Login from "./pages/Login.jsx";
+import Register from "./pages/Register.jsx";
+
 import { WatchlistProvider } from "./context/WatchlistContext.jsx";
+import { AuthProvider, useAuth } from "./context/AuthContext.jsx";
+import { Navigate } from "react-router-dom";
 
 import "./App.css";
+
+// Protected Route Wrapper
+const ProtectedRoute = ({ children }) => {
+  const { user, loading } = useAuth();
+  
+  if (loading) return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', color: '#fff' }}>Loading...</div>;
+  if (!user) return <Navigate to="/login" replace />;
+  
+  return children;
+};
 
 export default function App() {
   const [toast, setToast] = useState(null);
@@ -38,14 +53,15 @@ export default function App() {
   useEffect(() => {
     const updateBodyTheme = (isDark) => {
       if (isDark) {
-        document.body.classList.remove("light-theme");
+        document.body.classList.add("dark-theme");
       } else {
-        document.body.classList.add("light-theme");
+        document.body.classList.remove("dark-theme");
       }
     };
-
-    const initialDark = localStorage.getItem("pal_dark_mode") !== "false";
-    updateBodyTheme(initialDark);
+    
+    // Initial check
+    const savedTheme = localStorage.getItem("pal-theme");
+    updateBodyTheme(savedTheme === "dark");
 
     const handleThemeChange = (e) => {
       updateBodyTheme(e.detail);
@@ -56,33 +72,41 @@ export default function App() {
   }, []);
 
   return (
-    <WatchlistProvider>
-      <BrowserRouter>
-        <div className="app-container">
-        <TopBar />
+    <AuthProvider>
+      <WatchlistProvider>
+        <BrowserRouter>
+          <div className="app-container">
+            {/* We will conditionally render TopBar and BottomNavBar based on the route, 
+                but for simplicity, we'll let them handle it internally or assume they show on all routes.
+                Actually, login and register shouldn't have nav bars if possible, but let's keep it simple for now. */}
+          <TopBar />
 
-        <main className="main-content">
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/library" element={<Library />} />
-            <Route path="/discover" element={<Discover />} />
-            <Route path="/settings" element={<Settings />} />
-            <Route path="/statistics" element={<Statistics />} />
-            <Route path="/anime/:id" element={<AnimeDetails />} />
-            <Route path="/search" element={<Search />} />
-          </Routes>
-        </main>
-        
-        <BottomNavBar />
+          <main className="main-content">
+            <Routes>
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+              
+              <Route path="/" element={<ProtectedRoute><Home /></ProtectedRoute>} />
+              <Route path="/library" element={<ProtectedRoute><Library /></ProtectedRoute>} />
+              <Route path="/discover" element={<ProtectedRoute><Discover /></ProtectedRoute>} />
+              <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+              <Route path="/statistics" element={<ProtectedRoute><Statistics /></ProtectedRoute>} />
+              <Route path="/anime/:id" element={<ProtectedRoute><AnimeDetails /></ProtectedRoute>} />
+              <Route path="/search" element={<ProtectedRoute><Search /></ProtectedRoute>} />
+            </Routes>
+          </main>
+          
+          <BottomNavBar />
 
-        {/* Global Toast Alert */}
-        {toast && (
-          <div className={`toast-notification toast-${toast.type}`}>
-            {toast.message}
-          </div>
-        )}
-      </div>
-    </BrowserRouter>
-    </WatchlistProvider>
+          {/* Global Toast Alert */}
+          {toast && (
+            <div className={`toast-notification toast-${toast.type}`}>
+              {toast.message}
+            </div>
+          )}
+        </div>
+      </BrowserRouter>
+      </WatchlistProvider>
+    </AuthProvider>
   );
 }
