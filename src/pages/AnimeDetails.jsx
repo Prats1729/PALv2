@@ -516,7 +516,7 @@ export default function AnimeDetails() {
                     </div>
                   </div>
                   <div style={{ padding: '8px 12px', backgroundColor: '#131325', borderRadius: '6px', border: '1px solid #282845', fontSize: '0.82rem', color: '#68d391' }}>
-                    🚀 ani-cli target: <strong>Episode {playEp + (parseInt(epOffset) || 0)}</strong> {epOffset > 0 ? `(${playEp} + ${epOffset} previous)` : ''}
+                    Target: <strong>Episode {playEp + (parseInt(epOffset) || 0)}</strong> {epOffset > 0 ? `(${playEp} + ${epOffset} previous)` : ''}
                   </div>
                 </div>
               )}

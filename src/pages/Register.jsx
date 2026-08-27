@@ -138,7 +138,7 @@ export default function Register() {
               onMouseEnter={(e) => e.currentTarget.style.background = "rgba(255, 255, 255, 0.12)"}
               onMouseLeave={(e) => e.currentTarget.style.background = "rgba(255, 255, 255, 0.06)"}
             >
-              👤 Continue as Guest (Web)
+              Continue as Guest (Web)
             </button>
           </div>
         )}

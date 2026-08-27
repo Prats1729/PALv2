@@ -146,7 +146,12 @@ export default function App() {
                   }}
                   onClick={(e) => e.stopPropagation()}
                 >
-                  <div style={{ fontSize: "36px", marginBottom: "10px" }}>🔒</div>
+                  <div style={{ marginBottom: "14px", color: "#6366f1" }}>
+                    <svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                      <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                    </svg>
+                  </div>
                   <h3 style={{ margin: "0 0 8px 0", fontSize: "20px", fontWeight: "700" }}>
                     Account Required
                   </h3>

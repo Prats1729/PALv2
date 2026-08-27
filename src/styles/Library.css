@@ -199,7 +199,7 @@
 
 .library-tabs {
   display: flex;
-  gap: 12px;
+  gap: 10px;
   margin-bottom: 24px;
 }
 
@@ -213,6 +213,7 @@
   font-size: 14px;
   font-weight: 500;
   transition: all 0.2s ease-in-out;
+  white-space: nowrap;
 }
 
 .library-tab-btn:hover {
@@ -245,25 +246,59 @@
   color: #6366f1;
 }
 
-@media (max-width: 1024px) {
-  .library-title {
-    font-size: 22px;
+@media (max-width: 768px) {
+  .library-container {
+    padding: 16px 12px 30px 12px;
   }
 
+  .library-title {
+    font-size: 22px;
+    margin-bottom: 4px;
+  }
+
+  .library-subtitle {
+    font-size: 13px;
+    margin-bottom: 14px;
+  }
+
+  /* Horizontal swipeable status pills */
   .library-tabs {
-    flex-wrap: wrap;
+    overflow-x: auto;
+    white-space: nowrap;
+    padding-bottom: 6px;
+    margin-bottom: 16px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
     gap: 8px;
   }
 
+  .library-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
   .library-tab-btn {
-    padding: 6px 12px;
-    font-size: 13px;
-    flex: 1;
-    text-align: center;
+    padding: 6px 14px;
+    font-size: 12.5px;
+    border-radius: 20px;
+    flex-shrink: 0;
+  }
+
+  .library-controls-bar {
+    padding: 10px 12px;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+
+  .library-search-input-wrap {
+    min-width: 100%;
+  }
+
+  .library-custom-dropdown {
+    min-width: 100%;
   }
 
   .library-content-card {
-    padding: 16px;
+    padding: 14px 10px;
   }
 }
 
