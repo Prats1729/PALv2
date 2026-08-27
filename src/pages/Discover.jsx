@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
 import { searchAnime } from "../services/anilist";
 import Pagination from "../components/common/Pagination";
@@ -389,12 +389,52 @@ export default function Discover() {
     { value: "TITLE_ENGLISH_DESC", label: "Title" },
   ];
 
+  const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
+
+  const activeFilterCount = useMemo(() => {
+    let count = 0;
+    if (selectedGenres.length > 0) count++;
+    if (selectedTags.length > 0) count++;
+    if (selectedFormats.length > 0) count++;
+    if (season !== "") count++;
+    if (selectedStatus.length > 0) count++;
+    if (year !== "") count++;
+    if (sortBy !== "POPULARITY_DESC") count++;
+    return count;
+  }, [selectedGenres, selectedTags, selectedFormats, season, selectedStatus, year, sortBy]);
+
   return (
     <div className="discover-container">
       <h1 className="catalog-title">Catalog</h1>
 
+      {/* Mobile Collapsible Filter Toggle */}
+      <button 
+        type="button" 
+        className="mobile-filter-toggle"
+        onClick={() => setIsMobileFilterOpen(!isMobileFilterOpen)}
+      >
+        <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="4" y1="21" x2="4" y2="14"></line>
+            <line x1="4" y1="10" x2="4" y2="3"></line>
+            <line x1="12" y1="21" x2="12" y2="12"></line>
+            <line x1="12" y1="8" x2="12" y2="3"></line>
+            <line x1="20" y1="21" x2="20" y2="16"></line>
+            <line x1="20" y1="12" x2="20" y2="3"></line>
+            <line x1="1" y1="14" x2="7" y2="14"></line>
+            <line x1="9" y1="8" x2="15" y2="8"></line>
+            <line x1="17" y1="16" x2="23" y2="16"></line>
+          </svg>
+          Filters & Sorting
+          {activeFilterCount > 0 && (
+            <span className="mobile-filter-badge">{activeFilterCount}</span>
+          )}
+        </span>
+        <span style={{ fontSize: '12px', color: '#818cf8' }}>{isMobileFilterOpen ? "Hide" : "Show"}</span>
+      </button>
+
       {/* FILTER BAR GRID */}
-      <div className="filter-bar">
+      <div className={`filter-bar ${isMobileFilterOpen ? "mobile-open" : ""}`}>
         <div className="filter-grid-row">
           <MultiSelectDropdown
             label="Genre"

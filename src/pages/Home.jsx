@@ -103,6 +103,7 @@ export default function Home() {
   const [currentSlide, setCurrentSlide] = useState(0);
   const slideInterval = useRef(null);
   const continueListRef = useRef(null);
+  const isTauri = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
   const [historyTick, setHistoryTick] = useState(0);
 
   useEffect(() => {
@@ -325,17 +326,17 @@ export default function Home() {
               )}
               {heroAnime.season && heroAnime.seasonYear && (
                 <span className="hero-meta-tag">
-                  📅 {heroAnime.season} {heroAnime.seasonYear}
+                  {heroAnime.season} {heroAnime.seasonYear}
                 </span>
               )}
               {heroAnime.episodes && (
                 <span className="hero-meta-tag">
-                  📺 Ep {heroAnime.episodes}
+                  Ep {heroAnime.episodes}
                 </span>
               )}
               {heroAnime.averageScore && (
                 <span className="hero-meta-tag score">
-                  ⭐ {heroAnime.averageScore}%
+                  {heroAnime.averageScore}%
                 </span>
               )}
             </div>
@@ -348,10 +349,11 @@ export default function Home() {
 
             <div className="hero-actions">
               <Link to={`/anime/${heroAnime.id}`} className="hero-button watch-now-btn">
-                ▶ Watch Now
+                <span className="play-triangle">▶</span> Watch Now
               </Link>
-              <Link to={`/anime/${heroAnime.id}`} className="hero-button details-btn">
-                ⓘ Details
+              <Link to={`/anime/${heroAnime.id}`} className="hero-button details-btn" title="View Details">
+                <span className="info-circle-icon">ⓘ</span>
+                <span className="details-text-label">Details</span>
               </Link>
             </div>
           </div>
@@ -383,8 +385,8 @@ export default function Home() {
         </div>
       )}
 
-      {/* 1.5 CONTINUE WATCHING SECTION */}
-      {continueWatching.length > 0 && (
+      {/* 1.5 CONTINUE WATCHING SECTION (DESKTOP APP ONLY) */}
+      {isTauri && continueWatching.length > 0 && (
         <section className="continue-watching-section">
           <div className="continue-header-row">
             <h2 className="continue-heading">
@@ -487,7 +489,9 @@ export default function Home() {
         <div className="home-main-col">
           {/* 2. TRENDING NOW SECTION */}
           <section className="home-section">
-            <h2>Trending Now</h2>
+            <h2 className="home-section-heading">
+              <span className="section-bar">|</span> Trending Now
+            </h2>
             <div className="anime-grid">
               {trending.map((anime) => (
                 <AnimeCard key={anime.id} anime={anime} />
@@ -497,7 +501,9 @@ export default function Home() {
 
           {/* 3. POPULAR THIS SEASON SECTION */}
           <section className="home-section">
-            <h2>Popular This Season</h2>
+            <h2 className="home-section-heading">
+              <span className="section-bar">|</span> Popular This Season
+            </h2>
             <div className="anime-grid">
               {popular.map((anime) => (
                 <AnimeCard key={anime.id} anime={anime} />
@@ -509,8 +515,8 @@ export default function Home() {
         {/* 4. TOP AIRING SIDEBAR */}
         <aside className="home-sidebar">
           <div className="home-section">
-            <h2 className="sidebar-title">
-              <span className="caret">›</span> TOP AIRING
+            <h2 className="home-section-heading sidebar-title">
+              <span className="section-bar">|</span> Top Airing
             </h2>
             <div className="airing-list">
               {topAiring.map((anime) => (

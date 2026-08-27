@@ -62,7 +62,7 @@ export default function Settings() {
           localStorage.setItem("user", JSON.stringify(updatedUser));
           window.dispatchEvent(
             new CustomEvent("pal-toast", {
-              detail: { message: "AniList account linked! 🎉", type: "success" },
+              detail: { message: "AniList account linked!", type: "success" },
             })
           );
         } else {
@@ -156,7 +156,7 @@ export default function Settings() {
           {anilistLinked ? (
             <>
               <div className="settings-anilist-connected">
-                <span className="anilist-connected-badge">✓ Connected</span>
+                <span className="anilist-connected-badge">Connected</span>
                 <button
                   className="settings-auth-btn disconnect"
                   onClick={handleDisconnectAniList}
@@ -235,7 +235,7 @@ export default function Settings() {
                 setDeleteError(null);
               }}
             >
-              🗑️ Delete Account
+              Delete Account
             </button>
           </div>
         </div>
@@ -261,7 +261,6 @@ export default function Settings() {
 
             {deleteStep === 1 ? (
               <div>
-                <div style={{ fontSize: '36px', textAlign: 'center', marginBottom: '8px' }}>⚠️</div>
                 <h3 style={{ color: '#ef4444', margin: '0 0 10px 0', fontSize: '1.3rem', textAlign: 'center' }}>
                   Delete Account (Step 1 of 2)
                 </h3>
@@ -295,7 +294,6 @@ export default function Settings() {
               </div>
             ) : (
               <div>
-                <div style={{ fontSize: '36px', textAlign: 'center', marginBottom: '8px' }}>🚨</div>
                 <h3 style={{ color: '#ef4444', margin: '0 0 10px 0', fontSize: '1.3rem', textAlign: 'center' }}>
                   Final Confirmation (Step 2 of 2)
                 </h3>

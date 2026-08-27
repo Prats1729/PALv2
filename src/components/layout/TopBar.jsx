@@ -173,6 +173,7 @@ export default function TopBar() {
           {!isTauri && (
             <button
               type="button"
+              className="desktop-only"
               onClick={() => setShowDesktopModal(true)}
               style={{
                 display: "flex",
@@ -206,7 +207,7 @@ export default function TopBar() {
           <NavLink
             to="/discover"
             className={({ isActive }) =>
-              isActive ? "nav-link-active" : "nav-link"
+              isActive ? "nav-link-active desktop-only" : "nav-link desktop-only"
             }
           >
             Discover
@@ -224,7 +225,7 @@ export default function TopBar() {
               }
             }}
             className={({ isActive }) =>
-              isActive ? "nav-link-active" : "nav-link"
+              isActive ? "nav-link-active desktop-only" : "nav-link desktop-only"
             }
           >
             Library

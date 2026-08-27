@@ -11,11 +11,26 @@
   align-items: center;
   z-index: 100;
   backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }
 
 .top-bar p {
   color: white;
   font-size: 20px;
+  margin: 0;
+}
+
+.left-section {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  padding-left: 20px;
+}
+
+.home-logo {
+  width: 75px;
+  display: block;
+  margin-top: -6px;
 }
 
 .middle-section {
@@ -24,7 +39,11 @@
   transform: translateX(-50%);
   display: flex;
   align-items: center;
-  justify-content: space-around;
+  justify-content: center;
+}
+
+.search-container {
+  position: relative;
 }
 
 .search-box {
@@ -34,7 +53,6 @@
   border-radius: 7px;
   overflow: hidden;
   transition: all 0.2s ease-in-out;
-  /* GPU acceleration properties to prevent scaling jitter/blur */
   backface-visibility: hidden;
   transform: translateZ(0);
 }
@@ -54,8 +72,8 @@
   padding-left: 15px;
 }
 
-.search-box input:active {
-  outline: none;
+.search-box input:focus {
+  color: #fff;
 }
 
 .search-box input::placeholder {
@@ -79,43 +97,16 @@
   width: 10px;
 }
 
-.left-section{
-  display: flex;
-  align-items: center;
-  height: 100%;
-  padding-left: 20px;
-}
-
-.home-logo{
-  width: 75px;
-  display: block;
-  margin-top: -6px;
-}
-
-.right-section{
-  display: flex;
-  gap: 10px;
-}
-
-.right-section img{
-  width: 30px;
-}
-
-
-/* Container must be relative so absolute dropdown is positioned correctly */
-.search-container {
-  position: relative;
-}
-
 /* Floating dropdown panel */
 .search-dropdown {
   position: absolute;
-  top: calc(100% + 8px); /* Float 8px below the search bar */
+  top: calc(100% + 8px);
   left: 50%;
   transform: translateX(-50%);
   width: 320px;
   background-color: rgba(22, 18, 44, 0.95);
-    backdrop-filter: blur(8px); /* Frosted glass effect */ /* Semi-transparent dark slate */
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 8px;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
@@ -123,7 +114,6 @@
   overflow: hidden;
 }
 
-/* Status text (loading, no results) */
 .dropdown-status {
   padding: 15px;
   text-align: center;
@@ -131,7 +121,6 @@
   font-size: 14px;
 }
 
-/* Dropdown list item */
 .dropdown-item {
   display: flex;
   align-items: center;
@@ -147,7 +136,6 @@
   background-color: rgba(99, 102, 241, 0.2);
 }
 
-/* Thumbnail image */
 .dropdown-thumb {
   width: 40px;
   height: 55px;
@@ -155,12 +143,11 @@
   border-radius: 4px;
 }
 
-/* Metadata and title styling */
 .dropdown-info {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  min-width: 0; /* Prevents overflow */
+  min-width: 0;
 }
 
 .dropdown-title {
@@ -169,7 +156,7 @@
   font-weight: 500;
   white-space: nowrap;
   overflow: hidden;
-  text-overflow: ellipsis; /* Ellipsis for long titles */
+  text-overflow: ellipsis;
 }
 
 .dropdown-meta {
@@ -178,12 +165,11 @@
   margin-top: 3px;
 }
 
-/* Footer (VIEW ALL button) */
 .dropdown-footer {
   padding: 12px;
   text-align: center;
   background-color: rgba(11, 8, 19, 0.5);
-  color: #6366f1; /* Glowing Indigo theme */
+  color: #6366f1;
   font-weight: 600;
   font-size: 13px;
   cursor: pointer;
@@ -199,29 +185,26 @@
 .right-section {
   display: flex;
   align-items: center;
-  gap: 24px; /* Space between links */
+  gap: 24px;
   padding-right: 20px;
 }
 
-/* Default unselected text link */
 .nav-link {
   color: #959595;
   text-decoration: none;
   font-size: 14px;
   font-weight: 500;
   letter-spacing: 0.5px;
-  padding: 6px 12px; /* Padding to create the capsule shape */
-  border-radius: 6px; /* Rounded corners for the pill look */
+  padding: 6px 12px;
+  border-radius: 6px;
   transition: all 0.2s ease-in-out;
 }
 
-/* Hover state: subtle background highlight */
 .nav-link:hover {
   color: #ffffff;
-  background-color: rgba(255, 255, 255, 0.05); /* Very light transparent white capsule */
+  background-color: rgba(255, 255, 255, 0.05);
 }
 
-/* Active tab text link capsule */
 .nav-link-active {
   color: #ffffff;
   text-decoration: none;
@@ -230,34 +213,7 @@
   letter-spacing: 0.5px;
   padding: 6px 12px;
   border-radius: 6px;
-  background-color: rgba(255, 255, 255, 0.1); /* Stronger transparent capsule for active tab */
-}
-
-/* RESPONSIVE TOPBAR MEDIA QUERIES */
-@media (max-width: 1024px) {
-  .top-bar {
-    height: 55px;
-    padding: 0 10px;
-  }
-
-  .home-logo {
-    width: 55px;
-    margin-top: -3px;
-  }
-
-  .search-box input {
-    width: 150px;
-    height: 32px;
-    font-size: 13px;
-  }
-
-  .search-box button {
-    height: 32px;
-  }
-
-  .right-section {
-    display: none;
-  }
+  background-color: rgba(255, 255, 255, 0.1);
 }
 
 /* --- Profile Dropdown --- */
@@ -268,6 +224,7 @@
   width: 180px;
   background-color: rgba(11, 8, 19, 0.95);
   backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 12px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
@@ -314,4 +271,72 @@
 .profile-dropdown-item.logout:hover {
   background-color: rgba(239, 68, 68, 0.1);
   color: #fca5a5;
+}
+
+/* RESPONSIVE TOPBAR MEDIA QUERIES */
+@media (max-width: 768px) {
+  .top-bar {
+    height: 54px;
+    padding: 0 12px;
+  }
+
+  .left-section {
+    padding-left: 0;
+  }
+
+  .home-logo {
+    width: 52px;
+    margin-top: -2px;
+  }
+
+  .middle-section {
+    position: static;
+    transform: none;
+    flex: 1;
+    margin: 0 8px;
+    display: flex;
+    justify-content: center;
+  }
+
+  .search-box {
+    width: 100%;
+    max-width: 180px;
+  }
+
+  .search-box input {
+    width: 100%;
+    height: 32px;
+    font-size: 12.5px;
+    padding-left: 10px;
+  }
+
+  .search-box button {
+    height: 32px;
+    padding: 0 10px;
+  }
+
+  .desktop-only {
+    display: none !important;
+  }
+
+  .right-section {
+    padding-right: 0;
+    gap: 8px;
+  }
+
+  .profile-menu-container {
+    margin-left: 4px !important;
+    padding-left: 4px !important;
+    border-left: none !important;
+  }
+
+  .dropdown-results {
+    position: fixed;
+    top: 54px;
+    left: 12px;
+    right: 12px;
+    width: auto;
+    max-height: 70vh;
+    border-radius: 10px;
+  }
 }
