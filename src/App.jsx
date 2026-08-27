@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import TopBar from "./components/layout/TopBar.jsx";
 import BottomNavBar from "./components/layout/BottomNavBar.jsx";
 import Home from "./pages/Home.jsx";
@@ -16,7 +16,6 @@ import Register from "./pages/Register.jsx";
 
 import { WatchlistProvider } from "./context/WatchlistContext.jsx";
 import { AuthProvider, useAuth } from "./context/AuthContext.jsx";
-import { Navigate } from "react-router-dom";
 
 import "./App.css";
 
@@ -32,6 +31,7 @@ const ProtectedRoute = ({ children }) => {
 
 export default function App() {
   const [toast, setToast] = useState(null);
+  const [authPrompt, setAuthPrompt] = useState(null);
 
   useEffect(() => {
     let timer;
@@ -43,9 +43,15 @@ export default function App() {
       }, 3000);
     };
 
+    const handleAuthPrompt = (e) => {
+      setAuthPrompt(e.detail || { message: "Sign in or create an account to use this feature." });
+    };
+
     window.addEventListener("pal-toast", handleToast);
+    window.addEventListener("pal-auth-prompt", handleAuthPrompt);
     return () => {
       window.removeEventListener("pal-toast", handleToast);
+      window.removeEventListener("pal-auth-prompt", handleAuthPrompt);
       if (timer) clearTimeout(timer);
     };
   }, []);
@@ -77,37 +83,130 @@ export default function App() {
       <WatchlistProvider>
         <BrowserRouter>
           <div className="app-container">
-            {/* We will conditionally render TopBar and BottomNavBar based on the route, 
-                but for simplicity, we'll let them handle it internally or assume they show on all routes.
-                Actually, login and register shouldn't have nav bars if possible, but let's keep it simple for now. */}
-          <TopBar />
+            {/* Top Navigation */}
+            <TopBar />
 
-          <main className="main-content">
-            <Routes>
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
-              
-              <Route path="/" element={<ProtectedRoute><Home /></ProtectedRoute>} />
-              <Route path="/library" element={<ProtectedRoute><Library /></ProtectedRoute>} />
-              <Route path="/continue-watching" element={<ProtectedRoute><ContinueWatching /></ProtectedRoute>} />
-              <Route path="/discover" element={<ProtectedRoute><Discover /></ProtectedRoute>} />
-              <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-              <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-              <Route path="/anime/:id" element={<ProtectedRoute><AnimeDetails /></ProtectedRoute>} />
-              <Route path="/search" element={<ProtectedRoute><Search /></ProtectedRoute>} />
-            </Routes>
-          </main>
-          
-          <BottomNavBar />
+            <main className="main-content">
+              <Routes>
+                <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
+                
+                <Route path="/" element={<ProtectedRoute><Home /></ProtectedRoute>} />
+                <Route path="/library" element={<ProtectedRoute><Library /></ProtectedRoute>} />
+                <Route path="/continue-watching" element={<ProtectedRoute><ContinueWatching /></ProtectedRoute>} />
+                <Route path="/discover" element={<ProtectedRoute><Discover /></ProtectedRoute>} />
+                <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+                <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+                <Route path="/statistics" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+                <Route path="/anime/:id" element={<ProtectedRoute><AnimeDetails /></ProtectedRoute>} />
+                <Route path="/search" element={<ProtectedRoute><Search /></ProtectedRoute>} />
+                <Route path="*" element={<Navigate to="/" replace />} />
+              </Routes>
+            </main>
+            
+            <BottomNavBar />
 
-          {/* Global Toast Alert */}
-          {toast && (
-            <div className={`toast-notification toast-${toast.type}`}>
-              {toast.message}
-            </div>
-          )}
-        </div>
-      </BrowserRouter>
+            {/* Global Toast Alert */}
+            {toast && (
+              <div className={`toast-notification toast-${toast.type}`}>
+                {toast.message}
+              </div>
+            )}
+
+            {/* Global Auth Prompt Modal for Guests */}
+            {authPrompt && (
+              <div
+                style={{
+                  position: "fixed",
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  backgroundColor: "rgba(0, 0, 0, 0.8)",
+                  backdropFilter: "blur(4px)",
+                  zIndex: 10000,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  padding: "20px"
+                }}
+                onClick={() => setAuthPrompt(null)}
+              >
+                <div
+                  style={{
+                    backgroundColor: "#14111d",
+                    border: "1px solid rgba(255, 255, 255, 0.12)",
+                    borderRadius: "12px",
+                    maxWidth: "420px",
+                    width: "100%",
+                    padding: "24px",
+                    color: "#fff",
+                    textAlign: "center",
+                    boxShadow: "none"
+                  }}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div style={{ fontSize: "36px", marginBottom: "10px" }}>🔒</div>
+                  <h3 style={{ margin: "0 0 8px 0", fontSize: "20px", fontWeight: "700" }}>
+                    Account Required
+                  </h3>
+                  <p style={{ color: "#94a3b8", fontSize: "13px", lineHeight: "1.5", margin: "0 0 20px 0" }}>
+                    {authPrompt.message || "Sign in or create a free PAL account to build your personal watchlist and track your anime progress."}
+                  </p>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                    <a
+                      href="/login"
+                      style={{
+                        backgroundColor: "#6366f1",
+                        color: "#fff",
+                        padding: "10px 16px",
+                        borderRadius: "6px",
+                        textDecoration: "none",
+                        fontWeight: "600",
+                        fontSize: "13px"
+                      }}
+                      onClick={() => setAuthPrompt(null)}
+                    >
+                      Sign In
+                    </a>
+                    <a
+                      href="/register"
+                      style={{
+                        backgroundColor: "rgba(255, 255, 255, 0.06)",
+                        border: "1px solid rgba(255, 255, 255, 0.15)",
+                        color: "#e2e8f0",
+                        padding: "10px 16px",
+                        borderRadius: "6px",
+                        textDecoration: "none",
+                        fontWeight: "600",
+                        fontSize: "13px"
+                      }}
+                      onClick={() => setAuthPrompt(null)}
+                    >
+                      Create Free Account
+                    </a>
+                    <button
+                      type="button"
+                      onClick={() => setAuthPrompt(null)}
+                      style={{
+                        background: "transparent",
+                        border: "none",
+                        color: "#888",
+                        fontSize: "12px",
+                        cursor: "pointer",
+                        marginTop: "4px"
+                      }}
+                      onMouseEnter={(e) => e.currentTarget.style.color = "#ccc"}
+                      onMouseLeave={(e) => e.currentTarget.style.color = "#888"}
+                    >
+                      Continue Browsing
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </BrowserRouter>
       </WatchlistProvider>
     </AuthProvider>
   );

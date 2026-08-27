@@ -10,14 +10,17 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Basic initialization: if we have a token, we assume logged in for now.
-    // In a production app, you'd verify the token with the backend here.
+    const isTauri = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
     if (token) {
       try {
         const storedUser = JSON.parse(localStorage.getItem('user'));
+        if (isTauri && storedUser?.isGuest) {
+          logout();
+          setLoading(false);
+          return;
+        }
         setUser(storedUser);
       } catch (e) {
-        // invalid JSON
         logout();
       }
     }
@@ -58,6 +61,14 @@ export function AuthProvider({ children }) {
     return data;
   };
 
+  const continueAsGuest = () => {
+    const guestUser = { username: "Guest", isGuest: true, _id: "guest-user" };
+    setUser(guestUser);
+    setToken("guest-mode-token");
+    localStorage.setItem('user', JSON.stringify(guestUser));
+    localStorage.setItem('token', 'guest-mode-token');
+  };
+
   const logout = () => {
     setToken(null);
     setUser(null);
@@ -66,7 +77,7 @@ export function AuthProvider({ children }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, loading, login, register, logout, setUser }}>
+    <AuthContext.Provider value={{ user, token, loading, login, register, logout, continueAsGuest, setUser }}>
       {children}
     </AuthContext.Provider>
   );

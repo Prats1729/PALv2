@@ -29,7 +29,7 @@ export default function BottomNavBar() {
         <span className="nav-label">Discover</span>
       </NavLink>
       <NavLink
-        to={`/statistics${userSuffix}`}
+        to={`/profile${userSuffix}`}
         className={({ isActive }) =>
           isActive ? "bottom-nav-link active" : "bottom-nav-link"
         }

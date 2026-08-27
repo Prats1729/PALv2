@@ -14,6 +14,18 @@ export function WatchlistProvider({ children }) {
 
   const fetchWatchlist = useCallback(async () => {
     if (!token) return;
+    if (user?.isGuest) {
+      try {
+        const localData = JSON.parse(localStorage.getItem('pal_guest_watchlist') || '[]');
+        setWatchlist(localData);
+      } catch {
+        setWatchlist([]);
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+
     try {
       setLoading(true);
       const response = await fetch(`${API_URL}/api/watchlist`, {
@@ -32,11 +44,11 @@ export function WatchlistProvider({ children }) {
     } finally {
       setLoading(false);
     }
-  }, [token, logout]);
+  }, [token, user?.isGuest, logout]);
 
   // Fetch AniList token once on login (cached in ref to avoid re-renders)
   useEffect(() => {
-    if (token && user?.hasAnilistToken) {
+    if (token && user?.hasAnilistToken && !user?.isGuest) {
       fetch(`${API_URL}/api/auth/anilist-token`, {
         headers: { 'Authorization': `Bearer ${token}` }
       })
@@ -61,7 +73,7 @@ export function WatchlistProvider({ children }) {
     } else {
       anilistTokenRef.current = null;
     }
-  }, [token, user?.hasAnilistToken, fetchWatchlist]);
+  }, [token, user?.hasAnilistToken, user?.isGuest, fetchWatchlist]);
 
   useEffect(() => {
     if (token && user) {
@@ -84,12 +96,22 @@ export function WatchlistProvider({ children }) {
   };
 
   const addToWatchlist = async (anime, status = "Plan to Watch") => {
-    if (!token) return;
-    try {
-      const progress = status === "Completed" ? (anime.episodes || 0) : 0;
-      const rating = anime.averageScore ? (anime.averageScore / 10) : null;
-      touchWatchHistory(anime.id);
+    if (user?.isGuest) {
+      window.dispatchEvent(new CustomEvent("pal-auth-prompt", {
+        detail: {
+          message: `Sign in or create a free account to add "${anime.title?.userPreferred || anime.title?.english || anime.title?.romaji || anime.title || 'this anime'}" to your watchlist.`
+        }
+      }));
+      return;
+    }
 
+    if (!token) return;
+    touchWatchHistory(anime.id || anime.animeId);
+
+    const progress = status === "Completed" ? (anime.episodes || 0) : 0;
+    const rating = anime.averageScore ? (anime.averageScore / 10) : null;
+
+    try {
       const response = await fetch(`${API_URL}/api/watchlist`, {
         method: 'POST',
         headers: { 
@@ -139,21 +161,29 @@ export function WatchlistProvider({ children }) {
 
   const updateWatchlistItem = async (id, updates) => {
     if (!token) return;
+    touchWatchHistory(id);
+
+    // Auto-fill progress if status is set to Completed
+    if (updates.status === "Completed") {
+      const item = watchlist.find(w => w.animeId === id || w._id === id);
+      if (item && item.totalEpisodes) {
+        updates.progress = item.totalEpisodes;
+      }
+    }
+
+    if (!updates.lastWatchedAt) {
+      updates.lastWatchedAt = new Date().toISOString();
+    }
+
+    if (user?.isGuest) {
+      const current = JSON.parse(localStorage.getItem('pal_guest_watchlist') || '[]');
+      const updated = current.map(item => (item.animeId === id || item._id === id) ? { ...item, ...updates, updatedAt: new Date().toISOString() } : item);
+      localStorage.setItem('pal_guest_watchlist', JSON.stringify(updated));
+      setWatchlist(updated);
+      return;
+    }
+
     try {
-      touchWatchHistory(id);
-
-      // Auto-fill progress if status is set to Completed
-      if (updates.status === "Completed") {
-        const item = watchlist.find(w => w.animeId === id || w._id === id);
-        if (item && item.totalEpisodes) {
-          updates.progress = item.totalEpisodes;
-        }
-      }
-
-      if (!updates.lastWatchedAt) {
-        updates.lastWatchedAt = new Date().toISOString();
-      }
-
       const response = await fetch(`${API_URL}/api/watchlist/${id}`, {
         method: 'PUT',
         headers: { 
@@ -197,8 +227,19 @@ export function WatchlistProvider({ children }) {
     if (!token) return;
 
     // Grab animeId before deleting (for AniList sync)
-    const item = watchlist.find(w => w.animeId === id);
+    const item = watchlist.find(w => w.animeId === id || w._id === id);
     const animeId = item?.animeId || id;
+
+    if (user?.isGuest) {
+      const current = JSON.parse(localStorage.getItem('pal_guest_watchlist') || '[]');
+      const updated = current.filter(w => w.animeId !== animeId && w._id !== id);
+      localStorage.setItem('pal_guest_watchlist', JSON.stringify(updated));
+      setWatchlist(updated);
+      window.dispatchEvent(new CustomEvent("pal-toast", { 
+        detail: { message: "Removed from Watchlist", type: "info" } 
+      }));
+      return;
+    }
 
     try {
       const response = await fetch(`${API_URL}/api/watchlist/${id}`, {
@@ -207,7 +248,7 @@ export function WatchlistProvider({ children }) {
       });
 
       if (response.ok) {
-        setWatchlist(prev => prev.filter(w => w.animeId !== animeId));
+        setWatchlist(prev => prev.filter(w => w.animeId !== animeId && w._id !== id));
         window.dispatchEvent(new CustomEvent("pal-toast", { 
           detail: { message: "Removed from Watchlist", type: "info" } 
         }));

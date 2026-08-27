@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { useSearchParams, Link } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import { searchAnime } from "../services/anilist";
 import Pagination from "../components/common/Pagination";
 import AnimeCard from "../components/common/AnimeCard";

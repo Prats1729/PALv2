@@ -1,6 +1,6 @@
 .library-container {
-  max-width: 1200px;
-  margin: 0 auto;
+  padding: 24px 20px 40px 20px;
+  box-sizing: border-box;
 }
 
 .library-title {
@@ -15,7 +15,186 @@
 .library-subtitle {
   color: #7a7690;
   font-size: 14px;
-  margin-bottom: 24px;
+  margin-bottom: 20px;
+}
+
+/* Controls Bar (Search + Sort + Reset) */
+.library-controls-bar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+  background: rgba(255, 255, 255, 0.02);
+  padding: 14px 18px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.library-search-input-wrap {
+  position: relative;
+  flex: 1;
+  min-width: 240px;
+}
+
+.library-search-input {
+  width: 100%;
+  height: 38px;
+  padding: 0 34px 0 12px;
+  background-color: #0b0813;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  color: #ffffff;
+  font-size: 13px;
+  box-sizing: border-box;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.library-search-input:hover,
+.library-search-input:focus {
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+.library-search-clear {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  color: #888;
+  cursor: pointer;
+  font-size: 12px;
+  padding: 2px 4px;
+}
+
+.library-search-clear:hover {
+  color: #fff;
+}
+
+/* Custom Sort Dropdown */
+.library-custom-dropdown {
+  position: relative;
+  min-width: 250px;
+}
+
+.library-dropdown-trigger {
+  width: 100%;
+  height: 38px;
+  background-color: #0b0813;
+  color: #e2e8f0;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  padding: 0 12px;
+  font-size: 13px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  box-sizing: border-box;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.library-dropdown-trigger:hover,
+.library-dropdown-trigger.open {
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+.library-dropdown-label {
+  color: #7a7690;
+  font-size: 12px;
+  font-weight: 600;
+  margin-right: 6px;
+}
+
+.library-dropdown-value {
+  flex: 1;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: #e2e8f0;
+}
+
+.library-chevron-arrow::after {
+  content: '';
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  border-right: 2px solid #7a7690;
+  border-bottom: 2px solid #7a7690;
+  transform: rotate(45deg);
+  margin-left: 8px;
+  transition: transform 0.2s ease;
+}
+
+.library-dropdown-trigger.open .library-chevron-arrow::after {
+  transform: rotate(-135deg);
+}
+
+.library-dropdown-list {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  background-color: #120e25;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  max-height: 240px;
+  overflow-y: auto;
+  z-index: 100;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.6);
+  padding: 6px 0;
+  animation: dropdown-slide-in 0.15s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.library-dropdown-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 9px 14px;
+  color: #959595;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.library-dropdown-item:hover {
+  background-color: rgba(255, 255, 255, 0.06);
+  color: #ffffff;
+}
+
+.library-dropdown-item.active {
+  color: #6366f1;
+  font-weight: 600;
+  background-color: rgba(99, 102, 241, 0.08);
+}
+
+.library-dropdown-check {
+  color: #6366f1;
+  font-size: 13px;
+  font-weight: bold;
+}
+
+.library-reset-btn {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  color: #f87171;
+  height: 38px;
+  padding: 0 14px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.library-reset-btn:hover {
+  background: rgba(239, 68, 68, 0.2);
+  color: #ffffff;
 }
 
 .library-tabs {
@@ -45,7 +224,7 @@
   background: #6366f1;
   color: #ffffff;
   border-color: #6366f1;
-  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+  box-shadow: none;
 }
 
 .library-content-card {
@@ -53,7 +232,7 @@
   padding: 30px;
   border-radius: 10px;
   border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  box-shadow: none;
 }
 
 .library-empty-text {
