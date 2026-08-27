@@ -37,11 +37,16 @@ const watchlistSchema = new mongoose.Schema({
   animeId: { type: Number, required: true },
   title: { type: String, required: true },
   coverImage: { type: String, required: true },
+  bannerImage: { type: String, default: null },
   color: { type: String, default: "#6366f1" },
   status: { type: String, default: "Plan to Watch" },
   progress: { type: Number, default: 0 },
   totalEpisodes: { type: Number, default: null },
-  rating: { type: Number, default: null },
+  lastPosition: { type: Number, default: 0 },
+  lastDuration: { type: Number, default: 0 },
+  lastPercent: { type: Number, default: 0 },
+  lastWatchedAt: { type: Date, default: null },
+  updatedAt: { type: Date, default: Date.now },
   addedAt: { type: Date, default: Date.now }
 });
 // Create the Model based on the Schema
@@ -63,7 +68,7 @@ app.use('/api/auth', authRoutes);
 // 1. GET Request: Fetch the real watchlist from MongoDB
 app.get('/api/watchlist', authMiddleware, async (req, res) => {
   try {
-    const list = await Watchlist.find({ userId: req.user.id }); 
+    const list = await Watchlist.find({ userId: req.user.id }).sort({ lastWatchedAt: -1, updatedAt: -1, addedAt: -1 }); 
     res.json(list);
   } catch (err) {
     res.status(500).json({ error: "Failed to fetch watchlist" });
@@ -72,7 +77,7 @@ app.get('/api/watchlist', authMiddleware, async (req, res) => {
 
 // 2. POST Request: Save a new anime to MongoDB
 app.post('/api/watchlist', authMiddleware, async (req, res) => {
-  const { id, title, coverImage, color, status, totalEpisodes, progress, rating } = req.body;
+  const { id, title, coverImage, bannerImage, color, status, totalEpisodes, progress, rating, lastWatchedAt } = req.body;
   
   if (!id || !title || !coverImage) {
     return res.status(400).json({ error: "Missing required fields (id, title, coverImage)" });
@@ -89,11 +94,14 @@ app.post('/api/watchlist', authMiddleware, async (req, res) => {
       animeId: id,
       title,
       coverImage,
+      bannerImage: bannerImage || null,
       color,
       status,
       totalEpisodes,
-      progress,
-      rating
+      progress: progress || 0,
+      rating,
+      lastWatchedAt: lastWatchedAt ? new Date(lastWatchedAt) : ((progress > 0 || status === "Watching") ? new Date() : null),
+      updatedAt: new Date()
     });
     
     await newItem.save();
@@ -106,9 +114,24 @@ app.post('/api/watchlist', authMiddleware, async (req, res) => {
 // 3. PUT Request: Update an existing anime
 app.put('/api/watchlist/:id', authMiddleware, async (req, res) => {
   try {
+    const paramId = req.params.id;
+    const isObjectId = mongoose.Types.ObjectId.isValid(paramId);
+    const query = isObjectId
+      ? { $or: [{ _id: paramId }, { animeId: Number(paramId) || -1 }], userId: req.user.id }
+      : { animeId: Number(paramId), userId: req.user.id };
+
+    const updatePayload = {
+      ...req.body,
+      updatedAt: new Date()
+    };
+
+    if (req.body.progress !== undefined || req.body.status === "Watching" || req.body.lastWatchedAt) {
+      updatePayload.lastWatchedAt = req.body.lastWatchedAt ? new Date(req.body.lastWatchedAt) : new Date();
+    }
+
     const updatedAnime = await Watchlist.findOneAndUpdate(
-      { animeId: Number(req.params.id), userId: req.user.id },
-      { $set: req.body },
+      query,
+      { $set: updatePayload },
       { returnDocument: 'after' }
     );
     
@@ -124,7 +147,13 @@ app.put('/api/watchlist/:id', authMiddleware, async (req, res) => {
 // 4. DELETE Request: Remove an anime from the database
 app.delete('/api/watchlist/:id', authMiddleware, async (req, res) => {
   try {
-    const deletedAnime = await Watchlist.findOneAndDelete({ animeId: Number(req.params.id), userId: req.user.id });
+    const paramId = req.params.id;
+    const isObjectId = mongoose.Types.ObjectId.isValid(paramId);
+    const query = isObjectId
+      ? { $or: [{ _id: paramId }, { animeId: Number(paramId) || -1 }], userId: req.user.id }
+      : { animeId: Number(paramId), userId: req.user.id };
+
+    const deletedAnime = await Watchlist.findOneAndDelete(query);
     if (!deletedAnime) {
       return res.status(404).json({ error: "Anime not found in your watchlist" });
     }
@@ -214,22 +243,22 @@ app.post('/api/watchlist/import-anilist', authMiddleware, async (req, res) => {
     const lists = listJson.data.MediaListCollection.lists;
     let imported = 0;
     let updated = 0;
-    const activeAniListIds = [];
 
     for (const list of lists) {
       const palStatus = ANILIST_STATUS_MAP[list.status] || "Plan to Watch";
       
       for (const entry of list.entries) {
         const media = entry.media;
-        activeAniListIds.push(media.id);
         
+        const finalStatus = (media.episodes && entry.progress >= media.episodes) ? "Completed" : palStatus;
+
         const updateData = {
           userId: req.user.id,
           animeId: media.id,
           title: media.title.english || media.title.romaji || "Unknown",
           coverImage: media.coverImage.large,
           color: media.coverImage.color || "#6366f1",
-          status: palStatus,
+          status: finalStatus,
           progress: entry.progress || 0,
           totalEpisodes: media.episodes || null,
           rating: entry.score || null,
@@ -238,7 +267,7 @@ app.post('/api/watchlist/import-anilist', authMiddleware, async (req, res) => {
         const result = await Watchlist.findOneAndUpdate(
           { animeId: media.id, userId: req.user.id },
           { $set: updateData },
-          { upsert: true, new: false } // 'new: false' means it returns the old document if it existed
+          { upsert: true, returnDocument: 'before' }
         );
 
         if (result) {
@@ -249,14 +278,8 @@ app.post('/api/watchlist/import-anilist', authMiddleware, async (req, res) => {
       }
     }
 
-    // Delete any anime in PALv2 that are no longer in AniList
-    const deleteResult = await Watchlist.deleteMany({
-      userId: req.user.id,
-      animeId: { $nin: activeAniListIds }
-    });
-
     res.json({ 
-      message: `Sync complete! Added ${imported}, updated ${updated}, and removed ${deleteResult.deletedCount} deleted anime.` 
+      message: `Sync complete! Added ${imported} new and updated ${updated} existing anime.` 
     });
   } catch (err) {
     console.error("Import AniList error:", err);

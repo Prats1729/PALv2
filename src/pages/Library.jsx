@@ -44,6 +44,7 @@ export default function Library() {
           { label: "All Anime", key: "ALL" },
           { label: "Watching", key: "Watching" },
           { label: "Completed", key: "Completed" },
+          { label: "On Hold", key: "On Hold" },
           { label: "Plan to Watch", key: "Plan to Watch" },
           { label: "Dropped", key: "Dropped" },
         ].map((tab) => (
@@ -116,7 +117,7 @@ export default function Library() {
                       onMouseLeave={() => setActiveMenuId(null)}
                       onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
                     >
-                      {["Watching", "Plan to Watch", "Completed", "Dropped"].map(status => (
+                      {["Watching", "Plan to Watch", "Completed", "On Hold", "Dropped"].map(status => (
                         <button
                           key={status}
                           className="quick-add-option"

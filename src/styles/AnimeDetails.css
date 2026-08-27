@@ -133,6 +133,13 @@
   flex: 1;
 }
 
+.ops-progress-controls {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
 .ops-progress-btn {
   background: rgba(99, 102, 241, 0.8);
   color: #fff;
@@ -143,11 +150,10 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 16px;
+  font-size: 15px;
   font-weight: bold;
   cursor: pointer;
   transition: all 0.2s;
-  margin-left: auto;
 }
 
 .ops-progress-btn:hover:not(:disabled) {

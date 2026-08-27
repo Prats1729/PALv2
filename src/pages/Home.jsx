@@ -71,7 +71,7 @@ function AiringCard({ anime }) {
             className="airing-quick-add-menu" 
             onMouseLeave={() => setIsAdding(false)}
           >
-            {["Watching", "Plan to Watch", "Completed", "Dropped"].map(status => (
+            {["Watching", "Plan to Watch", "Completed", "On Hold", "Dropped"].map(status => (
               <button
                 key={status}
                 className="quick-add-option"
@@ -95,23 +95,91 @@ function AiringCard({ anime }) {
 
 // MAIN PAGE COMPONENT
 export default function Home() {
+  const { watchlist, updateWatchlistItem } = useWatchlist();
   const [trending, setTrending] = useState([]);
   const [popular, setPopular] = useState([]);
   const [topAiring, setTopAiring] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentSlide, setCurrentSlide] = useState(0);
   const slideInterval = useRef(null);
+  const continueListRef = useRef(null);
+  const [historyTick, setHistoryTick] = useState(0);
+
+  useEffect(() => {
+    const handleHistory = () => setHistoryTick((t) => t + 1);
+    window.addEventListener("pal-history-updated", handleHistory);
+    return () => window.removeEventListener("pal-history-updated", handleHistory);
+  }, []);
+
+  const handleRemoveFromContinue = (e, item) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    updateWatchlistItem(item.animeId, { status: "On Hold" });
+
+    try {
+      const history = JSON.parse(localStorage.getItem("pal_recent_history") || "{}");
+      delete history[item.animeId];
+      localStorage.setItem("pal_recent_history", JSON.stringify(history));
+      window.dispatchEvent(new CustomEvent("pal-history-updated", { detail: { animeId: item.animeId } }));
+    } catch {
+      // ignore
+    }
+
+    window.dispatchEvent(
+      new CustomEvent("pal-toast", {
+        detail: {
+          message: `Moved "${item.title}" to On Hold (Removed from Continue Watching)`,
+          type: "info",
+        },
+      })
+    );
+  };
+
+  const getRecentTimestamp = (anime) => {
+    try {
+      const history = JSON.parse(localStorage.getItem("pal_recent_history") || "{}");
+      if (history[anime.animeId]) return history[anime.animeId];
+    } catch {
+      // fallback
+    }
+    if (anime.lastWatchedAt) return new Date(anime.lastWatchedAt).getTime();
+    if (anime.updatedAt) return new Date(anime.updatedAt).getTime();
+    return 0;
+  };
+
+  const continueWatching = (watchlist || [])
+    .filter((w) => {
+      // Must not be Completed or Dropped
+      if (w.status === "Completed" || w.status === "Dropped") return false;
+      // If totalEpisodes is known and progress >= totalEpisodes, it is finished!
+      if (w.totalEpisodes && w.progress >= w.totalEpisodes) return false;
+      // Must be explicitly Watching or have positive progress
+      return w.status === "Watching" || w.progress > 0;
+    })
+    .sort((a, b) => {
+      const timeA = getRecentTimestamp(a);
+      const timeB = getRecentTimestamp(b);
+      return timeB - timeA;
+    });
+
+  const scrollContinue = (direction) => {
+    if (continueListRef.current) {
+      const scrollAmount = direction === "left" ? -400 : 400;
+      continueListRef.current.scrollBy({ left: scrollAmount, behavior: "smooth" });
+    }
+  };
 
   // Fetch lists with cover image color property
   useEffect(() => {
     const fetchHomeData = async () => {
       const query = `
         query {
-          trending: Page(page: 1, perPage: 10) { # Fetch 10 items for carousel
+          trending: Page(page: 1, perPage: 10) { # Fetch 10 items for carousel & grid
             media(sort: TRENDING_DESC, type: ANIME) {
               id
               title { english romaji native }
-              coverImage { large color } # Added color
+              coverImage { large color }
               bannerImage
               description(asHtml: false)
               averageScore
@@ -119,18 +187,18 @@ export default function Home() {
               episodes
             }
           }
-          popular: Page(page: 1, perPage: 6) {
+          popular: Page(page: 1, perPage: 10) {
             media(sort: POPULARITY_DESC, type: ANIME) {
               id
               title { english romaji }
-              coverImage { large color } # Added color
+              coverImage { large color }
               description(asHtml: false)
               averageScore
               format
               episodes
             }
           }
-          topAiring: Page(page: 1, perPage: 7) {
+          topAiring: Page(page: 1, perPage: 10) {
             media(sort: SCORE_DESC, status: RELEASING, type: ANIME) {
               id
               title { english romaji }
@@ -269,6 +337,105 @@ export default function Home() {
         </div>
       )}
 
+      {/* 1.5 CONTINUE WATCHING SECTION */}
+      {continueWatching.length > 0 && (
+        <section className="continue-watching-section">
+          <div className="continue-header-row">
+            <h2 className="continue-heading">
+              <span className="continue-bar">|</span> Continue Watching
+            </h2>
+            <Link to="/continue-watching" className="continue-view-all">
+              View All ›
+            </Link>
+          </div>
+
+          <div className="continue-carousel-container">
+            <button
+              className="continue-arrow left"
+              onClick={() => scrollContinue("left")}
+              aria-label="Scroll left"
+            >
+              ‹
+            </button>
+
+            <div className="continue-list" ref={continueListRef}>
+              {continueWatching.map((item) => {
+                const hasMidPosition = item.lastPosition > 15 && item.lastPercent > 0;
+                const nextEp = item.progress + 1;
+                const progressPercent = hasMidPosition
+                  ? item.lastPercent
+                  : (item.totalEpisodes ? Math.min(100, Math.round((item.progress / item.totalEpisodes) * 100)) : (item.progress > 0 ? 50 : 0));
+
+                const formatTime = (secs) => {
+                  const m = Math.floor(secs / 60);
+                  const s = Math.floor(secs % 60).toString().padStart(2, "0");
+                  return `${m}:${s}`;
+                };
+
+                return (
+                  <Link
+                    key={item.animeId || item._id}
+                    to={`/anime/${item.animeId}`}
+                    className="continue-card"
+                    style={{ "--card-color": item.color || "#6366f1" }}
+                  >
+                    <div className="continue-thumb-wrapper">
+                      <img
+                        src={item.coverImage}
+                        alt={item.title}
+                        className="continue-thumb"
+                        loading="lazy"
+                      />
+                      <button
+                        type="button"
+                        className="continue-remove-btn"
+                        onClick={(e) => handleRemoveFromContinue(e, item)}
+                        title="Remove from Continue Watching"
+                        aria-label="Remove from Continue Watching"
+                      >
+                        ✕
+                      </button>
+                      <div className="continue-play-overlay">
+                        <div className="continue-play-icon">▶</div>
+                      </div>
+                      <div className="continue-progress-bar-bg">
+                        <div
+                          className="continue-progress-bar-fill"
+                          style={{ 
+                            width: `${progressPercent}%`,
+                            background: hasMidPosition ? "linear-gradient(90deg, #6366f1, #a855f7)" : "#6366f1"
+                          }}
+                        />
+                      </div>
+                    </div>
+                    <div className="continue-info">
+                      <div className="continue-title" title={item.title}>
+                        {item.title}
+                      </div>
+                      <div className="continue-ep">
+                        {hasMidPosition ? (
+                          <span>Ep {nextEp} • <span style={{ color: "#818cf8" }}>{formatTime(item.lastPosition)} ({item.lastPercent}%)</span></span>
+                        ) : (
+                          <span>Episode {nextEp} • <span style={{ color: "#9ca3af" }}>Up Next</span></span>
+                        )}
+                      </div>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+
+            <button
+              className="continue-arrow right"
+              onClick={() => scrollContinue("right")}
+              aria-label="Scroll right"
+            >
+              ›
+            </button>
+          </div>
+        </section>
+      )}
+
       {/* BOTTOM SECTIONS SPLIT LAYOUT */}
       <div className="home-content-split">
         <div className="home-main-col">
@@ -276,7 +443,7 @@ export default function Home() {
           <section className="home-section">
             <h2>Trending Now</h2>
             <div className="anime-grid">
-              {trending.slice(0, 6).map((anime) => (
+              {trending.map((anime) => (
                 <AnimeCard key={anime.id} anime={anime} />
               ))}
             </div>

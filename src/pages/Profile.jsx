@@ -16,6 +16,7 @@ export default function Profile() {
     const statuses = {
       Watching: 0,
       Completed: 0,
+      "On Hold": 0,
       "Plan to Watch": 0,
       Dropped: 0
     };
@@ -105,6 +106,17 @@ export default function Profile() {
             ></div>
           </div>
           <div className="status-count">{stats.statuses['Completed']}</div>
+        </div>
+
+        <div className="status-bar-wrapper">
+          <div className="status-label">On Hold</div>
+          <div className="status-bar-bg">
+            <div 
+              className="status-bar-fill" 
+              style={{ backgroundColor: '#f59e0b', width: `${(stats.statuses['On Hold'] / maxStatusCount) * 100}%` }}
+            ></div>
+          </div>
+          <div className="status-count">{stats.statuses['On Hold']}</div>
         </div>
 
         <div className="status-bar-wrapper">
