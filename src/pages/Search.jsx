@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useSearchParams, Link } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import { searchAnime } from "../services/anilist";
 import Pagination from "../components/common/Pagination";
 import AnimeCard from "../components/common/AnimeCard";
@@ -39,7 +39,7 @@ export default function Search() {
   };
 
   return (
-    <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
+    <div style={{ padding: "24px 20px 40px 20px", boxSizing: "border-box" }}>
       <h2 className="search-title">
         Search Results {query && `for "${query}"`}
       </h2>

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { Link } from "react-router-dom";
 import star from "../assets/star.png";
 import { useWatchlist } from "../context/WatchlistContext";
@@ -170,28 +170,31 @@ export default function Home() {
     }
   };
 
-  // Fetch lists with cover image color property
   useEffect(() => {
     const fetchHomeData = async () => {
       const query = `
         query {
-          trending: Page(page: 1, perPage: 10) { # Fetch 10 items for carousel & grid
+          trending: Page(page: 1, perPage: 12) {
             media(sort: TRENDING_DESC, type: ANIME) {
               id
               title { english romaji native }
-              coverImage { large color }
+              coverImage { extraLarge large color }
               bannerImage
               description(asHtml: false)
               averageScore
               format
               episodes
+              status
+              season
+              seasonYear
+              genres
             }
           }
           popular: Page(page: 1, perPage: 10) {
             media(sort: POPULARITY_DESC, type: ANIME) {
               id
               title { english romaji }
-              coverImage { large color }
+              coverImage { extraLarge large color }
               description(asHtml: false)
               averageScore
               format
@@ -202,7 +205,7 @@ export default function Home() {
             media(sort: SCORE_DESC, status: RELEASING, type: ANIME) {
               id
               title { english romaji }
-              coverImage { large color }
+              coverImage { extraLarge large color }
               description(asHtml: false)
               averageScore
               format
@@ -214,17 +217,22 @@ export default function Home() {
       `;
 
       try {
-        const response = await fetch("https://graphql.anilist.co/", {
+        const res = await fetch("https://graphql.anilist.co", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          },
           body: JSON.stringify({ query }),
         });
-        const json = await response.json();
-        setTrending(json.data.trending.media);
-        setPopular(json.data.popular.media);
-        setTopAiring(json.data.topAiring.media);
+        const json = await res.json();
+        if (json.data) {
+          setTrending(json.data.trending.media);
+          setPopular(json.data.popular.media);
+          setTopAiring(json.data.topAiring.media);
+        }
       } catch (err) {
-        console.error("Failed to load home content:", err);
+        console.error("Failed to fetch home page data", err);
       } finally {
         setLoading(false);
       }
@@ -233,40 +241,47 @@ export default function Home() {
     fetchHomeData();
   }, []);
 
-  // Slide Cycle Management
+  // Use top 10 trending anime for Hero Carousel
+  const heroSlides = useMemo(() => {
+    return trending.slice(0, 10);
+  }, [trending]);
+
+  // Autoplay Hero Carousel
   const startSlideShow = () => {
     stopSlideShow();
     slideInterval.current = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % 10);
-    }, 7000); // Cycle every 7 seconds
+      setCurrentSlide((prev) => (prev + 1) % (heroSlides.length || 1));
+    }, 6000);
   };
 
   const stopSlideShow = () => {
-    if (slideInterval.current) clearInterval(slideInterval.current);
+    if (slideInterval.current) {
+      clearInterval(slideInterval.current);
+    }
   };
 
   useEffect(() => {
-    if (trending.length > 0) {
+    if (heroSlides.length > 0) {
       startSlideShow();
     }
     return () => stopSlideShow();
-  }, [trending]);
-
-  const handleNextSlide = () => {
-    stopSlideShow();
-    setCurrentSlide((prev) => (prev + 1) % trending.length);
-    startSlideShow();
-  };
+  }, [heroSlides.length]);
 
   const handlePrevSlide = () => {
     stopSlideShow();
-    setCurrentSlide((prev) => (prev - 1 + trending.length) % trending.length);
+    setCurrentSlide((prev) => (prev === 0 ? heroSlides.length - 1 : prev - 1));
+    startSlideShow();
+  };
+
+  const handleNextSlide = () => {
+    stopSlideShow();
+    setCurrentSlide((prev) => (prev + 1) % heroSlides.length);
     startSlideShow();
   };
 
   if (loading) {
     return (
-      <div className="home-container" style={{ marginTop: "1.5rem" }}>
+      <div className="home-container">
         <div className="skeleton-hero" />
         <div className="home-section" style={{ marginTop: "40px" }}>
           <h2>Trending Now</h2>
@@ -280,39 +295,70 @@ export default function Home() {
     );
   }
 
-  const heroAnime = trending[currentSlide];
+  const heroAnime = heroSlides[currentSlide] || trending[0];
   const heroDescription = heroAnime?.description
-    ? heroAnime.description.replace(/<[^>]*>/g, "").substring(0, 220) + "..."
+    ? heroAnime.description.replace(/<[^>]*>/g, "").substring(0, 240) + "..."
     : "";
 
   return (
     <div className="home-container">
-      {/* 1. HERO SLIDER BANNER */}
+      {/* 1. HERO SLIDER BANNER (Full-Bleed, Flowy, High-Res) */}
       {heroAnime && (
         <div
           key={heroAnime.id}
           className="hero-section"
           style={{
-            marginTop: "1.5rem",
-            backgroundImage: `linear-gradient(to top, #0b0813 5%, rgba(11, 8, 19, 0.2) 60%, rgba(11, 8, 19, 0.5) 98%, #0b0813 100%), url(${heroAnime.bannerImage || heroAnime.coverImage.large})`,
+            backgroundImage: `url(${heroAnime.bannerImage || heroAnime.coverImage?.extraLarge || heroAnime.coverImage?.large})`,
           }}
         >
+          {/* Multi-layered cinematic gradient overlays */}
+          <div className="hero-gradient-overlay" />
+
           <div className="hero-content">
-            <span className="hero-badge">#{currentSlide + 1} TRENDING</span>
+            {/* Metadata Badges */}
+            <div className="hero-meta-badges">
+              <span className="hero-badge">#{currentSlide + 1} TRENDING</span>
+              {heroAnime.status && (
+                <span className={`hero-meta-tag status-${heroAnime.status.toLowerCase()}`}>
+                  {heroAnime.status}
+                </span>
+              )}
+              {heroAnime.season && heroAnime.seasonYear && (
+                <span className="hero-meta-tag">
+                  📅 {heroAnime.season} {heroAnime.seasonYear}
+                </span>
+              )}
+              {heroAnime.episodes && (
+                <span className="hero-meta-tag">
+                  📺 Ep {heroAnime.episodes}
+                </span>
+              )}
+              {heroAnime.averageScore && (
+                <span className="hero-meta-tag score">
+                  ⭐ {heroAnime.averageScore}%
+                </span>
+              )}
+            </div>
+
             <h1 className="hero-title">
               {heroAnime.title.english || heroAnime.title.romaji}
             </h1>
+
             <p className="hero-desc">{heroDescription}</p>
+
             <div className="hero-actions">
-              <Link to={`/anime/${heroAnime.id}`} className="hero-button">
-                View Details
+              <Link to={`/anime/${heroAnime.id}`} className="hero-button watch-now-btn">
+                ▶ Watch Now
+              </Link>
+              <Link to={`/anime/${heroAnime.id}`} className="hero-button details-btn">
+                ⓘ Details
               </Link>
             </div>
           </div>
 
-          {/* Carousel Indicators (Bottom Left) */}
+          {/* Carousel Indicators */}
           <div className="carousel-indicators">
-            {trending.map((_, index) => (
+            {heroSlides.map((_, index) => (
               <span
                 key={index}
                 className={`indicator-dash ${index === currentSlide ? "active" : ""}`}
@@ -325,12 +371,12 @@ export default function Home() {
             ))}
           </div>
 
-          {/* Carousel Arrows (Bottom Right) */}
+          {/* Carousel Arrows */}
           <div className="carousel-arrows">
-            <button className="arrow-btn" onClick={handlePrevSlide}>
+            <button className="arrow-btn" onClick={handlePrevSlide} aria-label="Previous Slide">
               ‹
             </button>
-            <button className="arrow-btn" onClick={handleNextSlide}>
+            <button className="arrow-btn" onClick={handleNextSlide} aria-label="Next Slide">
               ›
             </button>
           </div>

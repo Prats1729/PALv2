@@ -1,28 +1,122 @@
-import { useState } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useWatchlist } from "../context/WatchlistContext";
+import { useAuth } from "../context/AuthContext";
 import Pagination from "../components/common/Pagination";
 import "../styles/Library.css";
 
+const SORT_OPTIONS = [
+  { value: "recent", label: "Recently Watched / Updated" },
+  { value: "title_asc", label: "Title: A to Z" },
+  { value: "title_desc", label: "Title: Z to A" },
+  { value: "score_desc", label: "Rating: High to Low" },
+  { value: "progress_desc", label: "Progress: Most Watched" },
+  { value: "progress_asc", label: "Progress: Least Watched" },
+];
+
+function LibrarySortDropdown({ value, onChange }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (ref.current && !ref.current.contains(e.target)) {
+        setIsOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const currentOption = SORT_OPTIONS.find((o) => o.value === value) || SORT_OPTIONS[0];
+
+  return (
+    <div className="library-custom-dropdown" ref={ref}>
+      <button
+        type="button"
+        className={`library-dropdown-trigger ${isOpen ? "open" : ""}`}
+        onClick={() => setIsOpen(!isOpen)}
+      >
+        <span className="library-dropdown-label">Sort:</span>
+        <span className="library-dropdown-value">{currentOption.label}</span>
+        <span className="library-chevron-arrow"></span>
+      </button>
+
+      {isOpen && (
+        <div className="library-dropdown-list">
+          {SORT_OPTIONS.map((opt) => (
+            <div
+              key={opt.value}
+              className={`library-dropdown-item ${opt.value === value ? "active" : ""}`}
+              onClick={() => {
+                onChange(opt.value);
+                setIsOpen(false);
+              }}
+            >
+              <span>{opt.label}</span>
+              {opt.value === value && <span className="library-dropdown-check">✓</span>}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function Library() {
   const { watchlist, updateWatchlistItem, removeFromWatchlist, loading } = useWatchlist();
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("ALL");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [sortBy, setSortBy] = useState("recent");
   const [activeMenuId, setActiveMenuId] = useState(null);
   
-  const ITEMS_PER_PAGE = 25;
+  const ITEMS_PER_PAGE = 24;
   const [page, setPage] = useState(1);
 
-  // Filter the backend watchlist based on the active tab
-  let entries = [];
-  if (activeTab === "ALL") {
-    entries = watchlist;
-  } else {
-    // Our backend status strings match exactly: "Watching", "Completed", "Plan to Watch", "Dropped"
-    entries = watchlist.filter((item) => item.status === activeTab);
-  }
+  // Filter and Sort entries
+  const filteredEntries = useMemo(() => {
+    let list = [...watchlist];
 
-  const totalPages = Math.ceil(entries.length / ITEMS_PER_PAGE);
-  const paginatedEntries = entries.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
+    // 1. Status Tab Filter
+    if (activeTab !== "ALL") {
+      list = list.filter((item) => item.status === activeTab);
+    }
+
+    // 2. Search Query Filter
+    if (searchQuery.trim()) {
+      const q = searchQuery.trim().toLowerCase();
+      list = list.filter((item) => (item.title || "").toLowerCase().includes(q));
+    }
+
+    // 3. Sorting
+    list.sort((a, b) => {
+      if (sortBy === "title_asc") {
+        return (a.title || "").localeCompare(b.title || "");
+      }
+      if (sortBy === "title_desc") {
+        return (b.title || "").localeCompare(a.title || "");
+      }
+      if (sortBy === "score_desc") {
+        return (b.rating || 0) - (a.rating || 0);
+      }
+      if (sortBy === "progress_desc") {
+        return (b.progress || 0) - (a.progress || 0);
+      }
+      if (sortBy === "progress_asc") {
+        return (a.progress || 0) - (b.progress || 0);
+      }
+      // Default: "recent"
+      const timeA = a.lastWatchedAt ? new Date(a.lastWatchedAt).getTime() : (a.updatedAt ? new Date(a.updatedAt).getTime() : 0);
+      const timeB = b.lastWatchedAt ? new Date(b.lastWatchedAt).getTime() : (b.updatedAt ? new Date(b.updatedAt).getTime() : 0);
+      return timeB - timeA;
+    });
+
+    return list;
+  }, [watchlist, activeTab, searchQuery, sortBy]);
+
+  const totalPages = Math.ceil(filteredEntries.length / ITEMS_PER_PAGE);
+  const paginatedEntries = filteredEntries.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
 
   const handlePageChange = (newPage) => {
     if (newPage >= 1 && newPage <= totalPages) {
@@ -31,12 +125,119 @@ export default function Library() {
     }
   };
 
+  const handleResetFilters = () => {
+    setActiveTab("ALL");
+    setSearchQuery("");
+    setSortBy("recent");
+    setPage(1);
+  };
+
+  const isTauri = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
+
+  if (!isTauri && user?.isGuest) {
+    return (
+      <div className="library-container" style={{ textAlign: "center", padding: "60px 20px" }}>
+        <div style={{ fontSize: "42px", marginBottom: "14px" }}>🔒</div>
+        <h2 style={{ color: "#ffffff", fontSize: "24px", fontWeight: "700", margin: "0 0 10px 0" }}>
+          Library is Locked in Guest Mode
+        </h2>
+        <p style={{ color: "#94a3b8", fontSize: "14px", maxWidth: "460px", margin: "0 auto 24px auto", lineHeight: "1.6" }}>
+          Sign in or create a free PAL account to build your personal watchlist, track episode progress, and sync with AniList.
+        </p>
+        <div style={{ display: "flex", gap: "12px", justifyContent: "center", maxWidth: "300px", margin: "0 auto" }}>
+          <Link
+            to="/login"
+            style={{
+              flex: 1,
+              backgroundColor: "#6366f1",
+              color: "#fff",
+              padding: "10px 18px",
+              borderRadius: "6px",
+              textDecoration: "none",
+              fontWeight: "600",
+              fontSize: "14px",
+              textAlign: "center"
+            }}
+          >
+            Sign In
+          </Link>
+          <Link
+            to="/register"
+            style={{
+              flex: 1,
+              backgroundColor: "rgba(255, 255, 255, 0.08)",
+              border: "1px solid rgba(255, 255, 255, 0.15)",
+              color: "#e2e8f0",
+              padding: "10px 18px",
+              borderRadius: "6px",
+              textDecoration: "none",
+              fontWeight: "600",
+              fontSize: "14px",
+              textAlign: "center"
+            }}
+          >
+            Sign Up
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="library-container">
-      <h2 className="library-title">My PAL Watchlist</h2>
-      <p className="library-subtitle">
-        Your personal, persistent anime list stored safely in MongoDB.
-      </p>
+      <div className="library-header-row">
+        <div>
+          <h2 className="library-title">
+            My PAL Watchlist
+          </h2>
+          <p className="library-subtitle">
+            Your personal, persistent anime list stored safely in MongoDB.
+          </p>
+        </div>
+      </div>
+
+      {/* Filter and Search Bar Controls */}
+      <div className="library-controls-bar">
+        <div className="library-search-input-wrap">
+          <input
+            type="text"
+            placeholder="Search your library..."
+            value={searchQuery}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              setPage(1);
+            }}
+            className="library-search-input"
+          />
+          {searchQuery && (
+            <button
+              type="button"
+              onClick={() => setSearchQuery("")}
+              className="library-search-clear"
+            >
+              ✕
+            </button>
+          )}
+        </div>
+
+        <LibrarySortDropdown
+          value={sortBy}
+          onChange={(val) => {
+            setSortBy(val);
+            setPage(1);
+          }}
+        />
+
+        {(searchQuery || sortBy !== "recent" || activeTab !== "ALL") && (
+          <button
+            type="button"
+            onClick={handleResetFilters}
+            className="library-reset-btn"
+          >
+            Reset Filters
+          </button>
+        )}
+      </div>
 
       {/* Status Filter Tabs */}
       <div className="library-tabs">
@@ -47,23 +248,29 @@ export default function Library() {
           { label: "On Hold", key: "On Hold" },
           { label: "Plan to Watch", key: "Plan to Watch" },
           { label: "Dropped", key: "Dropped" },
-        ].map((tab) => (
-          <button
-            key={tab.key}
-            onClick={() => {
-              setActiveTab(tab.key);
-              setPage(1);
-            }}
-            className={`library-tab-btn ${activeTab === tab.key ? "active" : ""}`}
-          >
-            {tab.label}
-          </button>
-        ))}
+        ].map((tab) => {
+          const count = tab.key === "ALL" 
+            ? watchlist.length 
+            : watchlist.filter(w => w.status === tab.key).length;
+
+          return (
+            <button
+              key={tab.key}
+              onClick={() => {
+                setActiveTab(tab.key);
+                setPage(1);
+              }}
+              className={`library-tab-btn ${activeTab === tab.key ? "active" : ""}`}
+            >
+              {tab.label} ({count})
+            </button>
+          );
+        })}
       </div>
 
-      {!loading && entries.length > 0 && (
-        <p style={{ color: "#aaa", marginBottom: "15px", marginTop: "-5px" }}>
-          Found {entries.length} anime in this category
+      {!loading && filteredEntries.length > 0 && (
+        <p style={{ color: "#aaa", marginBottom: "15px", fontSize: "13px" }}>
+          Showing {filteredEntries.length} {filteredEntries.length === 1 ? "title" : "titles"}
         </p>
       )}
 
@@ -74,7 +281,7 @@ export default function Library() {
             <div key={idx} className="skeleton-card" />
           ))}
         </div>
-      ) : entries.length === 0 ? (
+      ) : filteredEntries.length === 0 ? (
         <div className="library-content-card">
           <p className="library-empty-text">No anime found in this category.</p>
         </div>
@@ -85,10 +292,13 @@ export default function Library() {
               <Link
                 key={anime._id}
                 to={`/anime/${anime.animeId}`}
-                className="card-link"
-                style={{ "--hover-color": anime.color || "#6366f1" }}
+                className={`card-link ${activeMenuId === anime.animeId ? "dropdown-open" : ""}`}
+                style={{ 
+                  "--hover-color": anime.color || "#6366f1",
+                  zIndex: activeMenuId === anime.animeId ? 200 : "auto"
+                }}
               >
-                <div className="anime-card">
+                <div className={`anime-card ${activeMenuId === anime.animeId ? "dropdown-open" : ""}`}>
                   <img
                     src={anime.coverImage}
                     alt={anime.title}

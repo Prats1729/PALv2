@@ -54,6 +54,7 @@ export default function AnimeDetails() {
 
   useEffect(() => {
     if (!id) return;
+    window.scrollTo(0, 0);
 
     const fetchDetails = async () => {
       setLoading(true);
@@ -427,18 +428,36 @@ export default function AnimeDetails() {
                 {anime.relations.edges.map((edge, index) => {
                   const related = edge.node;
                   const relationType = edge.relationType.replace(/_/g, ' ');
+                  const isAnimeMedia = related.type === "ANIME";
+
+                  if (isAnimeMedia) {
+                    return (
+                      <Link 
+                        to={`/anime/${related.id}`} 
+                        key={`${related.id}-${index}`} 
+                        className="relation-item"
+                      >
+                        <div className="relation-info">
+                          <div className="relation-type">{relationType}</div>
+                          <div className="relation-title">{related.title.english || related.title.romaji}</div>
+                        </div>
+                        <div className="relation-arrow">›</div>
+                      </Link>
+                    );
+                  }
+
                   return (
-                    <Link 
-                      to={related.type === "ANIME" ? `/anime/${related.id}` : '#'} 
+                    <div 
                       key={`${related.id}-${index}`} 
                       className="relation-item"
+                      style={{ opacity: 0.6, cursor: "default" }}
+                      title={`${related.type}: Not playable`}
                     >
                       <div className="relation-info">
-                        <div className="relation-type">{relationType}</div>
+                        <div className="relation-type">{relationType} ({related.type})</div>
                         <div className="relation-title">{related.title.english || related.title.romaji}</div>
                       </div>
-                      <div className="relation-arrow">›</div>
-                    </Link>
+                    </div>
                   );
                 })}
               </div>

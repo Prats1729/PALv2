@@ -48,16 +48,30 @@ export default function AnimeCard({ anime }) {
 
   return (
     <div
-      className="anime-card-wrapper"
+      className={`anime-card-wrapper ${isAdding ? "dropdown-open" : ""}`}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
+      style={{
+        position: "relative",
+        zIndex: isAdding ? 9999 : (showPreview ? 50 : 1)
+      }}
     >
       <Link
         to={`/anime/${anime.id}`}
-        className="card-link"
-        style={{ "--hover-color": cardColor }}
+        className={`card-link ${isAdding ? "dropdown-open" : ""}`}
+        style={{ 
+          "--hover-color": cardColor,
+          position: "relative",
+          zIndex: isAdding ? 9999 : 1
+        }}
       >
-        <div className="anime-card">
+        <div 
+          className={`anime-card ${isAdding ? "dropdown-open" : ""}`}
+          style={{
+            position: "relative",
+            zIndex: isAdding ? 9999 : 1
+          }}
+        >
           <img
             src={anime.coverImage?.large}
             alt={anime.title?.english || anime.title?.romaji || "Anime"}
