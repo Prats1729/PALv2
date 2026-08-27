@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate, Link } from "react-router-dom";
 import logo from "../assets/pal-logo.svg";
@@ -6,12 +6,21 @@ import "../styles/Auth.css";
 
 export default function Register() {
   const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
-  const { register, continueAsGuest } = useAuth();
+  const { user, register, continueAsGuest } = useAuth();
   const navigate = useNavigate();
   const isTauri = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
+
+  // Navigate to home if user is logged in
+  useEffect(() => {
+    if (user) {
+      navigate("/");
+    }
+  }, [user]);
 
   const handleGuest = () => {
     continueAsGuest();
@@ -21,9 +30,20 @@ export default function Register() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
+
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters long");
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setError("Passwords do not match");
+      return;
+    }
+
     setLoading(true);
     try {
-      await register(username, password);
+      await register(username, email, password);
       navigate("/");
     } catch (err) {
       setError(err.message);
@@ -44,7 +64,9 @@ export default function Register() {
             ? "Desktop Edition • Create an account to sync your library & play locally"
             : "Join PALv2 and start tracking your anime"}
         </p>
+
         {error && <div className="auth-error">{error}</div>}
+
         <form onSubmit={handleSubmit}>
           <div className="form-group">
             <label>Username</label>
@@ -56,16 +78,40 @@ export default function Register() {
               required 
             />
           </div>
+
+          <div className="form-group">
+            <label>Email Address</label>
+            <input 
+              type="email" 
+              placeholder="name@example.com"
+              value={email} 
+              onChange={(e) => setEmail(e.target.value)} 
+              required 
+            />
+          </div>
+
           <div className="form-group">
             <label>Password</label>
             <input 
               type="password" 
-              placeholder="Create a password"
+              placeholder="At least 6 characters"
               value={password} 
               onChange={(e) => setPassword(e.target.value)} 
               required 
             />
           </div>
+
+          <div className="form-group">
+            <label>Confirm Password</label>
+            <input 
+              type="password" 
+              placeholder="Confirm your password"
+              value={confirmPassword} 
+              onChange={(e) => setConfirmPassword(e.target.value)} 
+              required 
+            />
+          </div>
+
           <button type="submit" disabled={loading} className="auth-btn">
             {loading ? "Creating account..." : "Create Account"}
           </button>
@@ -73,11 +119,7 @@ export default function Register() {
 
         {!isTauri && (
           <div style={{ marginTop: "16px", textAlign: "center" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "10px", margin: "14px 0", color: "#666", fontSize: "12px" }}>
-              <span style={{ flex: 1, height: "1px", backgroundColor: "rgba(255,255,255,0.1)" }}></span>
-              <span>OR</span>
-              <span style={{ flex: 1, height: "1px", backgroundColor: "rgba(255,255,255,0.1)" }}></span>
-            </div>
+            <div className="auth-divider">OR</div>
             <button
               type="button"
               onClick={handleGuest}
@@ -98,13 +140,10 @@ export default function Register() {
             >
               👤 Continue as Guest (Web)
             </button>
-            <p style={{ color: "#777", fontSize: "11px", marginTop: "6px" }}>
-              Stores watchlist locally in your browser without an account.
-            </p>
           </div>
         )}
 
-        <p className="auth-footer" style={{ marginTop: "18px" }}>
+        <p className="auth-footer">
           Already have an account? <Link to="/login">Sign in</Link>
         </p>
       </div>

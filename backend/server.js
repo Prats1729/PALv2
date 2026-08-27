@@ -25,9 +25,14 @@ app.get('/api/health', (req, res) => {
 
 // --- Database Model (Schema) ---
 const userSchema = new mongoose.Schema({
-  username: { type: String, required: true, unique: true },
-  password: { type: String, required: true }, // Hashed password
-  anilistToken: { type: String, default: null } // Encrypted token
+  username: { type: String, required: true, unique: true, trim: true },
+  email: { type: String, unique: true, sparse: true, lowercase: true, trim: true },
+  password: { type: String, required: false }, // Optional if authenticated solely via AniList OAuth
+  anilistId: { type: Number, default: null, unique: true, sparse: true },
+  anilistToken: { type: String, default: null }, // Encrypted token
+  resetPasswordToken: { type: String, default: null },
+  resetPasswordExpires: { type: Date, default: null },
+  createdAt: { type: Date, default: Date.now }
 });
 const User = mongoose.model('User', userSchema);
 
@@ -165,15 +170,7 @@ app.delete('/api/watchlist/:id', authMiddleware, async (req, res) => {
 
 // 5. POST: Import entire AniList watchlist into PALv2
 const { decrypt } = require('./utils/crypto');
-
-const ANILIST_STATUS_MAP = {
-  CURRENT: "Watching",
-  COMPLETED: "Completed",
-  PAUSED: "On Hold",
-  DROPPED: "Dropped",
-  PLANNING: "Plan to Watch",
-  REPEATING: "Watching",
-};
+const { importAniListWatchlist } = require('./utils/anilistImporter');
 
 app.post('/api/watchlist/import-anilist', authMiddleware, async (req, res) => {
   try {
@@ -183,107 +180,14 @@ app.post('/api/watchlist/import-anilist', authMiddleware, async (req, res) => {
     }
 
     const anilistToken = decrypt(user.anilistToken);
-
-    // Query AniList for the authenticated user's full anime list
-    const query = `
-      query {
-        Viewer {
-          id
-          mediaListOptions { scoreFormat }
-        }
-      }
-    `;
-    const viewerRes = await fetch("https://graphql.anilist.co", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${anilistToken}`,
-      },
-      body: JSON.stringify({ query }),
-    });
-    const viewerJson = await viewerRes.json();
-    if (viewerJson.errors) {
-      return res.status(400).json({ error: "AniList token expired or invalid" });
-    }
-    const viewerId = viewerJson.data.Viewer.id;
-
-    // Now fetch the full list
-    const listQuery = `
-      query ($userId: Int) {
-        MediaListCollection(userId: $userId, type: ANIME) {
-          lists {
-            status
-            entries {
-              progress
-              score(format: POINT_10_DECIMAL)
-              media {
-                id
-                title { english romaji }
-                coverImage { large color }
-                episodes
-              }
-            }
-          }
-        }
-      }
-    `;
-    const listRes = await fetch("https://graphql.anilist.co", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${anilistToken}`,
-      },
-      body: JSON.stringify({ query: listQuery, variables: { userId: viewerId } }),
-    });
-    const listJson = await listRes.json();
-    if (listJson.errors) {
-      return res.status(400).json({ error: "Failed to fetch AniList data" });
-    }
-
-    const lists = listJson.data.MediaListCollection.lists;
-    let imported = 0;
-    let updated = 0;
-
-    for (const list of lists) {
-      const palStatus = ANILIST_STATUS_MAP[list.status] || "Plan to Watch";
-      
-      for (const entry of list.entries) {
-        const media = entry.media;
-        
-        const finalStatus = (media.episodes && entry.progress >= media.episodes) ? "Completed" : palStatus;
-
-        const updateData = {
-          userId: req.user.id,
-          animeId: media.id,
-          title: media.title.english || media.title.romaji || "Unknown",
-          coverImage: media.coverImage.large,
-          color: media.coverImage.color || "#6366f1",
-          status: finalStatus,
-          progress: entry.progress || 0,
-          totalEpisodes: media.episodes || null,
-          rating: entry.score || null,
-        };
-
-        const result = await Watchlist.findOneAndUpdate(
-          { animeId: media.id, userId: req.user.id },
-          { $set: updateData },
-          { upsert: true, returnDocument: 'before' }
-        );
-
-        if (result) {
-          updated++;
-        } else {
-          imported++;
-        }
-      }
-    }
+    const { imported, updated, total } = await importAniListWatchlist(req.user.id, anilistToken, Watchlist);
 
     res.json({ 
-      message: `Sync complete! Added ${imported} new and updated ${updated} existing anime.` 
+      message: `Sync complete! Synced ${total} anime (${imported} new, ${updated} updated).` 
     });
   } catch (err) {
     console.error("Import AniList error:", err);
-    res.status(500).json({ error: "Failed to import AniList watchlist" });
+    res.status(500).json({ error: err.message || "Failed to import AniList watchlist" });
   }
 });
 

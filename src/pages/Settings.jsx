@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useWatchlist } from "../context/WatchlistContext";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import "../styles/Settings.css";
 
 const CLIENT_ID = import.meta.env.VITE_ANILIST_CLIENT_ID;
@@ -9,13 +9,21 @@ const REDIRECT_URI = window.location.origin + "/settings";
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
 export default function Settings() {
-  const { token, user, setUser } = useAuth();
+  const { token, user, setUser, deleteAccount } = useAuth();
   const { fetchWatchlist } = useWatchlist();
   const location = useLocation();
+  const navigate = useNavigate();
   const [anilistLinked, setAnilistLinked] = useState(user?.hasAnilistToken || false);
   const [linkingStatus, setLinkingStatus] = useState(null);
   const [importStatus, setImportStatus] = useState(null); // null | 'importing' | 'done' | 'error'
   const [importMessage, setImportMessage] = useState('');
+
+  // 2-Level Delete Account State
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteStep, setDeleteStep] = useState(1);
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState(null);
 
   const [darkMode, setDarkMode] = useState(() => {
     return localStorage.getItem("pal_dark_mode") !== "false";
@@ -210,19 +218,149 @@ export default function Settings() {
           </div>
         </div>
 
-        <div className="settings-card">
-          <h3 className="settings-card-title">Data Management</h3>
-          <p className="settings-card-desc">Advanced options for your data.</p>
+        <div className="settings-card" style={{ borderColor: 'rgba(239, 68, 68, 0.2)' }}>
+          <h3 className="settings-card-title" style={{ color: '#f87171' }}>Danger Zone</h3>
+          <p className="settings-card-desc">Irreversible account actions.</p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
             <button className="settings-auth-btn disconnect" onClick={() => { localStorage.clear(); window.location.reload(); }}>
               Clear Local Cache
             </button>
-            <button className="settings-auth-btn disconnect" style={{ color: '#ef4444', borderColor: '#ef4444', marginTop: '10px' }} onClick={() => alert("Delete account coming soon!")}>
-              Delete Account
+            <button 
+              className="settings-auth-btn disconnect" 
+              style={{ color: '#ef4444', borderColor: 'rgba(239, 68, 68, 0.4)', background: 'rgba(239, 68, 68, 0.08)' }} 
+              onClick={() => {
+                setShowDeleteModal(true);
+                setDeleteStep(1);
+                setDeleteConfirmText("");
+                setDeleteError(null);
+              }}
+            >
+              🗑️ Delete Account
             </button>
           </div>
         </div>
       </div>
+
+      {/* 2-Level Account Deletion Modal */}
+      {showDeleteModal && (
+        <div 
+          className="auth-modal-overlay" 
+          onClick={() => {
+            if (!isDeleting) setShowDeleteModal(false);
+          }}
+        >
+          <div className="auth-modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '440px' }}>
+            <button 
+              type="button" 
+              className="auth-modal-close"
+              onClick={() => setShowDeleteModal(false)}
+              disabled={isDeleting}
+            >
+              ✕
+            </button>
+
+            {deleteStep === 1 ? (
+              <div>
+                <div style={{ fontSize: '36px', textAlign: 'center', marginBottom: '8px' }}>⚠️</div>
+                <h3 style={{ color: '#ef4444', margin: '0 0 10px 0', fontSize: '1.3rem', textAlign: 'center' }}>
+                  Delete Account (Step 1 of 2)
+                </h3>
+                <p style={{ color: '#e2e8f0', fontSize: '0.9rem', lineHeight: '1.5', marginBottom: '16px', textAlign: 'center' }}>
+                  Are you absolutely sure you want to delete your account?
+                </p>
+                <div style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.25)', borderRadius: '8px', padding: '12px', marginBottom: '20px', color: '#fca5a5', fontSize: '0.8rem', lineHeight: '1.4' }}>
+                  • All tracked anime in your watchlist will be permanently wiped.<br />
+                  • Your watch history, progress, and account credentials will be erased.<br />
+                  • This action cannot be undone.
+                </div>
+
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  <button
+                    type="button"
+                    className="settings-auth-btn"
+                    style={{ flex: 1, backgroundColor: 'rgba(255,255,255,0.08)', color: '#fff' }}
+                    onClick={() => setShowDeleteModal(false)}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    className="settings-auth-btn disconnect"
+                    style={{ flex: 1, backgroundColor: '#ef4444', color: '#fff', borderColor: '#ef4444' }}
+                    onClick={() => setDeleteStep(2)}
+                  >
+                    I Understand, Continue →
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div>
+                <div style={{ fontSize: '36px', textAlign: 'center', marginBottom: '8px' }}>🚨</div>
+                <h3 style={{ color: '#ef4444', margin: '0 0 10px 0', fontSize: '1.3rem', textAlign: 'center' }}>
+                  Final Confirmation (Step 2 of 2)
+                </h3>
+                <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.85rem', lineHeight: '1.4', marginBottom: '16px', textAlign: 'center' }}>
+                  To permanently delete your account, type <strong style={{ color: '#fff' }}>{user?.username}</strong> in the box below:
+                </p>
+
+                {deleteError && <div className="auth-error" style={{ marginBottom: '14px' }}>{deleteError}</div>}
+
+                <div className="form-group" style={{ marginBottom: '18px' }}>
+                  <input
+                    type="text"
+                    placeholder={`Type ${user?.username} to confirm`}
+                    value={deleteConfirmText}
+                    onChange={(e) => setDeleteConfirmText(e.target.value)}
+                    style={{ borderColor: deleteConfirmText === user?.username ? '#ef4444' : 'rgba(255,255,255,0.1)' }}
+                  />
+                </div>
+
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  <button
+                    type="button"
+                    className="settings-auth-btn"
+                    style={{ flex: 1, backgroundColor: 'rgba(255,255,255,0.08)', color: '#fff' }}
+                    onClick={() => setDeleteStep(1)}
+                    disabled={isDeleting}
+                  >
+                    ← Back
+                  </button>
+                  <button
+                    type="button"
+                    className="settings-auth-btn disconnect"
+                    style={{ 
+                      flex: 1.2, 
+                      backgroundColor: deleteConfirmText === user?.username ? '#ef4444' : 'rgba(239,68,68,0.3)', 
+                      color: '#fff', 
+                      borderColor: '#ef4444',
+                      cursor: deleteConfirmText === user?.username && !isDeleting ? 'pointer' : 'not-allowed'
+                    }}
+                    disabled={deleteConfirmText !== user?.username || isDeleting}
+                    onClick={async () => {
+                      setIsDeleting(true);
+                      setDeleteError(null);
+                      try {
+                        await deleteAccount();
+                        window.dispatchEvent(
+                          new CustomEvent("pal-toast", {
+                            detail: { message: "Account and data permanently deleted.", type: "info" },
+                          })
+                        );
+                        navigate("/login");
+                      } catch (err) {
+                        setDeleteError(err.message || "Failed to delete account");
+                        setIsDeleting(false);
+                      }
+                    }}
+                  >
+                    {isDeleting ? "Deleting..." : "Permanently Delete"}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
