@@ -9,7 +9,7 @@ const isTauri = '__TAURI_INTERNALS__' in window;
 
 export default function AnimeDetails() {
   const { id } = useParams();
-  const { watchlist, addToWatchlist, updateWatchlistItem, removeFromWatchlist } = useWatchlist();
+  const { watchlist, addToWatchlist, updateWatchlistItem, removeFromWatchlist, touchWatchHistory } = useWatchlist();
 
   const [anime, setAnime] = useState(null);
   const [loading, setLoading] = useState(null);
@@ -137,6 +137,9 @@ export default function AnimeDetails() {
 
         const mediaData = json.data.Media;
         setAnime(mediaData);
+        if (mediaData && mediaData.id) {
+          touchWatchHistory(mediaData.id);
+        }
 
         // Pre-calculate prequel episode offset in background for desktop companion
         if (isTauri && mediaData) {
@@ -242,7 +245,7 @@ export default function AnimeDetails() {
                 </button>
                 {isStatusMenuOpen && (
                   <div className="ops-status-menu">
-                    {["Watching", "Plan to Watch", "Completed", "Dropped"].map(status => (
+                    {["Watching", "Plan to Watch", "Completed", "On Hold", "Dropped"].map(status => (
                       <button
                         key={status}
                         className="quick-add-option"
@@ -261,14 +264,24 @@ export default function AnimeDetails() {
               <div className="ops-row">
                 <div className="ops-progress">
                   <span>Ep {savedAnime.progress} / {savedAnime.totalEpisodes || "?"}</span>
-                  <button 
-                    className="ops-progress-btn"
-                    onClick={() => updateWatchlistItem(savedAnime.animeId, { progress: savedAnime.progress + 1 })}
-                    disabled={savedAnime.progress >= savedAnime.totalEpisodes}
-                    title="Watched another episode"
-                  >
-                    +
-                  </button>
+                  <div className="ops-progress-controls">
+                    <button 
+                      className="ops-progress-btn"
+                      onClick={() => updateWatchlistItem(savedAnime.animeId, { progress: Math.max(0, savedAnime.progress - 1) })}
+                      disabled={savedAnime.progress <= 0}
+                      title="Watched one less episode"
+                    >
+                      -
+                    </button>
+                    <button 
+                      className="ops-progress-btn"
+                      onClick={() => updateWatchlistItem(savedAnime.animeId, { progress: savedAnime.progress + 1 })}
+                      disabled={savedAnime.totalEpisodes ? savedAnime.progress >= savedAnime.totalEpisodes : false}
+                      title="Watched another episode"
+                    >
+                      +
+                    </button>
+                  </div>
                 </div>
                 <button 
                   className="ops-drop-btn"
@@ -522,7 +535,7 @@ export default function AnimeDetails() {
               </label>
               <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
                 <input type="checkbox" checked={autoSync} onChange={(e) => setAutoSync(e.target.checked)} style={{ cursor: 'pointer', width: '16px', height: '16px' }} />
-                <span style={{ color: '#ddd', fontSize: '0.85rem' }}>Prompt to sync progress after</span>
+                <span style={{ color: '#ddd', fontSize: '0.85rem' }}>Auto-track progress (≥70% watched)</span>
               </label>
             </div>
 
@@ -542,24 +555,107 @@ export default function AnimeDetails() {
                     setShowPlayModal(false);
                     
                     const targetEp = useAutoEp ? (playEp + (parseInt(epOffset) || 0)) : null;
+                    const resumeTime = (savedAnime && savedAnime.lastPosition > 15 && (playEp === (savedAnime.progress + 1) || playEp === savedAnime.progress))
+                      ? savedAnime.lastPosition
+                      : null;
 
                     // Dynamic import so @tauri-apps/api doesn't crash on web
                     const { invoke } = await import('@tauri-apps/api/core');
-                    await invoke('play_anime', {
+                    const rawResult = await invoke('play_anime', {
                       title: playTitle.trim(),
                       episode: targetEp,
                       isDub: playDub,
                       quality: playQuality,
                       skipIntro: skipIntro,
+                      startTime: resumeTime,
                     });
                     
                     if (autoSync) {
-                      if (window.confirm('Playback finished! Update your progress?')) {
+                      let trackingData = { completed_count: 0, max_percent: 0, last_time_pos: 0, duration: 0 };
+                      try {
+                        trackingData = typeof rawResult === 'string' ? JSON.parse(rawResult) : (rawResult || {});
+                      } catch {
+                        trackingData = { completed_count: 1, max_percent: 100, last_time_pos: 0, duration: 0 };
+                      }
+
+                      const completedCount = trackingData.completed_count || 0;
+                      const detectedEp = trackingData.last_completed_ep;
+                      const maxPercent = trackingData.max_percent || 0;
+                      const lastTimePos = trackingData.last_time_pos || 0;
+                      const duration = trackingData.duration || 0;
+                      
+                      if (completedCount > 0 || detectedEp) {
+                        // If ani-cli passed continuous absolute ep number, subtract prequel offset to get current season episode
+                        const seasonCalculatedEp = detectedEp ? Math.max(1, detectedEp - (parseInt(epOffset) || 0)) : null;
+
                         if (savedAnime) {
-                          updateWatchlistItem(savedAnime.animeId, { progress: savedAnime.progress + 1 });
+                          const newProgress = Math.min(
+                            savedAnime.totalEpisodes || 9999,
+                            seasonCalculatedEp ? Math.max(savedAnime.progress, seasonCalculatedEp) : (savedAnime.progress + completedCount)
+                          );
+                          const newStatus = (savedAnime.totalEpisodes && newProgress >= savedAnime.totalEpisodes)
+                            ? "Completed"
+                            : (savedAnime.status === "Plan to Watch" ? "Watching" : savedAnime.status);
+
+                          updateWatchlistItem(savedAnime.animeId, {
+                            progress: newProgress,
+                            status: newStatus,
+                            lastPosition: 0,
+                            lastPercent: 0,
+                            lastDuration: 0,
+                            lastWatchedAt: new Date().toISOString()
+                          });
+
+                          window.dispatchEvent(new CustomEvent("pal-toast", {
+                            detail: { 
+                              message: `Auto-tracked: Episode ${newProgress} marked complete! (${completedCount} ep${completedCount > 1 ? 's' : ''} watched)`,
+                              type: "success"
+                            }
+                          }));
                         } else {
-                          addToWatchlist(anime);
+                          const initialProgress = seasonCalculatedEp || completedCount || 1;
+                          addToWatchlist(anime, "Watching");
+                          setTimeout(() => {
+                            updateWatchlistItem(anime.id, { 
+                              progress: initialProgress, 
+                              lastPosition: 0,
+                              lastPercent: 0,
+                              lastWatchedAt: new Date().toISOString() 
+                            });
+                          }, 300);
+                          window.dispatchEvent(new CustomEvent("pal-toast", {
+                            detail: { 
+                              message: `Auto-tracked: Added to Watching and marked Ep ${initialProgress} complete!`,
+                              type: "success"
+                            }
+                          }));
                         }
+                      } else if (maxPercent >= 5 && lastTimePos > 15) {
+                        // Mid-episode stop: save exact timestamp for resuming next time!
+                        if (savedAnime) {
+                          updateWatchlistItem(savedAnime.animeId, {
+                            status: savedAnime.status === "Plan to Watch" ? "Watching" : savedAnime.status,
+                            lastPosition: lastTimePos,
+                            lastDuration: duration,
+                            lastPercent: Math.round(maxPercent),
+                            lastWatchedAt: new Date().toISOString()
+                          });
+                          const mins = Math.floor(lastTimePos / 60);
+                          const secs = Math.floor(lastTimePos % 60).toString().padStart(2, '0');
+                          window.dispatchEvent(new CustomEvent("pal-toast", {
+                            detail: { 
+                              message: `Saved position at ${mins}:${secs} (${Math.round(maxPercent)}%)`,
+                              type: "info"
+                            }
+                          }));
+                        }
+                      } else if (maxPercent > 0) {
+                        window.dispatchEvent(new CustomEvent("pal-toast", {
+                          detail: { 
+                            message: `Stopped at ${Math.round(maxPercent)}% (Need ≥70% to auto-advance).`,
+                            type: "info"
+                          }
+                        }));
                       }
                     }
                   } catch (err) {

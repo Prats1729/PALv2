@@ -83,7 +83,7 @@ export default function AnimeCard({ anime }) {
               className="quick-add-menu" 
               onMouseLeave={() => setIsAdding(false)}
             >
-              {["Watching", "Plan to Watch", "Completed", "Dropped"].map(status => (
+              {["Watching", "Plan to Watch", "Completed", "On Hold", "Dropped"].map(status => (
                 <button
                   key={status}
                   className="quick-add-option"
