@@ -1,8 +1,7 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
+import { apiFetch } from '../services/api';
 
 const AuthContext = createContext();
-
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
@@ -30,7 +29,7 @@ export function AuthProvider({ children }) {
       }
 
       // Verify token with backend to ensure user still exists in database
-      fetch(`${API_URL}/api/auth/me`, {
+      apiFetch('/api/auth/me', {
         headers: { Authorization: `Bearer ${token}` }
       })
         .then((res) => {
@@ -55,7 +54,7 @@ export function AuthProvider({ children }) {
   }, [token]);
 
   const login = async (identifier, password) => {
-    const response = await fetch(`${API_URL}/api/auth/login`, {
+    const response = await apiFetch('/api/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ identifier, username: identifier, password })
@@ -72,7 +71,7 @@ export function AuthProvider({ children }) {
   };
 
   const register = async (username, email, password) => {
-    const response = await fetch(`${API_URL}/api/auth/register`, {
+    const response = await apiFetch('/api/auth/register', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username, email, password })
@@ -89,7 +88,7 @@ export function AuthProvider({ children }) {
   };
 
   const loginWithAniList = async (anilistToken) => {
-    const response = await fetch(`${API_URL}/api/auth/anilist-login`, {
+    const response = await apiFetch('/api/auth/anilist-login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ anilistToken })
@@ -106,7 +105,7 @@ export function AuthProvider({ children }) {
   };
 
   const forgotPassword = async (email) => {
-    const response = await fetch(`${API_URL}/api/auth/forgot-password`, {
+    const response = await apiFetch('/api/auth/forgot-password', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email })
@@ -117,7 +116,7 @@ export function AuthProvider({ children }) {
   };
 
   const resetPassword = async (token, newPassword) => {
-    const response = await fetch(`${API_URL}/api/auth/reset-password`, {
+    const response = await apiFetch('/api/auth/reset-password', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ token, newPassword })
@@ -136,7 +135,7 @@ export function AuthProvider({ children }) {
   };
 
   const deleteAccount = async () => {
-    const response = await fetch(`${API_URL}/api/auth/account`, {
+    const response = await apiFetch('/api/auth/account', {
       method: 'DELETE',
       headers: { Authorization: `Bearer ${token}` }
     });

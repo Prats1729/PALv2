@@ -7,9 +7,11 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 // --- Middleware ---
-// CORS (Cross-Origin Resource Sharing) allows your React frontend 
-// to make requests to this backend without browser security errors.
-app.use(cors());
+// CORS allows React frontend and Tauri desktop clients to make requests
+app.use(cors({
+  origin: true,
+  credentials: true
+}));
 // express.json() allows your server to read JSON data sent in the request body.
 app.use(express.json());
 
@@ -197,6 +199,6 @@ app.post('/api/watchlist/import-anilist', authMiddleware, async (req, res) => {
 });
 
 // --- Start the Server ---
-app.listen(PORT, () => {
-  console.log(`🚀 Server is running on http://localhost:${PORT}`);
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`🚀 Server is running on http://127.0.0.1:${PORT}`);
 });

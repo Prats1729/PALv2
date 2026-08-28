@@ -1,10 +1,9 @@
 import React, { createContext, useState, useEffect, useContext, useCallback, useRef } from 'react';
 import { useAuth } from './AuthContext';
 import { syncToAniList, deleteFromAniList } from '../services/anilistSync';
+import { apiFetch } from '../services/api';
 
 const WatchlistContext = createContext();
-
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
 export function WatchlistProvider({ children }) {
   const { token, user, logout } = useAuth();
@@ -28,7 +27,7 @@ export function WatchlistProvider({ children }) {
 
     try {
       setLoading(true);
-      const response = await fetch(`${API_URL}/api/watchlist`, {
+      const response = await apiFetch('/api/watchlist', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (response.status === 401) {
@@ -49,7 +48,7 @@ export function WatchlistProvider({ children }) {
   // Fetch AniList token once on login (cached in ref to avoid re-renders)
   useEffect(() => {
     if (token && user?.hasAnilistToken && !user?.isGuest) {
-      fetch(`${API_URL}/api/auth/anilist-token`, {
+      apiFetch('/api/auth/anilist-token', {
         headers: { 'Authorization': `Bearer ${token}` }
       })
         .then(res => res.json())
@@ -57,7 +56,7 @@ export function WatchlistProvider({ children }) {
           anilistTokenRef.current = data.anilistToken; 
           // Silently trigger two-way sync in the background
           if (data.anilistToken) {
-            fetch(`${API_URL}/api/watchlist/import-anilist`, {
+            apiFetch('/api/watchlist/import-anilist', {
               method: 'POST',
               headers: { 'Authorization': `Bearer ${token}` }
             })
@@ -112,7 +111,7 @@ export function WatchlistProvider({ children }) {
     const rating = anime.averageScore ? (anime.averageScore / 10) : null;
 
     try {
-      const response = await fetch(`${API_URL}/api/watchlist`, {
+      const response = await apiFetch('/api/watchlist', {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -192,7 +191,7 @@ export function WatchlistProvider({ children }) {
     setWatchlist(prev => prev.map(item => isMatch(item, id) ? { ...item, ...updates, updatedAt: new Date().toISOString() } : item));
 
     try {
-      const response = await fetch(`${API_URL}/api/watchlist/${id}`, {
+      const response = await apiFetch(`/api/watchlist/${id}`, {
         method: 'PUT',
         headers: { 
           'Content-Type': 'application/json',
@@ -254,7 +253,7 @@ export function WatchlistProvider({ children }) {
     setWatchlist(prev => prev.filter(w => !isMatch(w, id)));
 
     try {
-      const response = await fetch(`${API_URL}/api/watchlist/${id}`, {
+      const response = await apiFetch(`/api/watchlist/${id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });
