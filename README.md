@@ -60,6 +60,7 @@
 - **Desktop Playback Integration**: Integrates with `ani-cli` and `mpv` through Windows Subsystem for Linux (WSL) for local playback.
 - **Automated Episode Tracking**: Reads playback progress from an embedded `mpv` Lua script to automatically increment episode counters when ≥70% of an episode is watched.
 - **Continue Watching Carousel**: Displays recently watched titles with saved timestamps, episode progress bars, and up-next episode indicators.
+- **Custom Themed Setup Installer**: NSIS Windows installer packaged with custom anime ensemble artwork, official PAL logo branding, and automatic desktop shortcuts.
 
 > **Note:** Playback functionality is available only in the desktop version. It requires a local WSL environment with `ani-cli` and `mpv` configured.
 
@@ -93,7 +94,7 @@ graph TD
 | **Frontend** | React 19, React Router v7, Vite, Vanilla CSS |
 | **Backend** | Node.js, Express.js, JWT, bcryptjs, crypto (AES-256-CBC) |
 | **Database** | MongoDB Atlas, Mongoose ODM |
-| **Desktop Shell** | Tauri v2, Rust |
+| **Desktop Shell** | Tauri v2, Rust, NSIS |
 | **External APIs** | AniList GraphQL API |
 | **Desktop Playback** | `ani-cli`, `mpv` video player |
 
@@ -109,6 +110,10 @@ PALv2/
 │   ├── utils/                # AniList GraphQL importer & AES crypto helpers
 │   └── server.js             # Backend server entry point
 ├── src-tauri/                # Tauri v2 Rust application configuration & IPC handlers
+│   ├── icons/                # Multi-resolution application icons (.ico, .icns, .png)
+│   ├── nsis/                 # Custom NSIS installer graphics (header & sidebar bitmaps)
+│   ├── src/                  # Rust backend logic & command handlers (lib.rs, main.rs)
+│   └── tauri.conf.json       # Desktop window, security, and packaging configuration
 ├── src/                      # Frontend React Application
 │   ├── assets/               # SVGs, icons, and branding assets
 │   ├── components/
@@ -187,9 +192,17 @@ PALv2/
    ```
 
 5. **Build for Production:**
+
+   *Web Client:*
    ```bash
    npm run build
    ```
+
+   *Desktop App & Windows Setup Installer:*
+   ```bash
+   npx tauri build
+   ```
+   The generated `.exe` installer will be located in `src-tauri/target/release/bundle/nsis/`.
 
 ---
 
