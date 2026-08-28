@@ -13,14 +13,7 @@ jobs:
   release:
     permissions:
       contents: write
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - platform: 'windows-latest'
-            args: ''
-
-    runs-on: ${{ matrix.platform }}
+    runs-on: windows-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -28,43 +21,19 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: 'npm'
 
       - name: Setup Rust toolchain
         uses: dtolnay/rust-toolchain@stable
 
       - name: Install frontend dependencies
-        run: npm ci
+        run: npm install
 
       - name: Auto-increment patch version for OTA
-        shell: bash
-        run: |
-          node -e '
-            const fs = require("fs");
-            const runNum = process.env.GITHUB_RUN_NUMBER || "1";
-
-            // 1. Update tauri.conf.json
-            const tauriConf = JSON.parse(fs.readFileSync("./src-tauri/tauri.conf.json", "utf8"));
-            const parts = (tauriConf.version || "2.0.0").split(".");
-            const major = parts[0] || "2";
-            const minor = parts[1] || "0";
-            const newVersion = `${major}.${minor}.${runNum}`;
-            tauriConf.version = newVersion;
-            fs.writeFileSync("./src-tauri/tauri.conf.json", JSON.stringify(tauriConf, null, 2));
-
-            // 2. Update package.json
-            const pkg = JSON.parse(fs.readFileSync("./package.json", "utf8"));
-            pkg.version = newVersion;
-            fs.writeFileSync("./package.json", JSON.stringify(pkg, null, 2));
-
-            // 3. Update Cargo.toml
-            let cargo = fs.readFileSync("./src-tauri/Cargo.toml", "utf8");
-            cargo = cargo.replace(/^version\s*=\s*".*"/m, `version = "${newVersion}"`);
-            fs.writeFileSync("./src-tauri/Cargo.toml", cargo);
-
-            console.log(`Successfully bumped release version to ${newVersion}`);
-          '
+        env:
+          GITHUB_RUN_NUMBER: ${{ github.run_number }}
+        run: node scripts/bump-version.js
 
       - name: Build Tauri App & Publish GitHub Release
         uses: tauri-apps/tauri-action@v0
@@ -78,4 +47,3 @@ jobs:
           releaseBody: 'Automated release for commit ${{ github.sha }}. Existing app installations will update over-the-air.'
           releaseDraft: false
           prerelease: false
-          args: ${{ matrix.args }}
