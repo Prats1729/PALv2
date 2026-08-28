@@ -209,10 +209,18 @@ export default function Settings() {
           <h3 className="settings-card-title">Account Settings</h3>
           <p className="settings-card-desc">Manage your PAL account details.</p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            <button className="settings-auth-btn" style={{ backgroundColor: 'rgba(255,255,255,0.05)', color: '#fff', border: '1px solid rgba(255,255,255,0.1)' }} onClick={() => alert("Change username coming soon!")}>
+            <button 
+              className="settings-auth-btn" 
+              style={{ backgroundColor: 'rgba(255,255,255,0.05)', color: '#fff', border: '1px solid rgba(255,255,255,0.1)' }} 
+              onClick={() => window.dispatchEvent(new CustomEvent("pal-toast", { detail: { message: "Change username feature coming soon!", type: "info" } }))}
+            >
               Change Username
             </button>
-            <button className="settings-auth-btn" style={{ backgroundColor: 'rgba(255,255,255,0.05)', color: '#fff', border: '1px solid rgba(255,255,255,0.1)' }} onClick={() => alert("Change password coming soon!")}>
+            <button 
+              className="settings-auth-btn" 
+              style={{ backgroundColor: 'rgba(255,255,255,0.05)', color: '#fff', border: '1px solid rgba(255,255,255,0.1)' }} 
+              onClick={() => window.dispatchEvent(new CustomEvent("pal-toast", { detail: { message: "Change password feature coming soon!", type: "info" } }))}
+            >
               Change Password
             </button>
           </div>

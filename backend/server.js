@@ -130,6 +130,11 @@ app.put('/api/watchlist/:id', authMiddleware, async (req, res) => {
       updatedAt: new Date()
     };
 
+    // Protect immutable identity keys
+    delete updatePayload._id;
+    delete updatePayload.userId;
+    delete updatePayload.animeId;
+
     if (req.body.progress !== undefined || req.body.status === "Watching" || req.body.lastWatchedAt) {
       updatePayload.lastWatchedAt = req.body.lastWatchedAt ? new Date(req.body.lastWatchedAt) : new Date();
     }

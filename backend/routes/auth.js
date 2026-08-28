@@ -5,6 +5,7 @@ const mongoose = require('mongoose');
 const crypto = require('crypto');
 const { encrypt, decrypt } = require('../utils/crypto');
 const { importAniListWatchlist } = require('../utils/anilistImporter');
+const authMiddleware = require('../middleware/auth');
 
 const router = express.Router();
 const User = mongoose.model('User');
@@ -12,13 +13,9 @@ const Watchlist = mongoose.model('Watchlist');
 const JWT_SECRET = process.env.JWT_SECRET;
 
 // 0. Verify Session / Current User
-router.get('/me', async (req, res) => {
+router.get('/me', authMiddleware, async (req, res) => {
   try {
-    const authHeader = req.header('Authorization');
-    if (!authHeader) return res.status(401).json({ error: 'No authorization token' });
-
-    const decoded = jwt.verify(authHeader.replace('Bearer ', ''), JWT_SECRET);
-    const user = await User.findById(decoded.id).select('-password');
+    const user = await User.findById(req.user.id).select('-password');
     if (!user) {
       return res.status(401).json({ error: 'User account no longer exists' });
     }
@@ -303,18 +300,13 @@ router.post('/reset-password', async (req, res) => {
 });
 
 // Link AniList Token (encrypt and save)
-router.post('/link-anilist', async (req, res) => {
+router.post('/link-anilist', authMiddleware, async (req, res) => {
   try {
-    const authHeader = req.header('Authorization');
-    if (!authHeader) return res.status(401).json({ error: 'No token' });
-
-    const decoded = jwt.verify(authHeader.replace('Bearer ', ''), process.env.JWT_SECRET);
-
     const { anilistToken } = req.body;
     if (!anilistToken) return res.status(400).json({ error: 'No AniList token provided' });
 
     const encryptedToken = encrypt(anilistToken);
-    await User.findByIdAndUpdate(decoded.id, { anilistToken: encryptedToken });
+    await User.findByIdAndUpdate(req.user.id, { anilistToken: encryptedToken });
 
     res.json({ message: 'AniList account linked successfully!', hasAnilistToken: true });
   } catch (err) {
@@ -324,14 +316,9 @@ router.post('/link-anilist', async (req, res) => {
 });
 
 // Get decrypted AniList token (for frontend sync calls)
-router.get('/anilist-token', async (req, res) => {
+router.get('/anilist-token', authMiddleware, async (req, res) => {
   try {
-    const authHeader = req.header('Authorization');
-    if (!authHeader) return res.status(401).json({ error: 'No token' });
-
-    const decoded = jwt.verify(authHeader.replace('Bearer ', ''), process.env.JWT_SECRET);
-
-    const user = await User.findById(decoded.id);
+    const user = await User.findById(req.user.id);
     if (!user || !user.anilistToken) {
       return res.json({ anilistToken: null });
     }
@@ -345,14 +332,9 @@ router.get('/anilist-token', async (req, res) => {
 });
 
 // Unlink AniList account
-router.delete('/unlink-anilist', async (req, res) => {
+router.delete('/unlink-anilist', authMiddleware, async (req, res) => {
   try {
-    const authHeader = req.header('Authorization');
-    if (!authHeader) return res.status(401).json({ error: 'No token' });
-
-    const decoded = jwt.verify(authHeader.replace('Bearer ', ''), process.env.JWT_SECRET);
-
-    await User.findByIdAndUpdate(decoded.id, { anilistToken: null });
+    await User.findByIdAndUpdate(req.user.id, { anilistToken: null });
     res.json({ message: 'AniList account unlinked', hasAnilistToken: false });
   } catch (err) {
     res.status(500).json({ error: 'Failed to unlink AniList' });
@@ -360,18 +342,13 @@ router.delete('/unlink-anilist', async (req, res) => {
 });
 
 // Delete User Account (Permanently deletes User and all related Watchlist data)
-router.delete('/account', async (req, res) => {
+router.delete('/account', authMiddleware, async (req, res) => {
   try {
-    const authHeader = req.header('Authorization');
-    if (!authHeader) return res.status(401).json({ error: 'No authorization token' });
-
-    const decoded = jwt.verify(authHeader.replace('Bearer ', ''), process.env.JWT_SECRET);
-
     // Delete user's watchlist records
-    await Watchlist.deleteMany({ userId: decoded.id });
+    await Watchlist.deleteMany({ userId: req.user.id });
 
     // Delete user document
-    await User.findByIdAndDelete(decoded.id);
+    await User.findByIdAndDelete(req.user.id);
 
     res.json({ message: 'Account and all associated data permanently deleted.' });
   } catch (err) {

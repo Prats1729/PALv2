@@ -43,7 +43,7 @@ export default function AnimeDetails() {
   }, []);
 
   // Check if the current anime on the page is already saved in our database!
-  const savedAnime = anime ? watchlist.find(item => item.animeId === anime.id) : null;
+  const savedAnime = anime ? watchlist.find(item => item.animeId === anime.id || String(item.animeId) === String(anime.id)) : null;
 
   const scrollCharacters = (direction) => {
     if (charactersListRef.current) {
