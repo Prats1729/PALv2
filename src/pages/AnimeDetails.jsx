@@ -3,6 +3,7 @@ import { useParams, Link } from "react-router-dom";
 import star from "../assets/star.png";
 import "../styles/AnimeDetails.css";
 import { useWatchlist } from "../context/WatchlistContext";
+import { getAnimeEpisodeMapping } from "../services/animeMapping";
 
 // Detect Tauri at module level (safe for both browser and desktop)
 const isTauri = '__TAURI_INTERNALS__' in window;
@@ -12,6 +13,7 @@ export default function AnimeDetails() {
   const { watchlist, addToWatchlist, updateWatchlistItem, removeFromWatchlist, touchWatchHistory } = useWatchlist();
 
   const [anime, setAnime] = useState(null);
+  const [animeMapping, setAnimeMapping] = useState(null);
   const [loading, setLoading] = useState(null);
   const [error, setError] = useState(null);
   const [isStatusMenuOpen, setIsStatusMenuOpen] = useState(false);
@@ -143,10 +145,13 @@ export default function AnimeDetails() {
           touchWatchHistory(mediaData.id);
         }
 
-        // Pre-calculate prequel episode offset in background for desktop companion
+        // Pre-calculate prequel episode offset and load AniZip mapping in background
         if (isTauri && mediaData) {
           calculatePrequelOffset(mediaData).then((offset) => {
             setDetectedPrequelOffset(offset);
+          });
+          getAnimeEpisodeMapping(mediaData.id).then((mapping) => {
+            if (mapping) setAnimeMapping(mapping);
           });
         }
       } catch (err) {
@@ -306,7 +311,10 @@ export default function AnimeDetails() {
                     const isCompleted = savedAnime.totalEpisodes && savedAnime.progress >= savedAnime.totalEpisodes;
                     setPlayEp(isCompleted ? 1 : (savedAnime.progress + 1));
                     setPlayTitle(anime.title.english || anime.title.romaji);
-                    setEpOffset(0);
+                    const mapping = animeMapping || await getAnimeEpisodeMapping(anime.id);
+                    if (mapping) setAnimeMapping(mapping);
+                    const defaultOffset = savedAnime.episodeOffset !== undefined ? savedAnime.episodeOffset : (mapping?.offset || 0);
+                    setEpOffset(defaultOffset);
                     setShowPlayModal(true);
                     if (anime) {
                       const offset = await calculatePrequelOffset(anime);
@@ -335,7 +343,9 @@ export default function AnimeDetails() {
                   onClick={async () => {
                     setPlayEp(1);
                     setPlayTitle(anime.title.english || anime.title.romaji);
-                    setEpOffset(0);
+                    const mapping = animeMapping || await getAnimeEpisodeMapping(anime.id);
+                    if (mapping) setAnimeMapping(mapping);
+                    setEpOffset(mapping?.offset || 0);
                     setShowPlayModal(true);
                     if (anime) {
                       const offset = await calculatePrequelOffset(anime);
@@ -490,14 +500,14 @@ export default function AnimeDetails() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <input type="checkbox" id="useAutoEp" checked={useAutoEp} onChange={(e) => setUseAutoEp(e.target.checked)} style={{ cursor: 'pointer', width: '16px', height: '16px' }} />
-                <label htmlFor="useAutoEp" style={{ color: '#aaa', fontSize: '0.85rem', cursor: 'pointer' }}>Directly launch specific episode</label>
+                <label htmlFor="useAutoEp" style={{ color: '#aaa', fontSize: '0.85rem', cursor: 'pointer' }}>Directly launch target episode</label>
               </div>
 
               {useAutoEp && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                  <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', gap: '10px' }}>
                     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                      <label style={{ color: '#aaa', fontSize: '0.8rem' }}>Episode Number</label>
+                      <label style={{ color: '#aaa', fontSize: '0.8rem' }}>Season Ep</label>
                       <input 
                         type="number" 
                         value={playEp} 
@@ -506,49 +516,75 @@ export default function AnimeDetails() {
                         style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid #333', backgroundColor: '#0f0f1a', color: 'white', fontSize: '1rem', fontWeight: 'bold' }} 
                       />
                     </div>
-                    {epOffset > 0 && (
-                      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                        <label style={{ color: '#aaa', fontSize: '0.8rem' }}>Manual Offset</label>
-                        <input 
-                          type="number" 
-                          value={epOffset} 
-                          onChange={(e) => setEpOffset(parseInt(e.target.value) || 0)} 
-                          min="0" 
-                          style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid #333', backgroundColor: '#0f0f1a', color: 'white' }} 
-                        />
-                      </div>
-                    )}
+                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <label style={{ color: '#aaa', fontSize: '0.8rem' }}>Offset (e.g. +40)</label>
+                      <input 
+                        type="number" 
+                        value={epOffset} 
+                        onChange={(e) => setEpOffset(parseInt(e.target.value) || 0)} 
+                        min="0" 
+                        placeholder="0"
+                        style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid #333', backgroundColor: '#0f0f1a', color: 'white' }} 
+                      />
+                    </div>
                   </div>
 
-                  {/* Optional prequel offset pill */}
-                  {detectedPrequelOffset > 0 && (
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'rgba(99, 102, 241, 0.08)', border: '1px solid rgba(99, 102, 241, 0.25)', borderRadius: '6px', padding: '6px 10px', fontSize: '0.78rem' }}>
-                      <span style={{ color: '#cbd5e1' }}>
-                        Prequels: <strong>+{detectedPrequelOffset} eps</strong>
-                      </span>
+                  {/* Suggested offset pills */}
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', alignItems: 'center' }}>
+                    <span style={{ color: '#888', fontSize: '0.75rem' }}>Presets:</span>
+                    <button
+                      type="button"
+                      style={{
+                        backgroundColor: epOffset === 0 ? '#6366f1' : 'rgba(255, 255, 255, 0.08)',
+                        border: 'none',
+                        color: '#fff',
+                        padding: '2px 8px',
+                        borderRadius: '4px',
+                        cursor: 'pointer',
+                        fontSize: '0.75rem',
+                      }}
+                      onClick={() => setEpOffset(0)}
+                    >
+                      +0 (Stand-alone)
+                    </button>
+                    {detectedPrequelOffset > 0 && (
                       <button
                         type="button"
                         style={{
-                          backgroundColor: epOffset > 0 ? '#ef4444' : 'rgba(99, 102, 241, 0.3)',
+                          backgroundColor: epOffset === detectedPrequelOffset ? '#6366f1' : 'rgba(255, 255, 255, 0.08)',
                           border: 'none',
                           color: '#fff',
-                          padding: '3px 8px',
+                          padding: '2px 8px',
                           borderRadius: '4px',
                           cursor: 'pointer',
                           fontSize: '0.75rem',
-                          fontWeight: '600',
                         }}
-                        onClick={() => {
-                          setEpOffset(epOffset > 0 ? 0 : detectedPrequelOffset);
-                        }}
+                        onClick={() => setEpOffset(detectedPrequelOffset)}
                       >
-                        {epOffset > 0 ? '✕ Remove Offset' : '+ Apply Franchise Offset'}
+                        +{detectedPrequelOffset} (Franchise Prequels)
                       </button>
-                    </div>
-                  )}
+                    )}
+                    {detectedPrequelOffset !== 40 && playTitle.toLowerCase().includes('bleach') && (
+                      <button
+                        type="button"
+                        style={{
+                          backgroundColor: epOffset === 40 ? '#6366f1' : 'rgba(255, 255, 255, 0.08)',
+                          border: 'none',
+                          color: '#fff',
+                          padding: '2px 8px',
+                          borderRadius: '4px',
+                          cursor: 'pointer',
+                          fontSize: '0.75rem',
+                        }}
+                        onClick={() => setEpOffset(40)}
+                      >
+                        +40 (TYBW Cours 1-3)
+                      </button>
+                    )}
+                  </div>
 
                   <div style={{ padding: '8px 12px', backgroundColor: '#131325', borderRadius: '6px', border: '1px solid #282845', fontSize: '0.82rem', color: '#68d391' }}>
-                    Target: <strong>Episode {playEp + (parseInt(epOffset) || 0)}</strong> {epOffset > 0 ? `(${playEp} + ${epOffset} offset)` : ''}
+                    Target: <strong>Episode {playEp + (parseInt(epOffset) || 0)}</strong> {epOffset > 0 ? `(${playEp} season ep + ${epOffset} offset)` : ''}
                   </div>
                 </div>
               )}
@@ -605,10 +641,16 @@ export default function AnimeDetails() {
                     setIsLaunching(true);
                     setShowPlayModal(false);
                     
-                    const targetEp = useAutoEp ? (playEp + (parseInt(epOffset) || 0)) : null;
+                    const currentOffset = parseInt(epOffset) || 0;
+                    const targetEp = useAutoEp ? (playEp + currentOffset) : null;
                     const resumeTime = (savedAnime && savedAnime.lastPosition > 15 && (playEp === (savedAnime.progress + 1) || playEp === savedAnime.progress))
                       ? savedAnime.lastPosition
                       : null;
+
+                    // Persist chosen offset for this anime so user never has to re-enter it
+                    if (savedAnime && currentOffset !== savedAnime.episodeOffset) {
+                      updateWatchlistItem(savedAnime.animeId, { episodeOffset: currentOffset });
+                    }
 
                     // Dynamic import so @tauri-apps/api doesn't crash on web
                     const { invoke } = await import('@tauri-apps/api/core');
@@ -636,8 +678,16 @@ export default function AnimeDetails() {
                       const duration = trackingData.duration || 0;
                       
                       if (completedCount > 0 || detectedEp) {
-                        // If ani-cli passed continuous absolute ep number, subtract prequel offset to get current season episode
-                        const seasonCalculatedEp = detectedEp ? Math.max(1, detectedEp - (parseInt(epOffset) || 0)) : null;
+                        let effectiveOffset = currentOffset;
+                        // Smart auto-detection if interactive mode or no offset provided but detected episode is outside current season:
+                        if (effectiveOffset === 0 && savedAnime && savedAnime.totalEpisodes && detectedEp && detectedEp > savedAnime.totalEpisodes) {
+                          effectiveOffset = detectedEp - (savedAnime.progress + 1);
+                          setEpOffset(effectiveOffset);
+                          updateWatchlistItem(savedAnime.animeId, { episodeOffset: effectiveOffset });
+                        }
+
+                        // Subtract effective offset to accurately map back to current season episode
+                        const seasonCalculatedEp = detectedEp ? Math.max(1, detectedEp - effectiveOffset) : null;
 
                         if (savedAnime) {
                           const newProgress = Math.min(
@@ -651,6 +701,7 @@ export default function AnimeDetails() {
                           updateWatchlistItem(savedAnime.animeId, {
                             progress: newProgress,
                             status: newStatus,
+                            episodeOffset: effectiveOffset,
                             lastPosition: 0,
                             lastPercent: 0,
                             lastDuration: 0,

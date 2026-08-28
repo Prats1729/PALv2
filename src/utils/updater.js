@@ -10,6 +10,18 @@ export const isTauri = () => {
  * @param {boolean} notifyIfLatest - whether to alert the user if they're already on the latest version
  */
 export async function checkForAppUpdates(notifyIfLatest = false) {
+  // In development mode, skip auto-update so it doesn't interrupt local coding
+  if (import.meta.env.DEV) {
+    if (notifyIfLatest) {
+      window.dispatchEvent(
+        new CustomEvent("pal-toast", {
+          detail: { message: "Running in local Dev mode. Updates apply to installed builds.", type: "info" },
+        })
+      );
+    }
+    return null;
+  }
+
   if (!isTauri()) {
     if (notifyIfLatest) {
       window.dispatchEvent(
