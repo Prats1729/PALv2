@@ -13,9 +13,10 @@
 
 ## Live Demo
 
-🌐 **Web App:** [Open PAL](WEB_APP_URL)
+🌐 **Web App:** [Open PAL](https://pal-v2-cyan.vercel.app)
 
-💻 **Desktop App:** Native Tauri companion with optional local playback integration.
+💻 **Desktop App:** [Download for Windows (v2.0.0)](https://github.com/Prats1729/PALv2/releases/latest)
+
 
 ---
 
@@ -25,15 +26,15 @@
 
 | Section | Preview |
 | :--- | :--- |
-| **Home Dashboard** | ![Desktop Home](images/desktop-home.png) |
-| **Library Management** | ![Desktop Library](images/desktop-library.png) |
-| **Anime Details & Episode Tracker** | ![Desktop Anime Details](images/desktop-details.png) |
+| **Home Dashboard** | ![Home Dashboard](images/desktop-home.png) |
+| **Library Management** | ![Library View](images/desktop-library.png) |
+| **Anime Details & Episode Tracker** | ![Anime Details](images/desktop-details.png) |
 
 ### Mobile Experience
 
 | Section | Preview |
 | :--- | :--- |
-| **Mobile Web Experience** | ![Mobile Home](images/mobile-home.png) |
+| **Mobile Web Experience** | ![Mobile Homepage](images/mobile-home.png) |
 
 ---
 
