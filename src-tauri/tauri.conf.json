@@ -2,7 +2,7 @@
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "PALv2",
   "version": "2.0.0",
-  "identifier": "com.palv2.desktop",
+  "identifier": "com.palv2.app",
   "build": {
     "frontendDist": "../dist",
     "devUrl": "http://localhost:5173",
@@ -22,7 +22,7 @@
       }
     ],
     "security": {
-      "csp": null
+      "csp": "default-src 'self' ipc: http://ipc.localhost tauri: https://tauri.localhost; connect-src 'self' ipc: http://ipc.localhost tauri: https://tauri.localhost https://palv2.onrender.com https://graphql.anilist.co https://anilist.co; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https: http:; media-src 'self' blob: https: http:"
     }
   },
   "bundle": {
