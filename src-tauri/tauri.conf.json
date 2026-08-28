@@ -35,6 +35,13 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ],
+    "windows": {
+      "nsis": {
+        "headerImage": "nsis/header.bmp",
+        "sidebarImage": "nsis/sidebar.bmp",
+        "installerIcon": "icons/icon.ico"
+      }
+    },
     "android": {
       "debugApplicationIdSuffix": ".debug"
     }
