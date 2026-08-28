@@ -35,11 +35,17 @@ jobs:
           GITHUB_RUN_NUMBER: ${{ github.run_number }}
         run: node scripts/bump-version.js
 
+      - name: Prepare signing key file
+        shell: bash
+        run: |
+          KEY_STR="${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}"
+          printf '%s' "$KEY_STR" | tr -d '\r\n' > ./src-tauri/palv2.key
+
       - name: Build Tauri App & Publish GitHub Release
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PATH: ./src-tauri/palv2.key
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
           tagName: v__VERSION__
