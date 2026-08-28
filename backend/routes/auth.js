@@ -43,7 +43,7 @@ router.post('/register', async (req, res) => {
     }
 
     // Validate email format if provided
-    const cleanEmail = email ? email.trim().toLowerCase() : null;
+    const cleanEmail = email && email.trim().length > 0 ? email.trim().toLowerCase() : undefined;
     if (cleanEmail) {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(cleanEmail)) {
@@ -64,11 +64,15 @@ router.post('/register', async (req, res) => {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    const newUser = new User({
+    const userData = {
       username: username.trim(),
-      email: cleanEmail,
       password: hashedPassword
-    });
+    };
+    if (cleanEmail) {
+      userData.email = cleanEmail;
+    }
+
+    const newUser = new User(userData);
 
     await newUser.save();
 
@@ -85,6 +89,15 @@ router.post('/register', async (req, res) => {
     });
   } catch (err) {
     console.error("Registration error:", err);
+    if (err.code === 11000) {
+      if (err.keyPattern?.email || (err.message && err.message.includes('email'))) {
+        return res.status(400).json({ error: "An account with this email already exists" });
+      }
+      if (err.keyPattern?.username || (err.message && err.message.includes('username'))) {
+        return res.status(400).json({ error: "Username is already taken" });
+      }
+      return res.status(400).json({ error: "An account with these details already exists" });
+    }
     res.status(500).json({ error: "Server error during registration" });
   }
 });

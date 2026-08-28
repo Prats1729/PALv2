@@ -30,7 +30,7 @@ const userSchema = new mongoose.Schema({
   username: { type: String, required: true, unique: true, trim: true },
   email: { type: String, unique: true, sparse: true, lowercase: true, trim: true },
   password: { type: String, required: false }, // Optional if authenticated solely via AniList OAuth
-  anilistId: { type: Number, default: null, unique: true, sparse: true },
+  anilistId: { type: Number, unique: true, sparse: true },
   anilistToken: { type: String, default: null }, // Encrypted token
   resetPasswordToken: { type: String, default: null },
   resetPasswordExpires: { type: Date, default: null },
