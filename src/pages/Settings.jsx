@@ -226,6 +226,34 @@ export default function Settings() {
           </div>
         </div>
 
+        <div className="settings-card">
+          <h3 className="settings-card-title">Application & Updates</h3>
+          <p className="settings-card-desc">
+            Keep PALv2 updated with the latest features, bug fixes, and improvements.
+          </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.9rem', color: '#94a3b8' }}>
+              <span>Current Version:</span>
+              <span style={{ color: '#fff', fontWeight: '600', backgroundColor: 'rgba(255,255,255,0.06)', padding: '3px 10px', borderRadius: '6px' }}>v2.0.0</span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.9rem', color: '#94a3b8' }}>
+              <span>Update Channel:</span>
+              <span style={{ color: '#a5b4fc', fontSize: '0.85rem' }}>GitHub Releases</span>
+            </div>
+            <button
+              className="settings-auth-btn"
+              style={{ backgroundColor: '#6366f1', color: '#fff', marginTop: '4px' }}
+              onClick={() => {
+                window.dispatchEvent(
+                  new CustomEvent("pal-check-update", { detail: { interactive: true } })
+                );
+              }}
+            >
+              Check for Updates
+            </button>
+          </div>
+        </div>
+
         <div className="settings-card" style={{ borderColor: 'rgba(239, 68, 68, 0.2)' }}>
           <h3 className="settings-card-title" style={{ color: '#f87171' }}>Danger Zone</h3>
           <p className="settings-card-desc">Irreversible account actions.</p>
