@@ -23,6 +23,7 @@ export default function AnimeDetails() {
   const [playTitle, setPlayTitle] = useState("");
   const [playEp, setPlayEp] = useState(1);
   const [epOffset, setEpOffset] = useState(0);
+  const [detectedPrequelOffset, setDetectedPrequelOffset] = useState(0);
   const [useAutoEp, setUseAutoEp] = useState(true);
   const [playDub, setPlayDub] = useState(false);
   const [playQuality, setPlayQuality] = useState("best");
@@ -145,7 +146,7 @@ export default function AnimeDetails() {
         // Pre-calculate prequel episode offset in background for desktop companion
         if (isTauri && mediaData) {
           calculatePrequelOffset(mediaData).then((offset) => {
-            setEpOffset(offset);
+            setDetectedPrequelOffset(offset);
           });
         }
       } catch (err) {
@@ -305,10 +306,11 @@ export default function AnimeDetails() {
                     const isCompleted = savedAnime.totalEpisodes && savedAnime.progress >= savedAnime.totalEpisodes;
                     setPlayEp(isCompleted ? 1 : (savedAnime.progress + 1));
                     setPlayTitle(anime.title.english || anime.title.romaji);
+                    setEpOffset(0);
                     setShowPlayModal(true);
                     if (anime) {
                       const offset = await calculatePrequelOffset(anime);
-                      setEpOffset(offset);
+                      setDetectedPrequelOffset(offset);
                     }
                   }}
                 >
@@ -333,10 +335,11 @@ export default function AnimeDetails() {
                   onClick={async () => {
                     setPlayEp(1);
                     setPlayTitle(anime.title.english || anime.title.romaji);
+                    setEpOffset(0);
                     setShowPlayModal(true);
                     if (anime) {
                       const offset = await calculatePrequelOffset(anime);
-                      setEpOffset(offset);
+                      setDetectedPrequelOffset(offset);
                     }
                   }}
                 >
@@ -487,42 +490,71 @@ export default function AnimeDetails() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <input type="checkbox" id="useAutoEp" checked={useAutoEp} onChange={(e) => setUseAutoEp(e.target.checked)} style={{ cursor: 'pointer', width: '16px', height: '16px' }} />
-                <label htmlFor="useAutoEp" style={{ color: '#aaa', fontSize: '0.85rem', cursor: 'pointer' }}>Auto-calculate episode number</label>
+                <label htmlFor="useAutoEp" style={{ color: '#aaa', fontSize: '0.85rem', cursor: 'pointer' }}>Directly launch specific episode</label>
               </div>
 
               {useAutoEp && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  <div style={{ display: 'flex', gap: '10px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
                     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                      <label style={{ color: '#aaa', fontSize: '0.8rem' }}>Current Season Ep</label>
+                      <label style={{ color: '#aaa', fontSize: '0.8rem' }}>Episode Number</label>
                       <input 
                         type="number" 
                         value={playEp} 
                         onChange={(e) => setPlayEp(parseInt(e.target.value) || 1)} 
                         min="1" 
-                        style={{ padding: '8px', borderRadius: '6px', border: '1px solid #333', backgroundColor: '#0f0f1a', color: 'white' }} 
+                        style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid #333', backgroundColor: '#0f0f1a', color: 'white', fontSize: '1rem', fontWeight: 'bold' }} 
                       />
                     </div>
-                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                      <label style={{ color: '#aaa', fontSize: '0.8rem' }}>Prev Seasons Offset</label>
-                      <input 
-                        type="number" 
-                        value={epOffset} 
-                        onChange={(e) => setEpOffset(parseInt(e.target.value) || 0)} 
-                        min="0" 
-                        placeholder="0"
-                        style={{ padding: '8px', borderRadius: '6px', border: '1px solid #333', backgroundColor: '#0f0f1a', color: 'white' }} 
-                      />
-                    </div>
+                    {epOffset > 0 && (
+                      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <label style={{ color: '#aaa', fontSize: '0.8rem' }}>Manual Offset</label>
+                        <input 
+                          type="number" 
+                          value={epOffset} 
+                          onChange={(e) => setEpOffset(parseInt(e.target.value) || 0)} 
+                          min="0" 
+                          style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid #333', backgroundColor: '#0f0f1a', color: 'white' }} 
+                        />
+                      </div>
+                    )}
                   </div>
+
+                  {/* Optional prequel offset pill */}
+                  {detectedPrequelOffset > 0 && (
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'rgba(99, 102, 241, 0.08)', border: '1px solid rgba(99, 102, 241, 0.25)', borderRadius: '6px', padding: '6px 10px', fontSize: '0.78rem' }}>
+                      <span style={{ color: '#cbd5e1' }}>
+                        Prequels: <strong>+{detectedPrequelOffset} eps</strong>
+                      </span>
+                      <button
+                        type="button"
+                        style={{
+                          backgroundColor: epOffset > 0 ? '#ef4444' : 'rgba(99, 102, 241, 0.3)',
+                          border: 'none',
+                          color: '#fff',
+                          padding: '3px 8px',
+                          borderRadius: '4px',
+                          cursor: 'pointer',
+                          fontSize: '0.75rem',
+                          fontWeight: '600',
+                        }}
+                        onClick={() => {
+                          setEpOffset(epOffset > 0 ? 0 : detectedPrequelOffset);
+                        }}
+                      >
+                        {epOffset > 0 ? '✕ Remove Offset' : '+ Apply Franchise Offset'}
+                      </button>
+                    </div>
+                  )}
+
                   <div style={{ padding: '8px 12px', backgroundColor: '#131325', borderRadius: '6px', border: '1px solid #282845', fontSize: '0.82rem', color: '#68d391' }}>
-                    Target: <strong>Episode {playEp + (parseInt(epOffset) || 0)}</strong> {epOffset > 0 ? `(${playEp} + ${epOffset} previous)` : ''}
+                    Target: <strong>Episode {playEp + (parseInt(epOffset) || 0)}</strong> {epOffset > 0 ? `(${playEp} + ${epOffset} offset)` : ''}
                   </div>
                 </div>
               )}
 
               {!useAutoEp && (
-                <span style={{ color: '#666', fontSize: '0.8rem', fontStyle: 'italic' }}>You'll pick the episode in the terminal</span>
+                <span style={{ color: '#888', fontSize: '0.8rem', fontStyle: 'italic' }}>Interactive mode: You will select the episode in the terminal</span>
               )}
             </div>
 
