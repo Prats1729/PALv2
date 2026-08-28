@@ -7,7 +7,15 @@
 [![MongoDB](https://img.shields.io/badge/MongoDB-Atlas-47a248.svg)](https://www.mongodb.com/)
 [![Tauri](https://img.shields.io/badge/Tauri-v2-24c8db.svg)](https://tauri.app/)
 
-**PAL (Personal Anime Library)** is a modern, full-stack anime tracking and discovery application designed for anime enthusiasts. It provides a persistent, cloud-synced watchlist independent of external piracy platforms, paired with AniList OAuth synchronization, an Animex-inspired mobile-first web interface, and a native desktop companion powered by Tauri.
+**PAL (Personal Anime Library)** is a full-stack anime tracking and discovery application built for anime fans. It provides a persistent, cloud-synced watchlist independent of third-party streaming sites, AniList OAuth integration for library import and synchronization, an Animex-inspired mobile-first web interface, and a desktop companion app built with Tauri.
+
+---
+
+## Live Demo
+
+🌐 **Web App:** [Open PAL](WEB_APP_URL)
+
+💻 **Desktop App:** Native Tauri companion with optional local playback integration.
 
 ---
 
@@ -31,58 +39,63 @@
 
 ## Key Features
 
-### 🎬 Discovery & Catalog
-- **Cinematic Hero Spotlight**: Auto-rotating hero slider showcasing current trending titles with metadata badges, status tags, and instant actions.
-- **Deep Filter System**: Multi-parameter search across Genres, Tags, Formats (TV, Movie, OVA, ONA, Special), Seasons, Release Years, and Sorting algorithms.
-- **URL Parameter State Sync**: URL search parameters (`useSearchParams`) maintain exact catalog filter state for easy link sharing and refreshing.
-- **Debounced Instant Search**: Floating search palette featuring real-time autocomplete results and keyboard navigation.
+### Discovery & Catalog
+- **Trending Carousel**: Rotating hero banner displaying currently trending titles with score badges, season tags, and quick-action buttons.
+- **Multi-Parameter Filters**: Filter by Genres, Tags, Formats (TV, Movie, OVA, ONA, Special), Seasons, Release Years, and Sort order.
+- **URL Search Parameter State**: Catalog filters synchronize with URL query parameters (`useSearchParams`) for shareable links and state persistence on page reloads.
+- **Debounced Instant Search**: Floating search input with debounced querying (400ms) and keyboard arrow navigation.
 
-### 📚 Personal Library & Cloud Watchlist
-- **Persistent Cloud Watchlist**: MongoDB Atlas storage linked to individual user accounts, replacing browser-only storage.
-- **AniList Two-Way Synchronization**: Secure OAuth 2.0 integration allowing one-click import and synchronized progress tracking across both PAL and AniList.
-- **Watch Status Tracking**: Segment titles by *Watching*, *Completed*, *On Hold*, *Plan to Watch*, and *Dropped*.
-- **Progress Tracking**: Granular episode counters with auto-completion triggers.
+### Library & Cloud Watchlist
+- **Persistent MongoDB Storage**: Watchlist records are stored in MongoDB Atlas and associated with user accounts.
+- **AniList OAuth & Library Import**: Users can connect their AniList account via OAuth, import their existing library, and synchronize status/progress mutations back to AniList.
+- **Watch Status Categories**: Track shows under *Watching*, *Completed*, *On Hold*, *Plan to Watch*, and *Dropped*.
+- **Episode Progress Controls**: Manual episode increment/decrement with automatic status updates upon completion.
 
-### 📱 Mobile-First Responsive Web App
-- **Animex-Inspired Mobile UI**: Full-bleed hero banners, horizontal momentum touch carousels with card peeking, and compact 3-column poster browsing grids.
-- **Floating Glass Bottom Navigation**: Translucent pill navigation bar (`Home`, `Discover`, `Library`, `Settings`) with iOS/Android safe-area inset support.
-- **Collapsible Mobile Filters**: Drawer filter accordion on catalog pages to keep cards front-and-center on smaller viewports.
+### Mobile-First Responsive Web Interface
+- **Mobile-First Layout**: Full-bleed hero banners, horizontal momentum carousels with card peeking, and 3-column poster browsing grids.
+- **Floating Bottom Navigation Bar**: Translucent glass bottom bar (`Home`, `Discover`, `Library`, `Settings`) formatted for mobile viewports.
+- **Collapsible Filter Controls**: Mobile drawer for filter options to maintain screen real estate on smaller screens.
 
-### 🖥️ Native Desktop Companion (Tauri)
-- **Zero-Ad Native Streaming**: Direct integration with `ani-cli` and `mpv` player via Windows Subsystem for Linux (WSL).
-- **Automated Progress Sync**: Real-time process monitoring that detects watched episodes in `mpv` and automatically increments cloud watchlist progress.
-- **Continue Watching Hub**: Dedicated resume hub displaying recent timestamps, progress percentages, and up-next episode indicators.
+### Desktop Companion (Tauri)
+- **Desktop Playback Integration**: Integrates with `ani-cli` and `mpv` through Windows Subsystem for Linux (WSL) for local playback.
+- **Automated Episode Tracking**: Reads playback progress from an embedded `mpv` Lua script to automatically increment episode counters when ≥70% of an episode is watched.
+- **Continue Watching Carousel**: Displays recently watched titles with saved timestamps, episode progress bars, and up-next episode indicators.
 
-### 🔒 Authentication & Security
-- **JWT Session Management**: Encrypted token-based authentication with automatic session validation on application startup.
-- **Two-Level Account Lifecycle**: Account deletion safety modal with typed username confirmation and cascading data cleanup.
-- **Encrypted Token Vault**: AES encryption for connected third-party OAuth access tokens.
-- **Guest Exploration Mode**: Instant read-only browsing access for prospective users without immediate registration.
+> **Note:** Playback functionality is available only in the desktop version. It requires a local WSL environment with `ani-cli` and `mpv` configured.
+
+### Authentication & Security
+- **JWT Session Management**: Token-based authentication with session validation on startup.
+- **OAuth Token Encryption**: Connected AniList access tokens are encrypted at rest using AES-256-CBC before database storage.
+- **Account Deletion Flow**: Confirmation modal with username verification to delete user accounts and associated watchlist entries.
+- **Guest Browsing Mode**: Read-only browsing access for users exploring the catalog without an account.
 
 ---
 
-## Architecture & Tech Stack
+## System Architecture
 
 ```mermaid
 graph TD
-    ClientWeb[Web Browser / Mobile Client] -->|HTTP / REST API| Server[Node.js / Express API Server]
-    ClientTauri[Tauri Desktop App] -->|Local IPC / CLI Process| WSL[ani-cli / mpv Media Player]
-    ClientTauri -->|REST API| Server
+    ClientWeb[React Web App] -->|HTTP / REST API| Server[Node.js / Express Server]
+    ClientTauri[Tauri Desktop App] -->|HTTP / REST API| Server
+    ClientTauri -->|Local Process / IPC| WSL[WSL Environment]
+    WSL -->|CLI Subprocess| AniCli[ani-cli]
+    AniCli -->|Video Player| MPV[mpv Player]
     Server -->|Mongoose ODM| DB[(MongoDB Atlas Cloud)]
-    Server -->|OAuth 2.0 / GraphQL| AniListAPI[AniList GraphQL API]
-    ClientWeb -->|GraphQL Queries| AniListAPI
+    Server -->|OAuth Profile & Token Sync| AniListAPI[AniList GraphQL API]
+    ClientWeb -->|Direct GraphQL Queries| AniListAPI
+    ClientTauri -->|Direct GraphQL Queries| AniListAPI
 ```
 
 ### Core Technologies
 
 | Layer | Technologies |
 | :--- | :--- |
-| **Frontend** | React 19, React Router v7, Vite, Vanilla CSS Design System |
-| **Backend** | Node.js, Express.js, JWT, bcryptjs, crypto (AES) |
+| **Frontend** | React 19, React Router v7, Vite, Vanilla CSS |
+| **Backend** | Node.js, Express.js, JWT, bcryptjs, crypto (AES-256-CBC) |
 | **Database** | MongoDB Atlas, Mongoose ODM |
 | **Desktop Shell** | Tauri v2, Rust |
 | **External APIs** | AniList GraphQL API |
-| **Player Pipeline** | `ani-cli`, `mpv` video player |
+| **Desktop Playback** | `ani-cli`, `mpv` video player |
 
 ---
 
@@ -91,26 +104,24 @@ graph TD
 ```text
 PALv2/
 ├── backend/                  # Express REST API & Database Models
-│   ├── config/               # Database connection configuration
 │   ├── middleware/           # JWT authentication middleware
-│   ├── models/               # Mongoose schemas (User, Watchlist)
-│   ├── routes/               # API endpoints (Auth, Watchlist)
-│   ├── utils/                # AniList GraphQL importer & crypto helpers
+│   ├── routes/               # Auth and Watchlist API routes
+│   ├── utils/                # AniList GraphQL importer & AES crypto helpers
 │   └── server.js             # Backend server entry point
-├── src-tauri/                # Tauri v2 Rust desktop application configuration
-├── src/                      # Frontend Single Page Application (React)
+├── src-tauri/                # Tauri v2 Rust application configuration & IPC handlers
+├── src/                      # Frontend React Application
 │   ├── assets/               # SVGs, icons, and branding assets
 │   ├── components/
 │   │   ├── common/           # Reusable cards, pagination, buttons
-│   │   └── layout/           # TopBar, BottomNavBar, companion modals
+│   │   └── layout/           # TopBar, BottomNavBar, modals
 │   ├── context/              # AuthContext, WatchlistContext
 │   ├── pages/                # Home, Discover, Library, AnimeDetails, Settings, Auth
-│   ├── services/             # AniList GraphQL service integration
-│   ├── styles/               # Component-level stylesheets
-│   ├── App.jsx               # Route coordinator and global providers
-│   ├── App.css               # Design tokens, theme variables, mobile media queries
-│   └── main.jsx              # React DOM mounting entry point
-├── package.json              # Workspace manifest & scripts
+│   ├── services/             # AniList GraphQL queries & sync mutations
+│   ├── styles/               # Component stylesheets
+│   ├── App.jsx               # Router configuration & providers
+│   ├── App.css               # Design tokens, themes, mobile media queries
+│   └── main.jsx              # React DOM entry point
+├── package.json              # Workspace dependencies & build scripts
 └── README.md                 # Project documentation
 ```
 
@@ -121,8 +132,8 @@ PALv2/
 ### Prerequisites
 
 - **Node.js**: v18.0.0 or higher
-- **MongoDB**: MongoDB Atlas connection URI or local instance
-- **Rust & Cargo** *(Optional, for building desktop app)*: [Install Rust](https://www.rust-lang.org/tools/install)
+- **MongoDB**: MongoDB Atlas cluster or local instance
+- **Rust & Cargo** *(Optional, for building the desktop app)*: [Install Rust](https://www.rust-lang.org/tools/install)
 - **WSL & ani-cli** *(Optional, for desktop playback)*: [ani-cli](https://github.com/pystardust/ani-cli)
 
 ---
@@ -137,20 +148,18 @@ PALv2/
 
 2. **Configure Environment Variables:**
 
-   Create `.env` in the root directory:
+   Create `.env` in the project root:
    ```env
    VITE_API_URL=http://localhost:5000
-   VITE_ANILIST_CLIENT_ID=your_anilist_oauth_client_id
+   VITE_ANILIST_CLIENT_ID=your_anilist_client_id
    ```
 
    Create `backend/.env`:
    ```env
    PORT=5000
-   MONGO_URI=your_mongodb_connection_string
+   MONGODB_URI=your_mongodb_connection_uri
    JWT_SECRET=your_jwt_secret_key
-   ENCRYPTION_KEY=your_32_character_aes_encryption_key
-   ANILIST_CLIENT_ID=your_anilist_client_id
-   ANILIST_CLIENT_SECRET=your_anilist_client_secret
+   ENCRYPTION_KEY=your_64_character_hex_aes_encryption_key
    ```
 
 3. **Install dependencies:**
@@ -159,7 +168,7 @@ PALv2/
    cd backend && npm install && cd ..
    ```
 
-4. **Start the Development Servers:**
+4. **Start Development Servers:**
 
    *Terminal 1 (Backend API):*
    ```bash
@@ -193,5 +202,5 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 ## Acknowledgements
 
 - [AniList API](https://anilist.gitbook.io/anilist-apiv2-docs) for providing anime metadata and GraphQL endpoints.
-- [ani-cli](https://github.com/pystardust/ani-cli) for CLI video streaming capabilities.
+- [ani-cli](https://github.com/pystardust/ani-cli) for CLI video playback tooling.
 - [Tauri](https://tauri.app) for the lightweight desktop application runtime.
