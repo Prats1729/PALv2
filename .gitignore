@@ -27,3 +27,9 @@ AGENTS.md
 PROJECT_CONTEXT.md
 FeatuesNBugs.md
 
+# Tauri signing keys
+*.key
+src-tauri/*.key
+
+# Binaries
+*.exe

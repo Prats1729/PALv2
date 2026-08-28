@@ -22,11 +22,20 @@
       }
     ],
     "security": {
-      "csp": "default-src 'self' ipc: http://ipc.localhost tauri: https://tauri.localhost; connect-src 'self' ipc: http://ipc.localhost tauri: https://tauri.localhost https://palv2.onrender.com https://graphql.anilist.co https://anilist.co; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https: http:; media-src 'self' blob: https: http:"
+      "csp": "default-src 'self' ipc: http://ipc.localhost tauri: https://tauri.localhost; connect-src 'self' ipc: http://ipc.localhost tauri: https://tauri.localhost https://palv2.onrender.com https://graphql.anilist.co https://anilist.co https://github.com https://objects.githubusercontent.com; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https: http:; media-src 'self' blob: https: http:"
+    }
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDlDNEEwMTJDNjJFNUI3NEQKUldSTnQrVmlMQUZLbkxhd3V1ekp0WWN6UlZXYk5OL0hGREs2L0ZGOVdqeXhyTWhoT3luakNVWmsK",
+      "endpoints": [
+        "https://github.com/Prats1729/PALv2/releases/latest/download/latest.json"
+      ]
     }
   },
   "bundle": {
     "active": true,
+    "createUpdaterArtifacts": true,
     "targets": "all",
     "icon": [
       "icons/32x32.png",

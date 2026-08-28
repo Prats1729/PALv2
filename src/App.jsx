@@ -13,6 +13,9 @@ import ContinueWatching from "./pages/ContinueWatching.jsx";
 
 import Login from "./pages/Login.jsx";
 import Register from "./pages/Register.jsx";
+import UpdateModal from "./components/common/UpdateModal.jsx";
+import PatchNotesModal from "./components/common/PatchNotesModal.jsx";
+import { checkForAppUpdates, checkPatchNotesOnStartup } from "./utils/updater.js";
 
 import { WatchlistProvider } from "./context/WatchlistContext.jsx";
 import { AuthProvider, useAuth } from "./context/AuthContext.jsx";
@@ -32,6 +35,42 @@ const ProtectedRoute = ({ children }) => {
 export default function App() {
   const [toast, setToast] = useState(null);
   const [authPrompt, setAuthPrompt] = useState(null);
+  const [availableUpdate, setAvailableUpdate] = useState(null);
+  const [patchNotes, setPatchNotes] = useState(null);
+
+  // Check for post-update patch notes & background updates on app launch
+  useEffect(() => {
+    // 1. Check if user just updated to a new version to show patch notes once
+    const checkNotes = async () => {
+      const notes = await checkPatchNotesOnStartup();
+      if (notes) {
+        setPatchNotes(notes);
+      }
+    };
+    checkNotes();
+
+    // 2. Check for newly available updates after a brief delay
+    const timer = setTimeout(async () => {
+      const update = await checkForAppUpdates(false);
+      if (update) {
+        setAvailableUpdate(update);
+      }
+    }, 3000);
+
+    const handleCheckUpdateEvent = async (e) => {
+      const interactive = Boolean(e?.detail?.interactive);
+      const update = await checkForAppUpdates(interactive);
+      if (update) {
+        setAvailableUpdate(update);
+      }
+    };
+
+    window.addEventListener("pal-check-update", handleCheckUpdateEvent);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener("pal-check-update", handleCheckUpdateEvent);
+    };
+  }, []);
 
   useEffect(() => {
     let timer;
@@ -209,6 +248,22 @@ export default function App() {
                   </div>
                 </div>
               </div>
+            )}
+
+            {/* Global Update Modal */}
+            {availableUpdate && (
+              <UpdateModal
+                update={availableUpdate}
+                onClose={() => setAvailableUpdate(null)}
+              />
+            )}
+
+            {/* Post-Update Patch Notes Modal */}
+            {patchNotes && (
+              <PatchNotesModal
+                patchNotes={patchNotes}
+                onClose={() => setPatchNotes(null)}
+              />
             )}
           </div>
         </BrowserRouter>
