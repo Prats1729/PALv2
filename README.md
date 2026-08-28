@@ -1,83 +1,88 @@
-# PAL - Personal Anime Library (PALv2) 🎬
-**Version:** v1.1.0
+# PAL - Personal Anime Library (v2.0)
 
-PAL (Personal Anime Library) is a modern, responsive web application built for anime enthusiasts to search, track, and catalog their favorite shows. Designed as a client-side catalog manager, PAL links directly to the AniList GraphQL API to provide real-time trending recommendations, advanced multi-layered filter configurations, custom search results, and public library summaries alongside calculated watch metrics without requiring a database in its initial release.
+[![Version](https://img.shields.io/badge/version-2.0.0-6366f1.svg)](https://github.com/Prats1729/PALv2)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![React](https://img.shields.io/badge/React-19.0-61dafb.svg)](https://react.dev/)
+[![Node](https://img.shields.io/badge/Node.js-20+-green.svg)](https://nodejs.org/)
+[![MongoDB](https://img.shields.io/badge/MongoDB-Atlas-47a248.svg)](https://www.mongodb.com/)
+[![Tauri](https://img.shields.io/badge/Tauri-v2-24c8db.svg)](https://tauri.app/)
 
-PALv2 is a complete rewrite of my original Personal Anime List project, rebuilt from scratch using React, React Router, GraphQL, and a modern component architecture.
+**PAL (Personal Anime Library)** is a modern, full-stack anime tracking and discovery application designed for anime enthusiasts. It provides a persistent, cloud-synced watchlist independent of external piracy platforms, paired with AniList OAuth synchronization, an Animex-inspired mobile-first web interface, and a native desktop companion powered by Tauri.
 
 ---
 
-## Screenshots
+## Showcase & Interface
 
-To set up PAL locally and view the user interface layouts, please check the placeholders below:
+### Desktop Experience
 
-### Desktop Layouts
-
-| Feature Section | Screenshot Preview Placeholder |
+| Section | Preview |
 | :--- | :--- |
-| **Home Dashboard** | ![home-dark](/images/image.png)  |
-| **Discover Catalog** | ![discover-dark](/images/image-1.png) |
-| **Quick Search & Full Page** | ![quickSearch-dark](/images/image-2.png) |
-| **Anime Details** | ![Anime Details](/images/image-3.png) |
-| **Library List Lookup** | ![Library](/images/image-4.png) |
-| **Statistics Console** | ![Statistics](/images/image-5.png) |
-| **Settings Panel** | ![Settings](/images/image-6.png) |
-| **Dark Theme View** | ![Dark Theme](/images/image-7.png) |
-| **Light Theme View** | ![Light Theme](/images/image-8.png) |
+| **Home Dashboard** | ![Desktop Home](images/desktop-home.png) |
+| **Library Management** | ![Desktop Library](images/desktop-library.png) |
+| **Anime Details & Episode Tracker** | ![Desktop Anime Details](images/desktop-details.png) |
 
-### Mobile Layouts
+### Mobile Experience
 
-| **Home Dashboard (Mobile)** | ![home-mobile](images/image-9.png) |
-
----
-
-## Features
-
-### Discover
-- **Trending Slideshow**: Immersive landing banner highlighting highly active shows with automated slide intervals and indicators.
-- **Advanced Filtering**: Custom multi-select checkbox list menus (Genres, Tags, Format, Status) alongside single-select options (Year, Season, Sort By).
-- **URL Parameter State Syncing**: All catalog parameters automatically sync to the browser query parameters (`?genres=Action&year=2024`), preserving filter selections upon reload or link sharing.
-
-### Search
-- **Debounced Suggestion Dropdown**: Floating navigation menu suggesting matching results as you type (400ms debounce), with full keyboard arrow key focus support.
-- **Full Results Page**: Redirects to a dedicated grid displaying full query matches (`/search?q=Naruto`).
-
-### Anime Details
-- **Dynamic Banners**: Pulls source banner banners with a dynamic gradient overlay, with smart CSS gradient backups for records missing hero artwork.
-- **Metadata Cards**: Formats detailed technical indexes including status, season, type, episodes, average rating, and studio names.
-
-### Library
-- **Public Profile Lookups**: Load public watchlists from AniList by simply entering a profile name.
-- **Tabs Categories**: Fast sorting toggles between *Watching*, *Completed*, *Plan to Watch*, and *Dropped* shows.
-- **Saved Profiles**: Cache multiple bookmarks in browser memory for easy switching.
-
-### Statistics
-- **Computed Indicators**: Evaluates profile records to calculate total entries, total episodes watched, mean rating, and watch time converted into days.
-- **Profile Quick-Selector**: Change statistics views instantly via saved profile buttons.
-- **Profile Caching & Fallback**: Automatically reads and syncs the last active username stored in browser local storage if no user context is provided in the URL.
-
-### UI & UX
-- **Theme Preferences**: Fully supported Light/Dark layout switches synced to browser memory.
-- **Theme Consistency**: Dynamic stylesheet updates to ensure all elements (including search dropdown footers, card hover previews, lists, and statistics panels) remain perfectly visible in both modes.
-- **Mobile First & Responsive Breakpoints**: Tailored viewport scaling and element positioning (such as relocating slider indicators and hiding previous/next controls) to prevent overlay clutter on mobile phones.
-- **Bottom Navigation Layout**: A floating frosted bottom navigation bar (`BottomNavBar`) for easy touch-based navigation on mobile devices.
-- **Loading Skeletons**: Fluid pulsing loaders that occupy empty grid spaces during loading states.
-- **Scrollbar Aesthetics**: Custom Windows 10 flat rectangular scrollbar modules matching dark/light themes.
-
----
-
-## Tech Stack
-
-| Technology | Purpose |
+| Section | Preview |
 | :--- | :--- |
-| **React** | Component-driven UI rendering engine |
-| **React Router v7** | Single Page Application client-side routing |
-| **Vite** | Fast frontend build bundler |
-| **GraphQL** | Query language used for targeted resource requests |
-| **AniList API** | External database server supplying metadata and lists |
-| **Vanilla CSS** | Structured, modular design layout and themes |
-| **LocalStorage** | Persistence layer caching settings, user contexts, and bookmark tags |
-| **Vercel** | Hosting platform for client-side static deployment |
+| **Mobile Web Experience** | ![Mobile Home](images/mobile-home.png) |
+
+---
+
+## Key Features
+
+### 🎬 Discovery & Catalog
+- **Cinematic Hero Spotlight**: Auto-rotating hero slider showcasing current trending titles with metadata badges, status tags, and instant actions.
+- **Deep Filter System**: Multi-parameter search across Genres, Tags, Formats (TV, Movie, OVA, ONA, Special), Seasons, Release Years, and Sorting algorithms.
+- **URL Parameter State Sync**: URL search parameters (`useSearchParams`) maintain exact catalog filter state for easy link sharing and refreshing.
+- **Debounced Instant Search**: Floating search palette featuring real-time autocomplete results and keyboard navigation.
+
+### 📚 Personal Library & Cloud Watchlist
+- **Persistent Cloud Watchlist**: MongoDB Atlas storage linked to individual user accounts, replacing browser-only storage.
+- **AniList Two-Way Synchronization**: Secure OAuth 2.0 integration allowing one-click import and synchronized progress tracking across both PAL and AniList.
+- **Watch Status Tracking**: Segment titles by *Watching*, *Completed*, *On Hold*, *Plan to Watch*, and *Dropped*.
+- **Progress Tracking**: Granular episode counters with auto-completion triggers.
+
+### 📱 Mobile-First Responsive Web App
+- **Animex-Inspired Mobile UI**: Full-bleed hero banners, horizontal momentum touch carousels with card peeking, and compact 3-column poster browsing grids.
+- **Floating Glass Bottom Navigation**: Translucent pill navigation bar (`Home`, `Discover`, `Library`, `Settings`) with iOS/Android safe-area inset support.
+- **Collapsible Mobile Filters**: Drawer filter accordion on catalog pages to keep cards front-and-center on smaller viewports.
+
+### 🖥️ Native Desktop Companion (Tauri)
+- **Zero-Ad Native Streaming**: Direct integration with `ani-cli` and `mpv` player via Windows Subsystem for Linux (WSL).
+- **Automated Progress Sync**: Real-time process monitoring that detects watched episodes in `mpv` and automatically increments cloud watchlist progress.
+- **Continue Watching Hub**: Dedicated resume hub displaying recent timestamps, progress percentages, and up-next episode indicators.
+
+### 🔒 Authentication & Security
+- **JWT Session Management**: Encrypted token-based authentication with automatic session validation on application startup.
+- **Two-Level Account Lifecycle**: Account deletion safety modal with typed username confirmation and cascading data cleanup.
+- **Encrypted Token Vault**: AES encryption for connected third-party OAuth access tokens.
+- **Guest Exploration Mode**: Instant read-only browsing access for prospective users without immediate registration.
+
+---
+
+## Architecture & Tech Stack
+
+```mermaid
+graph TD
+    ClientWeb[Web Browser / Mobile Client] -->|HTTP / REST API| Server[Node.js / Express API Server]
+    ClientTauri[Tauri Desktop App] -->|Local IPC / CLI Process| WSL[ani-cli / mpv Media Player]
+    ClientTauri -->|REST API| Server
+    Server -->|Mongoose ODM| DB[(MongoDB Atlas Cloud)]
+    Server -->|OAuth 2.0 / GraphQL| AniListAPI[AniList GraphQL API]
+    ClientWeb -->|GraphQL Queries| AniListAPI
+```
+
+### Core Technologies
+
+| Layer | Technologies |
+| :--- | :--- |
+| **Frontend** | React 19, React Router v7, Vite, Vanilla CSS Design System |
+| **Backend** | Node.js, Express.js, JWT, bcryptjs, crypto (AES) |
+| **Database** | MongoDB Atlas, Mongoose ODM |
+| **Desktop Shell** | Tauri v2, Rust |
+| **External APIs** | AniList GraphQL API |
+| **Player Pipeline** | `ani-cli`, `mpv` video player |
 
 ---
 
@@ -85,97 +90,108 @@ To set up PAL locally and view the user interface layouts, please check the plac
 
 ```text
 PALv2/
-├── public/                 # Static asset distribution files
-├── src/
-│   ├── assets/             # SVG icons and logos
+├── backend/                  # Express REST API & Database Models
+│   ├── config/               # Database connection configuration
+│   ├── middleware/           # JWT authentication middleware
+│   ├── models/               # Mongoose schemas (User, Watchlist)
+│   ├── routes/               # API endpoints (Auth, Watchlist)
+│   ├── utils/                # AniList GraphQL importer & crypto helpers
+│   └── server.js             # Backend server entry point
+├── src-tauri/                # Tauri v2 Rust desktop application configuration
+├── src/                      # Frontend Single Page Application (React)
+│   ├── assets/               # SVGs, icons, and branding assets
 │   ├── components/
-│   │   └── layout/
-│   │       └── TopBar.jsx   # Fixed navigation bar and suggestion list
-│   ├── pages/
-│   │   ├── Home.jsx         # Carousel and dashboard
-│   │   ├── Discover.jsx     # Filtering search catalog
-│   │   ├── Library.jsx      # Watchlist lookup and saved users
-│   │   ├── Search.jsx       # Dedicated query grids
-│   │   ├── Statistics.jsx   # Metrics calculations
-│   │   ├── Settings.jsx     # App configuration values
-│   │   └── AnimeDetails.jsx # Detailed synopsis and stats
-│   ├── services/
-│   │   ├── anilist.js       # GraphQL queries and API fetchers
-│   │   ├── storage.js       # localStorage CRUD helpers
-│   │   └── toast.js         # Event-driven toast notifications
-│   ├── styles/              # Component-specific styles
-│   ├── App.jsx              # Main routing coordinator
-│   ├── App.css              # Global themes, media queries, and skeletons
-│   └── main.jsx             # React DOM entry point
-├── package.json             # Core dependency settings
-└── README.md                # Project documentation
+│   │   ├── common/           # Reusable cards, pagination, buttons
+│   │   └── layout/           # TopBar, BottomNavBar, companion modals
+│   ├── context/              # AuthContext, WatchlistContext
+│   ├── pages/                # Home, Discover, Library, AnimeDetails, Settings, Auth
+│   ├── services/             # AniList GraphQL service integration
+│   ├── styles/               # Component-level stylesheets
+│   ├── App.jsx               # Route coordinator and global providers
+│   ├── App.css               # Design tokens, theme variables, mobile media queries
+│   └── main.jsx              # React DOM mounting entry point
+├── package.json              # Workspace manifest & scripts
+└── README.md                 # Project documentation
 ```
 
 ---
 
-## Installation
+## Getting Started
 
-Follow these steps to run PAL on your local machine:
+### Prerequisites
 
-1. Clone the repository:
+- **Node.js**: v18.0.0 or higher
+- **MongoDB**: MongoDB Atlas connection URI or local instance
+- **Rust & Cargo** *(Optional, for building desktop app)*: [Install Rust](https://www.rust-lang.org/tools/install)
+- **WSL & ani-cli** *(Optional, for desktop playback)*: [ani-cli](https://github.com/pystardust/ani-cli)
+
+---
+
+### Installation & Local Setup
+
+1. **Clone the repository:**
    ```bash
    git clone https://github.com/Prats1729/PALv2.git
    cd PALv2
    ```
 
-2. Install dependencies:
-   ```bash
-   npm install
+2. **Configure Environment Variables:**
+
+   Create `.env` in the root directory:
+   ```env
+   VITE_API_URL=http://localhost:5000
+   VITE_ANILIST_CLIENT_ID=your_anilist_oauth_client_id
    ```
 
-3. Launch the local Vite development server:
+   Create `backend/.env`:
+   ```env
+   PORT=5000
+   MONGO_URI=your_mongodb_connection_string
+   JWT_SECRET=your_jwt_secret_key
+   ENCRYPTION_KEY=your_32_character_aes_encryption_key
+   ANILIST_CLIENT_ID=your_anilist_client_id
+   ANILIST_CLIENT_SECRET=your_anilist_client_secret
+   ```
+
+3. **Install dependencies:**
+   ```bash
+   npm install
+   cd backend && npm install && cd ..
+   ```
+
+4. **Start the Development Servers:**
+
+   *Terminal 1 (Backend API):*
+   ```bash
+   cd backend
+   node server.js
+   ```
+
+   *Terminal 2 (Frontend Web):*
    ```bash
    npm run dev
    ```
-   Open `http://localhost:5173` in your browser.
 
-4. Build the production bundle:
+   *Terminal 3 (Tauri Desktop App - Optional):*
+   ```bash
+   npx tauri dev
+   ```
+
+5. **Build for Production:**
    ```bash
    npm run build
    ```
 
 ---
 
-## Deployment
+## License
 
-PAL is configured for production hosting on **Vercel**. Every commit pushed to the main repository automatically builds and updates the live site.
-
----
-
-## Future Plans (Version 2)
-
-Version 2 will transition PAL into a full-stack dashboard, introducing the following backend capabilities:
-- **Node.js & Express API**: Internal backend server to orchestrate data aggregation.
-- **MongoDB Database**: Document-store persistence for user accounts and personal lists.
-- **OAuth Login**: Official AniList OAuth integration to update watch lists and ratings directly from PAL.
-- **Personal Cloud Library**: User accounts with settings and profile caching synced across devices.
-
----
-
-## What I Learned
-
-Building PAL provided deep experience in modern frontend development patterns:
-- **React Router Navigation Context**: Synchronizing search parameters (`useSearchParams`) to serve as the single source of truth for UI filters.
-- **GraphQL Integration**: Structuring efficient queries to fetch nested parameters (e.g. titles, cover colors, format, user lists) in a single request.
-- **Pure CSS Theme Systems**: Creating overrides based on parent container classes (e.g. `body.light-theme`) to transition inputs, scrollbars, and skeletons cleanly.
-- **Keyboard Usability**: Implementing index-based states to enable keyboard controls on custom floating components.
-- **State Caching**: Constructing resilient CRUD helpers on browser storage models.
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
 
 ---
 
 ## Acknowledgements
 
-- [AniList API Co.](https://github.com/AniList/ApiV2-GraphQL-Docs) for providing their detailed GraphQL endpoint.
-- [React Group](https://react.dev) for components.
-- [Vite Team](https://vite.dev) for compilation tooling.
-
----
-
-## License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
+- [AniList API](https://anilist.gitbook.io/anilist-apiv2-docs) for providing anime metadata and GraphQL endpoints.
+- [ani-cli](https://github.com/pystardust/ani-cli) for CLI video streaming capabilities.
+- [Tauri](https://tauri.app) for the lightweight desktop application runtime.
