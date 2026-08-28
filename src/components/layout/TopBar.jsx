@@ -49,7 +49,7 @@ export default function TopBar() {
       setLoading(true);
       setIsOpen(true);
       try {
-        const data = await searchAnime(searchQuery, 1, 5); // Limit to 5 quick results
+        const data = await searchAnime(searchQuery, 1, 4); // Limit to 4 quick results
         setResults(data.media || []);
       } catch (err) {
         console.error("Search failed:", err);
@@ -91,6 +91,20 @@ export default function TopBar() {
     }
   };
 
+  const searchInputRef = useRef(null);
+
+  // Global Ctrl+K / Cmd+K shortcut listener to focus search
+  useEffect(() => {
+    const handleGlobalKeyDown = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+      }
+    };
+    window.addEventListener("keydown", handleGlobalKeyDown);
+    return () => window.removeEventListener("keydown", handleGlobalKeyDown);
+  }, []);
+
   const [showDesktopModal, setShowDesktopModal] = useState(false);
   const isTauri = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
 
@@ -112,17 +126,39 @@ export default function TopBar() {
         <div className="middle-section" ref={dropdownRef}>
           <div className="search-container">
             <form className="search-box" onSubmit={handleSubmit}>
+              <div className="search-icon-prefix">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="11" cy="11" r="8"></circle>
+                  <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+              </div>
               <input
+                ref={searchInputRef}
                 type="text"
-                placeholder="Quick search..."
+                placeholder="Search anime..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onFocus={() => searchQuery.trim() !== "" && setIsOpen(true)}
                 onKeyDown={handleKeyDown}
               />
-              <button type="submit">
-                <img src={searchIcon} alt="search" />
-              </button>
+              {searchQuery ? (
+                <button
+                  type="button"
+                  className="search-clear-btn"
+                  onClick={() => {
+                    setSearchQuery("");
+                    setIsOpen(false);
+                    searchInputRef.current?.focus();
+                  }}
+                  title="Clear"
+                >
+                  ✕
+                </button>
+              ) : (
+                <div className="search-shortcut-badge" title="Press Ctrl+K to search">
+                  <span>Ctrl</span>K
+                </div>
+              )}
             </form>
 
             {/* FLOATING DROPDOWN PANEL */}

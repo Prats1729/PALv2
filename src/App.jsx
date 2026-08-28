@@ -95,26 +95,29 @@ export default function App() {
     };
   }, []);
 
-  // Handle Light/Dark theme overrides globally on document.body
+  // Handle theme application globally on document.body and document.documentElement
   useEffect(() => {
-    const updateBodyTheme = (isDark) => {
-      if (isDark) {
-        document.body.classList.add("dark-theme");
-      } else {
-        document.body.classList.remove("dark-theme");
-      }
+    const applyTheme = (themeName) => {
+      const theme = themeName || localStorage.getItem("pal_theme") || "midnight";
+      document.body.classList.remove("theme-midnight", "theme-google-dark", "theme-oled", "theme-light", "dark-theme");
+      document.body.classList.add(`theme-${theme}`);
+      document.documentElement.setAttribute("data-theme", theme);
     };
-    
+
     // Initial check
-    const savedTheme = localStorage.getItem("pal-theme");
-    updateBodyTheme(savedTheme === "dark");
+    applyTheme(localStorage.getItem("pal_theme") || "midnight");
 
     const handleThemeChange = (e) => {
-      updateBodyTheme(e.detail);
+      const selected = typeof e.detail === "string" ? e.detail : (e.detail ? "midnight" : "google-dark");
+      applyTheme(selected);
     };
 
+    window.addEventListener("pal-theme-select", handleThemeChange);
     window.addEventListener("pal-theme-change", handleThemeChange);
-    return () => window.removeEventListener("pal-theme-change", handleThemeChange);
+    return () => {
+      window.removeEventListener("pal-theme-select", handleThemeChange);
+      window.removeEventListener("pal-theme-change", handleThemeChange);
+    };
   }, []);
 
   return (

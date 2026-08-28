@@ -8,15 +8,16 @@
 }
 
 .auth-card {
-  background: rgba(255, 255, 255, 0.04);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  background: var(--bg-card, rgba(255, 255, 255, 0.04));
+  backdrop-filter: var(--topbar-blur, blur(20px));
+  -webkit-backdrop-filter: var(--topbar-blur, blur(20px));
   border-radius: 20px;
   padding: 48px 40px;
   width: 100%;
   max-width: 420px;
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--border-card, rgba(255, 255, 255, 0.06));
   animation: cardFadeIn 0.4s ease-out;
+  box-shadow: var(--card-shadow, none);
 }
 
 @keyframes cardFadeIn {
@@ -29,12 +30,12 @@
   text-align: center;
   font-size: 1.6rem;
   font-weight: 700;
-  color: #fff;
+  color: var(--text-primary, #fff);
 }
 
 .auth-card .auth-subtitle {
   text-align: center;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--text-secondary, rgba(255, 255, 255, 0.4));
   font-size: 0.85rem;
   margin-bottom: 32px;
 }
@@ -57,7 +58,7 @@
 .form-group label {
   display: block;
   margin-bottom: 8px;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--text-secondary, rgba(255, 255, 255, 0.5));
   font-size: 0.8rem;
   font-weight: 500;
   text-transform: uppercase;
@@ -68,21 +69,22 @@
   width: 100%;
   padding: 14px 16px;
   border-radius: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(255, 255, 255, 0.04);
-  color: #fff;
+  border: 1px solid var(--border-card, rgba(255, 255, 255, 0.08));
+  background: var(--bg-input, rgba(255, 255, 255, 0.04));
+  color: var(--text-primary, #fff);
   font-size: 0.95rem;
   transition: border-color 0.2s;
   box-sizing: border-box;
+  font-family: inherit;
 }
 
 .form-group input::placeholder {
-  color: rgba(255, 255, 255, 0.2);
+  color: var(--text-muted, rgba(255, 255, 255, 0.2));
 }
 
 .form-group input:focus {
   outline: none;
-  border-color: rgba(99, 102, 241, 0.5);
+  border-color: var(--accent-primary, #6366f1);
 }
 
 .auth-btn {
@@ -90,17 +92,28 @@
   padding: 14px;
   border: none;
   border-radius: 10px;
-  background: #6366f1;
+  background: var(--accent-primary, #6366f1);
   color: #fff;
   font-size: 0.95rem;
   font-weight: 600;
   cursor: pointer;
   transition: background 0.2s;
   margin-top: 8px;
+  font-family: inherit;
+}
+
+body.theme-google-dark .auth-btn {
+  background: #8ab4f8;
+  color: #1f1f1f;
+}
+
+body.theme-oled .auth-btn {
+  background: #38bdf8;
+  color: #000000;
 }
 
 .auth-btn:hover {
-  background: #4f46e5;
+  background: var(--accent-primary-hover, #4f46e5);
 }
 
 .auth-btn:disabled {
