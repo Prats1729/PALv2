@@ -8,7 +8,11 @@ const authMiddleware = (req, res, next) => {
   }
 
   try {
-    const decoded = jwt.verify(token.replace('Bearer ', ''), process.env.JWT_SECRET);
+    const rawToken = token.replace(/^Bearer\s+/i, '').trim();
+    if (!rawToken || rawToken === 'null' || rawToken === 'undefined') {
+      return res.status(401).json({ error: 'Token is not valid' });
+    }
+    const decoded = jwt.verify(rawToken, process.env.JWT_SECRET);
     req.user = decoded; // Contains id
     next();
   } catch (err) {

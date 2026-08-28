@@ -159,13 +159,18 @@ export function WatchlistProvider({ children }) {
     }
   };
 
+  const isMatch = (item, targetId) => {
+    if (!item || targetId == null) return false;
+    return item._id === targetId || item.animeId === targetId || String(item.animeId) === String(targetId);
+  };
+
   const updateWatchlistItem = async (id, updates) => {
     if (!token) return;
     touchWatchHistory(id);
 
     // Auto-fill progress if status is set to Completed
     if (updates.status === "Completed") {
-      const item = watchlist.find(w => w.animeId === id || w._id === id);
+      const item = watchlist.find(w => isMatch(w, id));
       if (item && item.totalEpisodes) {
         updates.progress = item.totalEpisodes;
       }
@@ -177,11 +182,14 @@ export function WatchlistProvider({ children }) {
 
     if (user?.isGuest) {
       const current = JSON.parse(localStorage.getItem('pal_guest_watchlist') || '[]');
-      const updated = current.map(item => (item.animeId === id || item._id === id) ? { ...item, ...updates, updatedAt: new Date().toISOString() } : item);
+      const updated = current.map(item => isMatch(item, id) ? { ...item, ...updates, updatedAt: new Date().toISOString() } : item);
       localStorage.setItem('pal_guest_watchlist', JSON.stringify(updated));
       setWatchlist(updated);
       return;
     }
+
+    // Optimistically update local state for instantaneous responsiveness
+    setWatchlist(prev => prev.map(item => isMatch(item, id) ? { ...item, ...updates, updatedAt: new Date().toISOString() } : item));
 
     try {
       const response = await fetch(`${API_URL}/api/watchlist/${id}`, {
@@ -196,9 +204,7 @@ export function WatchlistProvider({ children }) {
       if (response.ok) {
         const data = await response.json();
         if (data.anime) {
-          setWatchlist(prev => prev.map(item => (item.animeId === id || item._id === id) ? { ...item, ...data.anime } : item));
-        } else {
-          fetchWatchlist();
+          setWatchlist(prev => prev.map(item => isMatch(item, id) ? { ...item, ...data.anime } : item));
         }
 
         // Background sync to AniList
@@ -213,13 +219,15 @@ export function WatchlistProvider({ children }) {
           );
         }
       } else {
-        const errorData = await response.json();
+        fetchWatchlist();
+        const errorData = await response.json().catch(() => ({}));
         window.dispatchEvent(new CustomEvent("pal-toast", { 
           detail: { message: errorData.error || "Failed to update", type: "error" } 
         }));
       }
     } catch (error) {
       console.error("Error updating watchlist item", error);
+      fetchWatchlist();
     }
   };
 
@@ -227,12 +235,12 @@ export function WatchlistProvider({ children }) {
     if (!token) return;
 
     // Grab animeId before deleting (for AniList sync)
-    const item = watchlist.find(w => w.animeId === id || w._id === id);
+    const item = watchlist.find(w => isMatch(w, id));
     const animeId = item?.animeId || id;
 
     if (user?.isGuest) {
       const current = JSON.parse(localStorage.getItem('pal_guest_watchlist') || '[]');
-      const updated = current.filter(w => w.animeId !== animeId && w._id !== id);
+      const updated = current.filter(w => !isMatch(w, id));
       localStorage.setItem('pal_guest_watchlist', JSON.stringify(updated));
       setWatchlist(updated);
       window.dispatchEvent(new CustomEvent("pal-toast", { 
@@ -241,6 +249,10 @@ export function WatchlistProvider({ children }) {
       return;
     }
 
+    // Optimistically remove from state
+    const previousWatchlist = [...watchlist];
+    setWatchlist(prev => prev.filter(w => !isMatch(w, id)));
+
     try {
       const response = await fetch(`${API_URL}/api/watchlist/${id}`, {
         method: 'DELETE',
@@ -248,7 +260,6 @@ export function WatchlistProvider({ children }) {
       });
 
       if (response.ok) {
-        setWatchlist(prev => prev.filter(w => w.animeId !== animeId && w._id !== id));
         window.dispatchEvent(new CustomEvent("pal-toast", { 
           detail: { message: "Removed from Watchlist", type: "info" } 
         }));
@@ -258,13 +269,15 @@ export function WatchlistProvider({ children }) {
           deleteFromAniList(anilistTokenRef.current, animeId);
         }
       } else {
-        const errorData = await response.json();
+        setWatchlist(previousWatchlist);
+        const errorData = await response.json().catch(() => ({}));
         window.dispatchEvent(new CustomEvent("pal-toast", { 
           detail: { message: errorData.error || "Failed to delete", type: "error" } 
         }));
       }
     } catch (error) {
       console.error("Error removing from watchlist", error);
+      setWatchlist(previousWatchlist);
     }
   };
 
