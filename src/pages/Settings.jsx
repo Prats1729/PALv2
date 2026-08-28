@@ -27,8 +27,8 @@ export default function Settings() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState(null);
 
-  const [darkMode, setDarkMode] = useState(() => {
-    return localStorage.getItem("pal_dark_mode") !== "false";
+  const [currentTheme, setCurrentTheme] = useState(() => {
+    return localStorage.getItem("pal_theme") || "midnight";
   });
 
   // Capture AniList token from URL hash after OAuth redirect
@@ -135,11 +135,18 @@ export default function Settings() {
     }
   };
 
-  const handleToggle = (e) => {
-    const checked = e.target.checked;
-    setDarkMode(checked);
-    localStorage.setItem("pal_dark_mode", checked);
-    window.dispatchEvent(new CustomEvent("pal-theme-change", { detail: checked }));
+  const handleThemeSelect = (themeId, themeName) => {
+    setCurrentTheme(themeId);
+    localStorage.setItem("pal_theme", themeId);
+    document.body.classList.remove("theme-midnight", "theme-google-dark", "theme-oled", "theme-light", "dark-theme");
+    document.body.classList.add(`theme-${themeId}`);
+    document.documentElement.setAttribute("data-theme", themeId);
+    window.dispatchEvent(new CustomEvent("pal-theme-select", { detail: themeId }));
+    window.dispatchEvent(
+      new CustomEvent("pal-toast", {
+        detail: { message: `Theme switched to ${themeName}!`, type: "success" },
+      })
+    );
   };
 
   return (
@@ -193,22 +200,91 @@ export default function Settings() {
         </div>
 
         <div className="settings-card">
-          <h3 className="settings-card-title">Appearance</h3>
-          <p className="settings-card-desc">Customize how PAL looks for you.</p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-            <label className="settings-checkbox-label">
-              <input type="checkbox" checked={darkMode} onChange={handleToggle} />{" "}
-              Dark Mode Layout
-            </label>
-            <div>
-              <label style={{ display: 'block', color: '#959595', fontSize: '14px', marginBottom: '8px' }}>Accent Color (Coming Soon)</label>
-              <div style={{ display: 'flex', gap: '10px' }}>
-                {['#6366f1', '#10b981', '#f43f5e', '#f59e0b'].map(color => (
-                  <div key={color} style={{
-                    width: '24px', height: '24px', borderRadius: '50%', backgroundColor: color,
-                    cursor: 'not-allowed', border: color === '#6366f1' ? '2px solid white' : 'none'
-                  }} title="Coming Soon"></div>
-                ))}
+          <h3 className="settings-card-title">Appearance & Theme</h3>
+          <p className="settings-card-desc">Choose the visual style that suits your viewing experience.</p>
+          
+          <div className="theme-selector-grid">
+            {/* Theme 1: Midnight Purple (Default) */}
+            <div
+              className={`theme-option-card ${currentTheme === 'midnight' ? 'active' : ''}`}
+              onClick={() => handleThemeSelect('midnight', 'Midnight Purple')}
+            >
+              <div className="theme-card-preview theme-preview-midnight">
+                <div className="theme-swatch-bar">
+                  <span style={{ backgroundColor: '#0b0813' }} />
+                  <span style={{ backgroundColor: '#1a1822' }} />
+                  <span style={{ backgroundColor: '#6366f1' }} />
+                </div>
+              </div>
+              <div className="theme-card-body">
+                <div className="theme-card-header">
+                  <span className="theme-card-name">Midnight Purple</span>
+                  {currentTheme === 'midnight' && <span className="theme-badge-active">Active</span>}
+                </div>
+                <p className="theme-card-desc">Deep cyber violet with neon indigo accents (Default)</p>
+              </div>
+            </div>
+
+            {/* Theme 2: Google Dark (Clean Slate) */}
+            <div
+              className={`theme-option-card ${currentTheme === 'google-dark' ? 'active' : ''}`}
+              onClick={() => handleThemeSelect('google-dark', 'Google Slate Dark')}
+            >
+              <div className="theme-card-preview theme-preview-google">
+                <div className="theme-swatch-bar">
+                  <span style={{ backgroundColor: '#121212' }} />
+                  <span style={{ backgroundColor: '#1e1e1e' }} />
+                  <span style={{ backgroundColor: '#8ab4f8' }} />
+                </div>
+              </div>
+              <div className="theme-card-body">
+                <div className="theme-card-header">
+                  <span className="theme-card-name">Google Slate Dark</span>
+                  {currentTheme === 'google-dark' && <span className="theme-badge-active">Active</span>}
+                </div>
+                <p className="theme-card-desc">Matte dark gray, refined crisp borders & Material Blue</p>
+              </div>
+            </div>
+
+            {/* Theme 3: OLED Pitch Black */}
+            <div
+              className={`theme-option-card ${currentTheme === 'oled' ? 'active' : ''}`}
+              onClick={() => handleThemeSelect('oled', 'OLED Pure Black')}
+            >
+              <div className="theme-card-preview theme-preview-oled">
+                <div className="theme-swatch-bar">
+                  <span style={{ backgroundColor: '#000000' }} />
+                  <span style={{ backgroundColor: '#111111' }} />
+                  <span style={{ backgroundColor: '#38bdf8' }} />
+                </div>
+              </div>
+              <div className="theme-card-body">
+                <div className="theme-card-header">
+                  <span className="theme-card-name">OLED Pure Black</span>
+                  {currentTheme === 'oled' && <span className="theme-badge-active">Active</span>}
+                </div>
+                <p className="theme-card-desc">True #000000 pitch black for OLED displays & high contrast</p>
+              </div>
+            </div>
+
+            {/* Theme 4: Nordic Clean Light */}
+            <div
+              className={`theme-option-card ${currentTheme === 'light' ? 'active' : ''}`}
+              onClick={() => handleThemeSelect('light', 'Nordic Clean Light')}
+            >
+              <div className="theme-card-preview theme-preview-light">
+                <div className="theme-swatch-bar">
+                  <span style={{ backgroundColor: '#f6f8fa' }} />
+                  <span style={{ backgroundColor: '#ffffff', border: '1px solid #e2e8f0' }} />
+                  <span style={{ backgroundColor: '#4f46e5' }} />
+                </div>
+              </div>
+              <div className="theme-card-body">
+                <div className="theme-card-header">
+                  <span className="theme-card-name">Nordic Clean Light</span>
+                  {currentTheme === 'light' && <span className="theme-badge-active">Active</span>}
+                </div>
+                <p className="theme-card-desc">Crisp porcelain background, elevated cards & Royal Indigo accents</p>
               </div>
             </div>
           </div>
@@ -217,17 +293,15 @@ export default function Settings() {
         <div className="settings-card">
           <h3 className="settings-card-title">Account Settings</h3>
           <p className="settings-card-desc">Manage your PAL account details.</p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          <div className="settings-button-group">
             <button 
-              className="settings-auth-btn" 
-              style={{ backgroundColor: 'rgba(255,255,255,0.05)', color: '#fff', border: '1px solid rgba(255,255,255,0.1)' }} 
+              className="settings-secondary-btn" 
               onClick={() => window.dispatchEvent(new CustomEvent("pal-toast", { detail: { message: "Change username feature coming soon!", type: "info" } }))}
             >
               Change Username
             </button>
             <button 
-              className="settings-auth-btn" 
-              style={{ backgroundColor: 'rgba(255,255,255,0.05)', color: '#fff', border: '1px solid rgba(255,255,255,0.1)' }} 
+              className="settings-secondary-btn" 
               onClick={() => window.dispatchEvent(new CustomEvent("pal-toast", { detail: { message: "Change password feature coming soon!", type: "info" } }))}
             >
               Change Password
@@ -240,25 +314,20 @@ export default function Settings() {
           <p className="settings-card-desc">
             Keep PALv2 updated with the latest features, bug fixes, and improvements.
           </p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.9rem', color: '#94a3b8' }}>
+          <div className="settings-updates-container">
+            <div className="settings-update-row">
               <span>Current Version:</span>
-              <span style={{ color: '#fff', fontWeight: '600', backgroundColor: 'rgba(99, 102, 241, 0.15)', border: '1px solid rgba(99, 102, 241, 0.3)', padding: '3px 10px', borderRadius: '6px' }}>v{appVersion}</span>
+              <span className="settings-version-badge">v{appVersion}</span>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.9rem', color: '#94a3b8' }}>
-              <span>Update Channel:</span>
-              <span style={{ color: '#34d399', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#34d399', display: 'inline-block' }}></span>
-                OTA Active
-              </span>
+            <div className="settings-update-row">
+              <span>OTA Updates:</span>
+              <span className="settings-ota-status">● Enabled</span>
             </div>
             <button
               className="settings-auth-btn"
-              style={{ backgroundColor: '#6366f1', color: '#fff', marginTop: '4px' }}
+              style={{ marginTop: '6px' }}
               onClick={() => {
-                window.dispatchEvent(
-                  new CustomEvent("pal-check-update", { detail: { interactive: true } })
-                );
+                window.dispatchEvent(new CustomEvent("pal-check-update", { detail: { interactive: true } }));
               }}
             >
               Check for Updates

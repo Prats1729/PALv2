@@ -37,24 +37,11 @@ function AiringCard({ anime }) {
         {!isSaved && !isAdding && (
           <div style={{ display: "flex", alignItems: "center", paddingRight: "12px" }}>
             <button 
+              className="airing-quick-add-btn"
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
                 setIsAdding(true);
-              }}
-              style={{
-                background: "rgba(99, 102, 241, 0.9)",
-                color: "white",
-                border: "none",
-                borderRadius: "50%",
-                width: "24px",
-                height: "24px",
-                fontSize: "16px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                cursor: "pointer",
-                boxShadow: "0 2px 5px rgba(0,0,0,0.5)"
               }}
               title="Quick Add to Watchlist"
             >
@@ -352,7 +339,11 @@ export default function Home() {
                 <span className="play-triangle">▶</span> Watch Now
               </Link>
               <Link to={`/anime/${heroAnime.id}`} className="hero-button details-btn" title="View Details">
-                <span className="info-circle-icon">ⓘ</span>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="info-circle-icon">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <line x1="12" y1="16" x2="12" y2="12"></line>
+                  <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                </svg>
                 <span className="details-text-label">Details</span>
               </Link>
             </div>
@@ -451,7 +442,7 @@ export default function Home() {
                           className="continue-progress-bar-fill"
                           style={{ 
                             width: `${progressPercent}%`,
-                            background: hasMidPosition ? "linear-gradient(90deg, #6366f1, #a855f7)" : "#6366f1"
+                            background: "var(--accent-primary, #6366f1)"
                           }}
                         />
                       </div>
@@ -462,9 +453,9 @@ export default function Home() {
                       </div>
                       <div className="continue-ep">
                         {hasMidPosition ? (
-                          <span>Ep {nextEp} • <span style={{ color: "#818cf8" }}>{formatTime(item.lastPosition)} ({item.lastPercent}%)</span></span>
+                          <span>Ep {nextEp} • <span style={{ color: "var(--accent-primary, #818cf8)" }}>{formatTime(item.lastPosition)} ({item.lastPercent}%)</span></span>
                         ) : (
-                          <span>Episode {nextEp} • <span style={{ color: "#9ca3af" }}>Up Next</span></span>
+                          <span>Episode {nextEp} • <span style={{ color: "var(--text-secondary, #9ca3af)" }}>Up Next</span></span>
                         )}
                       </div>
                     </div>
