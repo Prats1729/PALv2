@@ -3,6 +3,7 @@ import { useAuth } from "../context/AuthContext";
 import { useWatchlist } from "../context/WatchlistContext";
 import { useLocation, useNavigate } from "react-router-dom";
 import { apiFetch } from "../services/api";
+import { getCurrentAppVersion } from "../utils/updater";
 import "../styles/Settings.css";
 
 const CLIENT_ID = import.meta.env.VITE_ANILIST_CLIENT_ID;
@@ -13,6 +14,7 @@ export default function Settings() {
   const { fetchWatchlist } = useWatchlist();
   const location = useLocation();
   const navigate = useNavigate();
+  const [appVersion, setAppVersion] = useState("2.0.0");
   const [anilistLinked, setAnilistLinked] = useState(user?.hasAnilistToken || false);
   const [linkingStatus, setLinkingStatus] = useState(null);
   const [importStatus, setImportStatus] = useState(null); // null | 'importing' | 'done' | 'error'
@@ -71,6 +73,13 @@ export default function Settings() {
       })
       .catch(() => setLinkingStatus("error"));
   }, [location]);
+
+  // Load app version
+  useEffect(() => {
+    getCurrentAppVersion().then((v) => {
+      if (v) setAppVersion(v);
+    });
+  }, []);
 
   const handleConnectAniList = () => {
     const authUrl = `https://anilist.co/api/v2/oauth/authorize?client_id=${CLIENT_ID}&response_type=token`;
@@ -234,11 +243,14 @@ export default function Settings() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.9rem', color: '#94a3b8' }}>
               <span>Current Version:</span>
-              <span style={{ color: '#fff', fontWeight: '600', backgroundColor: 'rgba(255,255,255,0.06)', padding: '3px 10px', borderRadius: '6px' }}>v2.0.0</span>
+              <span style={{ color: '#fff', fontWeight: '600', backgroundColor: 'rgba(99, 102, 241, 0.15)', border: '1px solid rgba(99, 102, 241, 0.3)', padding: '3px 10px', borderRadius: '6px' }}>v{appVersion}</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.9rem', color: '#94a3b8' }}>
               <span>Update Channel:</span>
-              <span style={{ color: '#a5b4fc', fontSize: '0.85rem' }}>GitHub Releases</span>
+              <span style={{ color: '#34d399', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#34d399', display: 'inline-block' }}></span>
+                OTA Active
+              </span>
             </div>
             <button
               className="settings-auth-btn"
