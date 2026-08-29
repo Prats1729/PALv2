@@ -526,3 +526,457 @@
   font-size: 20px;
   padding-left: 15px;
 }
+
+/* =========================================================
+   LAUNCHER MODAL STYLES (THEMED & ULTRA-PREMIUM)
+   ========================================================= */
+.pal-launcher-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 10000;
+  animation: palModalFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  padding: 16px;
+}
+
+@keyframes palModalFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.pal-launcher-modal {
+  background: var(--bg-modal, #151222);
+  border: 1px solid var(--border-card, rgba(255, 255, 255, 0.1));
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  border-radius: 16px;
+  width: 100%;
+  max-width: 440px;
+  padding: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  color: var(--text-primary, #ffffff);
+  animation: palModalScaleIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  font-family: var(--font-family, inherit);
+}
+
+@keyframes palModalScaleIn {
+  from { opacity: 0; transform: scale(0.96) translateY(8px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.pal-launcher-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border-card, rgba(255, 255, 255, 0.08));
+}
+
+.pal-launcher-title-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.pal-launcher-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, var(--accent-primary, #6366f1), var(--accent-secondary, #a855f7));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.35);
+}
+
+.pal-launcher-title {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text-primary, #ffffff);
+  letter-spacing: -0.02em;
+}
+
+.pal-launcher-close-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted, #94a3b8);
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 18px;
+  transition: all 0.15s ease;
+}
+
+.pal-launcher-close-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-primary, #fff);
+}
+
+.pal-launcher-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pal-launcher-label-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.pal-launcher-label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-secondary, #94a3b8);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.pal-launcher-sublabel {
+  font-size: 0.75rem;
+  color: var(--text-muted, #64748b);
+}
+
+.pal-launcher-badge {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--accent-secondary, #a855f7);
+  background: rgba(168, 85, 247, 0.12);
+  border: 1px solid rgba(168, 85, 247, 0.25);
+  padding: 2px 8px;
+  border-radius: 6px;
+}
+
+.pal-launcher-input {
+  width: 100%;
+  padding: 10px 14px;
+  background: var(--bg-input, #0d0b14);
+  border: 1px solid var(--border-card, rgba(255, 255, 255, 0.1));
+  border-radius: 8px;
+  color: var(--text-primary, #ffffff);
+  font-size: 0.92rem;
+  font-family: inherit;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+}
+
+.pal-launcher-input:focus {
+  outline: none;
+  border-color: var(--accent-primary, #6366f1);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+}
+
+/* Suggested pills */
+.pal-launcher-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.pal-launcher-pill {
+  background: var(--bg-card, rgba(255, 255, 255, 0.05));
+  border: 1px solid var(--border-card, rgba(255, 255, 255, 0.08));
+  color: var(--text-secondary, #94a3b8);
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 0.74rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pal-launcher-pill:hover {
+  background: var(--bg-card-hover, rgba(99, 102, 241, 0.15));
+  color: var(--text-primary, #fff);
+  border-color: var(--border-card-hover, rgba(99, 102, 241, 0.4));
+}
+
+.pal-launcher-pill.active {
+  background: var(--accent-primary, #6366f1);
+  color: #ffffff;
+  border-color: var(--accent-primary, #6366f1);
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.35);
+}
+
+/* Stepper Episode Input */
+.pal-launcher-stepper {
+  display: flex;
+  align-items: center;
+  background: var(--bg-input, #0d0b14);
+  border: 1px solid var(--border-card, rgba(255, 255, 255, 0.1));
+  border-radius: 8px;
+  overflow: hidden;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.pal-launcher-stepper:focus-within {
+  border-color: var(--accent-primary, #6366f1);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+}
+
+.pal-launcher-stepper-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary, #94a3b8);
+  width: 42px;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.pal-launcher-stepper-btn:hover:not(:disabled) {
+  background: var(--bg-card-hover, rgba(255, 255, 255, 0.08));
+  color: var(--text-primary, #fff);
+}
+
+.pal-launcher-stepper-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.pal-launcher-stepper-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--text-primary, #ffffff);
+  text-align: center;
+  font-size: 1.1rem;
+  font-weight: 700;
+  font-family: inherit;
+  padding: 8px 0;
+  -moz-appearance: textfield;
+}
+
+.pal-launcher-stepper-input::-webkit-outer-spin-button,
+.pal-launcher-stepper-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.pal-launcher-stepper-input:focus {
+  outline: none;
+}
+
+/* Segmented Buttons / Pill selectors */
+.pal-launcher-segmented-group {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.pal-launcher-segmented {
+  display: flex;
+  background: var(--bg-input, #0d0b14);
+  border: 1px solid var(--border-card, rgba(255, 255, 255, 0.08));
+  border-radius: 8px;
+  padding: 3px;
+  gap: 3px;
+}
+
+.pal-launcher-segment-btn {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--text-secondary, #94a3b8);
+  padding: 8px 10px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: center;
+  font-family: inherit;
+}
+
+.pal-launcher-segment-btn:hover {
+  color: var(--text-primary, #fff);
+}
+
+.pal-launcher-segment-btn.active {
+  background: var(--accent-primary, #6366f1);
+  color: #ffffff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+}
+
+/* Custom styled modern select */
+.pal-launcher-select-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.pal-launcher-select {
+  width: 100%;
+  padding: 8px 32px 8px 12px;
+  background: var(--bg-input, #0d0b14);
+  border: 1px solid var(--border-card, rgba(255, 255, 255, 0.1));
+  border-radius: 8px;
+  color: var(--text-primary, #ffffff);
+  font-size: 0.88rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  transition: all 0.2s ease;
+}
+
+.pal-launcher-select:focus {
+  outline: none;
+  border-color: var(--accent-primary, #6366f1);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+}
+
+.pal-launcher-select-icon {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  color: var(--text-muted, #94a3b8);
+  font-size: 10px;
+}
+
+/* Toggle Switches */
+.pal-launcher-toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 0;
+  cursor: pointer;
+  user-select: none;
+}
+
+.pal-launcher-toggle-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.pal-launcher-toggle-title {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text-primary, #e2e8f0);
+}
+
+.pal-launcher-toggle-desc {
+  font-size: 0.72rem;
+  color: var(--text-muted, #64748b);
+}
+
+.pal-launcher-switch {
+  position: relative;
+  width: 38px;
+  height: 22px;
+  background: var(--bg-input, #2a2a3c);
+  border-radius: 20px;
+  border: 1px solid var(--border-card, rgba(255, 255, 255, 0.1));
+  transition: all 0.25s ease;
+  flex-shrink: 0;
+}
+
+.pal-launcher-switch.checked {
+  background: var(--accent-primary, #6366f1);
+  border-color: var(--accent-primary, #6366f1);
+}
+
+.pal-launcher-switch-thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.pal-launcher-switch.checked .pal-launcher-switch-thumb {
+  transform: translateX(16px);
+}
+
+/* Actions */
+.pal-launcher-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.pal-launcher-btn-cancel {
+  flex: 1;
+  padding: 12px;
+  background: var(--bg-card, rgba(255, 255, 255, 0.05));
+  border: 1px solid var(--border-card, rgba(255, 255, 255, 0.1));
+  color: var(--text-primary, #fff);
+  border-radius: 10px;
+  font-size: 0.92rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.pal-launcher-btn-cancel:hover {
+  background: var(--bg-card-hover, rgba(255, 255, 255, 0.1));
+}
+
+.pal-launcher-btn-launch {
+  flex: 1.4;
+  padding: 12px;
+  background: linear-gradient(135deg, var(--accent-primary, #6366f1), var(--accent-secondary, #a855f7));
+  border: none;
+  color: #ffffff;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 14px rgba(99, 102, 241, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.pal-launcher-btn-launch:hover:not(:disabled) {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.5);
+}
+
+.pal-launcher-btn-launch:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.pal-launcher-btn-launch:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
