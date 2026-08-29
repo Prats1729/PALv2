@@ -47,6 +47,8 @@ export default function AnimeDetails() {
   const savedAnime = anime ? watchlist.find(item => item.animeId === anime.id || String(item.animeId) === String(anime.id)) : null;
   const suggestedTitles = anime ? getSuggestedTitles(anime, animeMapping?.raw) : [];
 
+  const [bannerError, setBannerError] = useState(false);
+
   const scrollCharacters = (direction) => {
     if (charactersListRef.current) {
       const scrollAmount = direction === 'left' ? -300 : 300;
@@ -57,6 +59,7 @@ export default function AnimeDetails() {
   useEffect(() => {
     if (!id) return;
     window.scrollTo(0, 0);
+    setBannerError(false);
 
     const fetchDetails = async () => {
       setLoading(true);
@@ -73,7 +76,9 @@ export default function AnimeDetails() {
                             native
                         }
                         coverImage {
+                            extraLarge
                             large
+                            color
                         }
                         bannerImage
                         description
@@ -175,23 +180,31 @@ export default function AnimeDetails() {
     <div className="details-container">
       {/* banner */}
       <div className="details-banner-wrapper">
-        {anime.bannerImage ? (
+        {anime.bannerImage && !bannerError ? (
           <img
             style={{ marginTop: "15px" }}
             src={anime.bannerImage}
-            alt="banner"
+            alt={anime.title.english || anime.title.romaji || "banner"}
             className="details-banner"
+            onError={() => setBannerError(true)}
           />
         ) : (
-          <div className="details-banner-placeholder"></div>
+          <div
+            className="details-banner-ambient"
+            style={{
+              "--dominant-color": anime.coverImage?.color || "var(--accent-primary, #6366f1)",
+            }}
+          >
+            <div className="details-ambient-glow" />
+          </div>
         )}
       </div>
 
       <div className="details-content">
         <div className="details-left-col">
           <img
-            src={anime.coverImage.large}
-            alt={anime.title.english}
+            src={anime.coverImage?.extraLarge || anime.coverImage?.large}
+            alt={anime.title.english || anime.title.romaji}
             className="details-cover"
           />
           {savedAnime ? (
