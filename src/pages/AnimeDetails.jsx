@@ -3,7 +3,7 @@ import { useParams, Link } from "react-router-dom";
 import star from "../assets/star.png";
 import "../styles/AnimeDetails.css";
 import { useWatchlist } from "../context/WatchlistContext";
-import { getAnimeEpisodeMapping } from "../services/animeMapping";
+import { getAnimeEpisodeMapping, getSuggestedTitles } from "../services/animeMapping";
 
 // Detect Tauri at module level (safe for both browser and desktop)
 const isTauri = '__TAURI_INTERNALS__' in window;
@@ -24,8 +24,6 @@ export default function AnimeDetails() {
   const [showPlayModal, setShowPlayModal] = useState(false);
   const [playTitle, setPlayTitle] = useState("");
   const [playEp, setPlayEp] = useState(1);
-  const [epOffset, setEpOffset] = useState(0);
-  const [detectedPrequelOffset, setDetectedPrequelOffset] = useState(0);
   const [useAutoEp, setUseAutoEp] = useState(true);
   const [playDub, setPlayDub] = useState(false);
   const [playQuality, setPlayQuality] = useState("best");
@@ -47,6 +45,7 @@ export default function AnimeDetails() {
 
   // Check if the current anime on the page is already saved in our database!
   const savedAnime = anime ? watchlist.find(item => item.animeId === anime.id || String(item.animeId) === String(anime.id)) : null;
+  const suggestedTitles = anime ? getSuggestedTitles(anime, animeMapping?.raw) : [];
 
   const scrollCharacters = (direction) => {
     if (charactersListRef.current) {
@@ -145,11 +144,8 @@ export default function AnimeDetails() {
           touchWatchHistory(mediaData.id);
         }
 
-        // Pre-calculate prequel episode offset and load AniZip mapping in background
+        // Load AniZip mapping in background
         if (isTauri && mediaData) {
-          calculatePrequelOffset(mediaData).then((offset) => {
-            setDetectedPrequelOffset(offset);
-          });
           getAnimeEpisodeMapping(mediaData.id).then((mapping) => {
             if (mapping) setAnimeMapping(mapping);
           });
@@ -162,45 +158,6 @@ export default function AnimeDetails() {
     };
     fetchDetails();
   }, [id]);
-
-  // Recursively calculate total episodes from previous seasons (PREQUEL chain)
-  const calculatePrequelOffset = async (initialMedia) => {
-    let totalOffset = 0;
-    let currentMedia = initialMedia;
-    let visited = new Set([initialMedia.id]);
-
-    while (currentMedia) {
-      const prequelEdge = currentMedia.relations?.edges?.find(
-        (e) => e.relationType === "PREQUEL" && e.node?.type === "ANIME" && e.node?.format !== "MUSIC"
-      );
-      if (!prequelEdge || !prequelEdge.node) break;
-
-      const prequelNode = prequelEdge.node;
-      if (visited.has(prequelNode.id)) break;
-      visited.add(prequelNode.id);
-
-      if (prequelNode.episodes) {
-        totalOffset += prequelNode.episodes;
-      }
-
-      try {
-        const q = `query ($id: Int) { Media(id: $id, type: ANIME) { id episodes relations { edges { relationType node { id episodes format type } } } } }`;
-        const res = await fetch("https://graphql.anilist.co/", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ query: q, variables: { id: prequelNode.id } }),
-        });
-        const data = await res.json();
-        currentMedia = data.data?.Media;
-        if (!prequelNode.episodes && currentMedia?.episodes) {
-          totalOffset += currentMedia.episodes;
-        }
-      } catch {
-        break;
-      }
-    }
-    return totalOffset;
-  };
 
   if (loading) return <div className="details-status">Loading anime...</div>;
   if (error)
@@ -309,17 +266,13 @@ export default function AnimeDetails() {
                   style={{ width: "100%", marginTop: "10px", padding: "12px", backgroundColor: "#ff5252", color: "white", border: "none", borderRadius: "8px", cursor: "pointer", fontWeight: "bold" }}
                   onClick={async () => {
                     const isCompleted = savedAnime.totalEpisodes && savedAnime.progress >= savedAnime.totalEpisodes;
-                    setPlayEp(isCompleted ? 1 : (savedAnime.progress + 1));
-                    setPlayTitle(anime.title.english || anime.title.romaji);
+                    const nextEp = isCompleted ? 1 : (savedAnime.progress + 1);
+                    setPlayEp(nextEp);
                     const mapping = animeMapping || await getAnimeEpisodeMapping(anime.id);
                     if (mapping) setAnimeMapping(mapping);
-                    const defaultOffset = savedAnime.episodeOffset !== undefined ? savedAnime.episodeOffset : (mapping?.offset || 0);
-                    setEpOffset(defaultOffset);
+                    const titles = getSuggestedTitles(anime, mapping?.raw);
+                    setPlayTitle(titles[0] || anime.title.english || anime.title.romaji);
                     setShowPlayModal(true);
-                    if (anime) {
-                      const offset = await calculatePrequelOffset(anime);
-                      setDetectedPrequelOffset(offset);
-                    }
                   }}
                 >
                   ▶ {(savedAnime.totalEpisodes && savedAnime.progress >= savedAnime.totalEpisodes) ? "Rewatch" : `Play Ep ${savedAnime.progress + 1}`}
@@ -342,15 +295,11 @@ export default function AnimeDetails() {
                   style={{ width: "100%", padding: "12px", backgroundColor: "#ff5252", color: "white", border: "none", borderRadius: "8px", cursor: "pointer", fontWeight: "bold" }}
                   onClick={async () => {
                     setPlayEp(1);
-                    setPlayTitle(anime.title.english || anime.title.romaji);
                     const mapping = animeMapping || await getAnimeEpisodeMapping(anime.id);
                     if (mapping) setAnimeMapping(mapping);
-                    setEpOffset(mapping?.offset || 0);
+                    const titles = getSuggestedTitles(anime, mapping?.raw);
+                    setPlayTitle(titles[0] || anime.title.english || anime.title.romaji);
                     setShowPlayModal(true);
-                    if (anime) {
-                      const offset = await calculatePrequelOffset(anime);
-                      setDetectedPrequelOffset(offset);
-                    }
                   }}
                 >
                   ▶ Play Ep 1
@@ -481,176 +430,192 @@ export default function AnimeDetails() {
 
       {/* Tauri Playback Settings Modal */}
       {showPlayModal && (
-        <div className="modal-overlay" onClick={() => setShowPlayModal(false)} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.7)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ backgroundColor: '#1a1a2e', padding: '25px', borderRadius: '12px', width: '90%', maxWidth: '420px', display: 'flex', flexDirection: 'column', gap: '15px' }}>
-            <h2 style={{ margin: 0, color: '#fff', fontSize: '1.2rem', textAlign: 'center' }}>ani-cli Launcher</h2>
+        <div className="pal-launcher-overlay" onClick={() => setShowPlayModal(false)}>
+          <div className="pal-launcher-modal" onClick={(e) => e.stopPropagation()}>
+            
+            {/* Header */}
+            <div className="pal-launcher-header">
+              <div className="pal-launcher-title-group">
+                <div className="pal-launcher-icon">▶</div>
+                <h2 className="pal-launcher-title">Playback Companion</h2>
+              </div>
+              <button 
+                className="pal-launcher-close-btn" 
+                onClick={() => setShowPlayModal(false)}
+                title="Close"
+              >
+                ✕
+              </button>
+            </div>
             
             {/* Search Title */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-              <label style={{ color: '#aaa', fontSize: '0.85rem' }}>Search Title</label>
+            <div className="pal-launcher-field">
+              <div className="pal-launcher-label-row">
+                <label className="pal-launcher-label">Search Query</label>
+                <span className="pal-launcher-sublabel">Select exact entry if needed</span>
+              </div>
               <input 
                 type="text" 
+                className="pal-launcher-input"
                 value={playTitle} 
                 onChange={(e) => setPlayTitle(e.target.value)} 
-                style={{ padding: '10px', borderRadius: '6px', border: '1px solid #333', backgroundColor: '#0f0f1a', color: 'white', fontSize: '0.95rem' }}
+                placeholder="Anime title..."
               />
-            </div>
-
-            {/* Episode & Offset Calculation */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <input type="checkbox" id="useAutoEp" checked={useAutoEp} onChange={(e) => setUseAutoEp(e.target.checked)} style={{ cursor: 'pointer', width: '16px', height: '16px' }} />
-                <label htmlFor="useAutoEp" style={{ color: '#aaa', fontSize: '0.85rem', cursor: 'pointer' }}>Directly launch target episode</label>
-              </div>
-
-              {useAutoEp && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                  <div style={{ display: 'flex', gap: '10px' }}>
-                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                      <label style={{ color: '#aaa', fontSize: '0.8rem' }}>Season Ep</label>
-                      <input 
-                        type="number" 
-                        value={playEp} 
-                        onChange={(e) => setPlayEp(parseInt(e.target.value) || 1)} 
-                        min="1" 
-                        style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid #333', backgroundColor: '#0f0f1a', color: 'white', fontSize: '1rem', fontWeight: 'bold' }} 
-                      />
-                    </div>
-                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                      <label style={{ color: '#aaa', fontSize: '0.8rem' }}>Offset (e.g. +40)</label>
-                      <input 
-                        type="number" 
-                        value={epOffset} 
-                        onChange={(e) => setEpOffset(parseInt(e.target.value) || 0)} 
-                        min="0" 
-                        placeholder="0"
-                        style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid #333', backgroundColor: '#0f0f1a', color: 'white' }} 
-                      />
-                    </div>
-                  </div>
-
-                  {/* Suggested offset pills */}
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', alignItems: 'center' }}>
-                    <span style={{ color: '#888', fontSize: '0.75rem' }}>Presets:</span>
+              {suggestedTitles.length > 0 && (
+                <div className="pal-launcher-pills">
+                  {suggestedTitles.map((t, idx) => (
                     <button
+                      key={idx}
                       type="button"
-                      style={{
-                        backgroundColor: epOffset === 0 ? '#6366f1' : 'rgba(255, 255, 255, 0.08)',
-                        border: 'none',
-                        color: '#fff',
-                        padding: '2px 8px',
-                        borderRadius: '4px',
-                        cursor: 'pointer',
-                        fontSize: '0.75rem',
-                      }}
-                      onClick={() => setEpOffset(0)}
+                      onClick={() => setPlayTitle(t)}
+                      className={`pal-launcher-pill ${playTitle === t ? 'active' : ''}`}
+                      title={`Search with: ${t}`}
                     >
-                      +0 (Stand-alone)
+                      {t}
                     </button>
-                    {detectedPrequelOffset > 0 && (
-                      <button
-                        type="button"
-                        style={{
-                          backgroundColor: epOffset === detectedPrequelOffset ? '#6366f1' : 'rgba(255, 255, 255, 0.08)',
-                          border: 'none',
-                          color: '#fff',
-                          padding: '2px 8px',
-                          borderRadius: '4px',
-                          cursor: 'pointer',
-                          fontSize: '0.75rem',
-                        }}
-                        onClick={() => setEpOffset(detectedPrequelOffset)}
-                      >
-                        +{detectedPrequelOffset} (Franchise Prequels)
-                      </button>
-                    )}
-                    {detectedPrequelOffset !== 40 && playTitle.toLowerCase().includes('bleach') && (
-                      <button
-                        type="button"
-                        style={{
-                          backgroundColor: epOffset === 40 ? '#6366f1' : 'rgba(255, 255, 255, 0.08)',
-                          border: 'none',
-                          color: '#fff',
-                          padding: '2px 8px',
-                          borderRadius: '4px',
-                          cursor: 'pointer',
-                          fontSize: '0.75rem',
-                        }}
-                        onClick={() => setEpOffset(40)}
-                      >
-                        +40 (TYBW Cours 1-3)
-                      </button>
-                    )}
-                  </div>
-
-                  <div style={{ padding: '8px 12px', backgroundColor: '#131325', borderRadius: '6px', border: '1px solid #282845', fontSize: '0.82rem', color: '#68d391' }}>
-                    Target: <strong>Episode {playEp + (parseInt(epOffset) || 0)}</strong> {epOffset > 0 ? `(${playEp} season ep + ${epOffset} offset)` : ''}
-                  </div>
+                  ))}
                 </div>
               )}
-
-              {!useAutoEp && (
-                <span style={{ color: '#888', fontSize: '0.8rem', fontStyle: 'italic' }}>Interactive mode: You will select the episode in the terminal</span>
-              )}
             </div>
 
-            {/* Audio + Quality row */}
-            <div style={{ display: 'flex', gap: '10px' }}>
-              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                <label style={{ color: '#aaa', fontSize: '0.85rem' }}>Audio</label>
-                <select value={playDub ? "dub" : "sub"} onChange={(e) => setPlayDub(e.target.value === "dub")} style={{ padding: '10px', borderRadius: '6px', border: '1px solid #333', backgroundColor: '#0f0f1a', color: 'white' }}>
-                  <option value="sub">Sub</option>
-                  <option value="dub">Dub</option>
-                </select>
+            {/* Episode Selection Stepper */}
+            <div className="pal-launcher-field">
+              <div className="pal-launcher-label-row">
+                <label className="pal-launcher-label">Season Episode</label>
+                {animeMapping && animeMapping.getTargetEpisode(playEp) !== playEp ? (
+                  <span className="pal-launcher-badge">
+                    Auto-Mapped: Scraper Ep {animeMapping.getTargetEpisode(playEp)}
+                  </span>
+                ) : (
+                  <span className="pal-launcher-sublabel">
+                    Episode {playEp} {anime?.episodes ? `of ${anime.episodes}` : ''}
+                  </span>
+                )}
               </div>
-              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                <label style={{ color: '#aaa', fontSize: '0.85rem' }}>Quality</label>
-                <select value={playQuality} onChange={(e) => setPlayQuality(e.target.value)} style={{ padding: '10px', borderRadius: '6px', border: '1px solid #333', backgroundColor: '#0f0f1a', color: 'white' }}>
-                  <option value="best">Best</option>
-                  <option value="1080p">1080p</option>
-                  <option value="720p">720p</option>
-                  <option value="480p">480p</option>
-                </select>
+
+              <div className="pal-launcher-stepper">
+                <button 
+                  type="button"
+                  className="pal-launcher-stepper-btn"
+                  onClick={() => setPlayEp(prev => Math.max(1, prev - 1))}
+                  disabled={playEp <= 1}
+                >
+                  −
+                </button>
+                <input 
+                  type="number" 
+                  className="pal-launcher-stepper-input"
+                  value={playEp} 
+                  onChange={(e) => setPlayEp(Math.max(1, parseInt(e.target.value) || 1))} 
+                  min="1" 
+                  max={anime?.episodes || 9999}
+                />
+                <button 
+                  type="button"
+                  className="pal-launcher-stepper-btn"
+                  onClick={() => setPlayEp(prev => Math.min(anime?.episodes || 9999, prev + 1))}
+                  disabled={anime?.episodes && playEp >= anime.episodes}
+                >
+                  +
+                </button>
+              </div>
+            </div>
+
+            {/* Audio + Quality Row */}
+            <div className="pal-launcher-segmented-group">
+              {/* Audio Segmented Control */}
+              <div className="pal-launcher-field">
+                <label className="pal-launcher-label">Audio</label>
+                <div className="pal-launcher-segmented">
+                  <button 
+                    type="button"
+                    className={`pal-launcher-segment-btn ${!playDub ? 'active' : ''}`}
+                    onClick={() => setPlayDub(false)}
+                  >
+                    Sub
+                  </button>
+                  <button 
+                    type="button"
+                    className={`pal-launcher-segment-btn ${playDub ? 'active' : ''}`}
+                    onClick={() => setPlayDub(true)}
+                  >
+                    Dub
+                  </button>
+                </div>
+              </div>
+
+              {/* Quality Select */}
+              <div className="pal-launcher-field">
+                <label className="pal-launcher-label">Quality</label>
+                <div className="pal-launcher-select-wrapper">
+                  <select 
+                    className="pal-launcher-select"
+                    value={playQuality} 
+                    onChange={(e) => setPlayQuality(e.target.value)}
+                  >
+                    <option value="best">Best (1080p+)</option>
+                    <option value="1080p">1080p</option>
+                    <option value="720p">720p</option>
+                    <option value="480p">480p</option>
+                  </select>
+                  <span className="pal-launcher-select-icon">▼</span>
+                </div>
               </div>
             </div>
 
             {/* Toggles */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
-                <input type="checkbox" checked={skipIntro} onChange={(e) => setSkipIntro(e.target.checked)} style={{ cursor: 'pointer', width: '16px', height: '16px' }} />
-                <span style={{ color: '#ddd', fontSize: '0.85rem' }}>Skip intro (ani-skip, mpv only)</span>
-              </label>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
-                <input type="checkbox" checked={autoSync} onChange={(e) => setAutoSync(e.target.checked)} style={{ cursor: 'pointer', width: '16px', height: '16px' }} />
-                <span style={{ color: '#ddd', fontSize: '0.85rem' }}>Auto-track progress (≥70% watched)</span>
-              </label>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <div 
+                className="pal-launcher-toggle-row"
+                onClick={() => setSkipIntro(prev => !prev)}
+              >
+                <div className="pal-launcher-toggle-info">
+                  <span className="pal-launcher-toggle-title">Skip Intro & Outro</span>
+                  <span className="pal-launcher-toggle-desc">Automatic chapter skip (ani-skip, mpv)</span>
+                </div>
+                <div className={`pal-launcher-switch ${skipIntro ? 'checked' : ''}`}>
+                  <div className="pal-launcher-switch-thumb" />
+                </div>
+              </div>
+
+              <div 
+                className="pal-launcher-toggle-row"
+                onClick={() => setAutoSync(prev => !prev)}
+              >
+                <div className="pal-launcher-toggle-info">
+                  <span className="pal-launcher-toggle-title">Auto-Track Progress</span>
+                  <span className="pal-launcher-toggle-desc">Sync watchlist & history (≥70% watched)</span>
+                </div>
+                <div className={`pal-launcher-switch ${autoSync ? 'checked' : ''}`}>
+                  <div className="pal-launcher-switch-thumb" />
+                </div>
+              </div>
             </div>
 
             {/* Actions */}
-            <div style={{ display: 'flex', gap: '10px', marginTop: '5px' }}>
+            <div className="pal-launcher-actions">
               <button 
+                type="button"
+                className="pal-launcher-btn-cancel"
                 onClick={() => setShowPlayModal(false)}
-                style={{ flex: 1, padding: '12px', backgroundColor: '#333', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}
               >
                 Cancel
               </button>
               <button 
+                type="button"
+                className="pal-launcher-btn-launch"
                 disabled={isLaunching || !playTitle.trim()}
                 onClick={async () => {
                   try {
                     setIsLaunching(true);
                     setShowPlayModal(false);
                     
-                    const currentOffset = parseInt(epOffset) || 0;
-                    const targetEp = useAutoEp ? (playEp + currentOffset) : null;
+                    const mapping = animeMapping || await getAnimeEpisodeMapping(anime.id);
+                    if (mapping) setAnimeMapping(mapping);
+                    const targetEp = useAutoEp ? (mapping ? mapping.getTargetEpisode(playEp) : playEp) : null;
                     const resumeTime = (savedAnime && savedAnime.lastPosition > 15 && (playEp === (savedAnime.progress + 1) || playEp === savedAnime.progress))
                       ? savedAnime.lastPosition
                       : null;
-
-                    // Persist chosen offset for this anime so user never has to re-enter it
-                    if (savedAnime && currentOffset !== savedAnime.episodeOffset) {
-                      updateWatchlistItem(savedAnime.animeId, { episodeOffset: currentOffset });
-                    }
 
                     // Dynamic import so @tauri-apps/api doesn't crash on web
                     const { invoke } = await import('@tauri-apps/api/core');
@@ -678,16 +643,10 @@ export default function AnimeDetails() {
                       const duration = trackingData.duration || 0;
                       
                       if (completedCount > 0 || detectedEp) {
-                        let effectiveOffset = currentOffset;
-                        // Smart auto-detection if interactive mode or no offset provided but detected episode is outside current season:
-                        if (effectiveOffset === 0 && savedAnime && savedAnime.totalEpisodes && detectedEp && detectedEp > savedAnime.totalEpisodes) {
-                          effectiveOffset = detectedEp - (savedAnime.progress + 1);
-                          setEpOffset(effectiveOffset);
-                          updateWatchlistItem(savedAnime.animeId, { episodeOffset: effectiveOffset });
-                        }
-
-                        // Subtract effective offset to accurately map back to current season episode
-                        const seasonCalculatedEp = detectedEp ? Math.max(1, detectedEp - effectiveOffset) : null;
+                        // Universal AniZip season mapping
+                        const seasonCalculatedEp = (detectedEp && mapping)
+                          ? mapping.getSeasonEpisode(detectedEp, savedAnime?.totalEpisodes || anime?.episodes)
+                          : (detectedEp ? Math.max(1, detectedEp) : null);
 
                         if (savedAnime) {
                           const newProgress = Math.min(
@@ -701,7 +660,6 @@ export default function AnimeDetails() {
                           updateWatchlistItem(savedAnime.animeId, {
                             progress: newProgress,
                             status: newStatus,
-                            episodeOffset: effectiveOffset,
                             lastPosition: 0,
                             lastPercent: 0,
                             lastDuration: 0,

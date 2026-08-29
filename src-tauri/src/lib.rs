@@ -16,22 +16,12 @@ async fn play_anime(
         title, episode, is_dub, quality, skip_intro, start_time
     );
 
-    // Build the ani-cli flags
-    let mut flags = String::from(" --no-detach"); // keep terminal alive during playback
-    if let Some(ep) = episode {
-        flags.push_str(&format!(" -e {}", ep));
-    }
-    if is_dub {
-        flags.push_str(" --dub");
-    }
-    if quality != "best" {
-        flags.push_str(&format!(" -q {}", quality));
-    }
-    if skip_intro {
-        flags.push_str(" --skip");
-    }
+    let target_ep_str = match episode {
+        Some(ep) => format!("{}", ep),
+        None => String::new(),
+    };
 
-    // Lua tracker script to measure watched percentage, exact time position, and completion
+    // 1. Write Lua tracker script to measure watched percentage, exact time position, and completion
     let lua_script = r#"
 local max_percent = 0
 local last_time_pos = 0
@@ -90,56 +80,143 @@ mp.register_event("shutdown", function()
 end)
 "#;
 
-    // Ensure C:\tmp directory exists and write pal_tracker.lua for Windows mpv.exe
+    // Ensure C:\tmp exists
     let _ = fs::create_dir_all("C:\\tmp");
     let _ = fs::write("C:\\tmp\\pal_tracker.lua", lua_script);
     let _ = fs::remove_file("C:\\tmp\\pal_tracker.log");
 
-    // Also copy into %APPDATA%\mpv\scripts for automatic detection
     if let Ok(appdata) = std::env::var("APPDATA") {
         let mpv_scripts = Path::new(&appdata).join("mpv").join("scripts");
         let _ = fs::create_dir_all(&mpv_scripts);
         let _ = fs::write(mpv_scripts.join("pal_tracker.lua"), lua_script);
     }
 
-    let write_lua = format!(
-        "mkdir -p /mnt/c/tmp /tmp ~/.config/mpv/scripts && printf '%s' '{}' > /tmp/pal_tracker.lua && cp /tmp/pal_tracker.lua ~/.config/mpv/scripts/pal_tracker.lua 2>/dev/null || true",
-        lua_script.replace("'", "'\\''")
-    );
+    // 2. Write Python universal resolver directly to C:\tmp\pal_launcher.py
+    let py_launcher = r#"import sys
+import os
+import re
+import subprocess
+import urllib.parse
 
-    // Escape the title for use inside single quotes in bash
-    let escaped_title = title.replace("'", "'\\''");
+query = sys.argv[1] if len(sys.argv) > 1 else ""
+desired_ep_str = sys.argv[2] if len(sys.argv) > 2 else ""
+desired_ep = int(desired_ep_str) if desired_ep_str.isdigit() else None
+is_dub = sys.argv[3].lower() == "true" if len(sys.argv) > 3 else False
+quality = sys.argv[4] if len(sys.argv) > 4 else "best"
+skip_intro = sys.argv[5].lower() == "true" if len(sys.argv) > 5 else False
 
-    // Configure start flag if resuming mid-episode
+print(f"[PAL Engine] Starting playback for: '{query}' (Season Episode: {desired_ep or 'Interactive'})")
+
+for p in ["/mnt/c/tmp/pal_tracker.log", "/tmp/pal_tracker.log"]:
+    try:
+        if os.path.exists(p):
+            os.remove(p)
+    except Exception:
+        pass
+
+curl_bin = "curl"
+for c in ["curl_chrome116", "curl_chrome110", "curl"]:
+    if subprocess.call(["which", c], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL) == 0:
+        curl_bin = c
+        break
+
+agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+encoded = urllib.parse.quote(query)
+search_url = f"https://anidb.app/browse?q={encoded}"
+
+selected_index = None
+selected_id = None
+selected_name = None
+resolved_ep = str(desired_ep) if desired_ep else None
+
+try:
+    cmd = [curl_bin, "-sL", "-A", agent, "--max-time", "10", search_url]
+    page = subprocess.check_output(cmd).decode("utf-8", errors="ignore")
+    matches = re.findall(r'anime/([a-z0-9-]+-[0-9]+)"[^>]*(?:title|alt)="([^"]+)"', page)
+    if not matches:
+        raw_ids = re.findall(r'anime/([a-z0-9-]+-[0-9]+)"', page)
+        matches = [(m, m) for m in raw_ids]
+    if matches:
+        clean_q = re.sub(r'[^a-zA-Z0-9]', '', query).lower()
+        for idx, (mid, mname) in enumerate(matches, start=1):
+            clean_n = re.sub(r'[^a-zA-Z0-9]', '', mname).lower()
+            if clean_n == clean_q:
+                selected_index = idx
+                selected_id = mid
+                selected_name = mname
+                break
+        
+        if not selected_id and matches:
+            selected_index = 1
+            selected_id = matches[0][0]
+            selected_name = matches[0][1]
+
+    if selected_id and desired_ep:
+        anime_num = selected_id.split("-")[-1]
+        ep_url = f"https://anidb.app/api/frontend/anime/{anime_num}/episodes"
+        ep_json_raw = subprocess.check_output([curl_bin, "-sL", "-A", agent, ep_url]).decode("utf-8", errors="ignore")
+        ep_numbers = re.findall(r'"number":\s*([0-9]+)', ep_json_raw)
+        if ep_numbers:
+            idx = desired_ep - 1
+            if 0 <= idx < len(ep_numbers):
+                resolved_ep = ep_numbers[idx]
+                print(f"[PAL Engine] Auto-mapped Season Episode {desired_ep} -> Scraper Episode {resolved_ep} ({selected_name})")
+except Exception as e:
+    print(f"[PAL Engine] Resolver note: {e}")
+
+ani_cli_cmd = ["ani-cli", "--no-detach"]
+if is_dub:
+    ani_cli_cmd.append("--dub")
+if quality and quality != "best":
+    ani_cli_cmd.extend(["-q", quality])
+if skip_intro:
+    ani_cli_cmd.append("--skip")
+
+if selected_index and resolved_ep:
+    full_cmd = ani_cli_cmd + ["-S", str(selected_index), "-e", str(resolved_ep), query]
+elif resolved_ep:
+    full_cmd = ani_cli_cmd + ["-e", str(resolved_ep), query]
+else:
+    full_cmd = ani_cli_cmd + [query]
+
+print(f"[PAL Engine] Launching ani-cli: {' '.join(full_cmd)}")
+try:
+    subprocess.call(full_cmd)
+except Exception as err:
+    print(f"[PAL Engine] Playback failed: {err}")
+    subprocess.call(["ani-cli", "--no-detach", query])
+
+print("\n[PAL Companion] Playback session ended. Press Enter to close window...")
+try:
+    input()
+except Exception:
+    pass
+"#;
+
+    let _ = fs::write("C:\\tmp\\pal_launcher.py", py_launcher);
+
+    // 3. Configure player flags
     let mut player_flags = String::from("--script=C:\\\\tmp\\\\pal_tracker.lua");
     if let Some(st) = start_time {
         if st > 15 {
-            // Only resume if more than 15 seconds in
             player_flags.push_str(&format!(" --start={}", st));
         }
     }
 
-    // Build the full script content with export for player flags
-    let script_lines = format!(
-        "#!/bin/bash\nrm -f /mnt/c/tmp/pal_tracker.log /tmp/pal_tracker.log\nexport ANI_CLI_PLAYER_FLAGS=\"{}\"\nani-cli '{}'{}\necho ''\nread -p '[PAL] Press Enter to close...'",
-        player_flags, escaped_title, flags
+    // 4. Write runner script to C:\tmp\pal_run.sh
+    let run_sh = format!(
+        "#!/bin/bash\nmkdir -p /mnt/c/tmp /tmp ~/.config/mpv/scripts && cp /mnt/c/tmp/pal_tracker.lua ~/.config/mpv/scripts/pal_tracker.lua 2>/dev/null || true\nexport ANI_CLI_PLAYER_FLAGS='{}'\npython3 /mnt/c/tmp/pal_launcher.py '{}' '{}' '{}' '{}' '{}'\n",
+        player_flags,
+        title.replace("'", "'\\''"),
+        target_ep_str,
+        is_dub,
+        quality,
+        skip_intro
     );
 
-    // Step 1: Write tracker lua and execution script in WSL
-    let write_cmd = format!(
-        "{} && printf '%s' '{}' > /tmp/pal_play.sh && chmod +x /tmp/pal_play.sh",
-        write_lua,
-        script_lines.replace("'", "'\\''")
-    );
+    let _ = fs::write("C:\\tmp\\pal_run.sh", run_sh);
 
-    Command::new("wsl")
-        .arg("bash")
-        .arg("-c")
-        .arg(&write_cmd)
-        .output()
-        .map_err(|e| format!("Failed to write script: {}", e))?;
-
-    // Step 2: Execute in a visible terminal window
+    // 5. Execute in a visible terminal window
     let _ = Command::new("cmd")
         .arg("/C")
         .arg("start")
@@ -147,11 +224,11 @@ end)
         .arg("/WAIT")
         .arg("wsl")
         .arg("bash")
-        .arg("/tmp/pal_play.sh")
+        .arg("/mnt/c/tmp/pal_run.sh")
         .status()
         .map_err(|e| format!("Failed to execute: {}", e))?;
 
-    // Step 3: Read the tracker log from Windows C:\tmp\pal_tracker.log or WSL /tmp/pal_tracker.log
+    // 6. Read the tracker log
     let log_content = fs::read_to_string("C:\\tmp\\pal_tracker.log").unwrap_or_else(|_| {
         let out = Command::new("wsl")
             .arg("bash")
@@ -192,7 +269,6 @@ end)
                 if is_completed {
                     completed_count += 1;
 
-                    // Extract episode number from media title (e.g. "Clannad Episode 6" or "Episode 8")
                     if parts.len() >= 6 {
                         let title_part = parts[5..].join(":");
                         let re_words: Vec<&str> = title_part.split_whitespace().collect();
