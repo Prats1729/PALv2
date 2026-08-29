@@ -158,11 +158,13 @@ export default function Home() {
     }
   };
 
+  const [failedBannerIds, setFailedBannerIds] = useState(() => new Set());
+
   useEffect(() => {
     const fetchHomeData = async () => {
       const query = `
         query {
-          trending: Page(page: 1, perPage: 12) {
+          trending: Page(page: 1, perPage: 30) {
             media(sort: TRENDING_DESC, type: ANIME) {
               id
               title { english romaji native }
@@ -229,14 +231,17 @@ export default function Home() {
     fetchHomeData();
   }, []);
 
-  // Use top 10 trending anime for Hero Carousel
+  // Filter trending anime with valid native banner images for Hero Carousel (up to 10)
   const heroSlides = useMemo(() => {
-    return trending.slice(0, 10);
-  }, [trending]);
+    return trending
+      .filter((item) => Boolean(item.bannerImage) && !failedBannerIds.has(item.id))
+      .slice(0, 10);
+  }, [trending, failedBannerIds]);
 
   // Autoplay Hero Carousel
   const startSlideShow = () => {
     stopSlideShow();
+    if (heroSlides.length <= 1) return;
     slideInterval.current = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % (heroSlides.length || 1));
     }, 6000);
@@ -250,6 +255,7 @@ export default function Home() {
 
   useEffect(() => {
     if (heroSlides.length > 0) {
+      setCurrentSlide((prev) => (prev >= heroSlides.length ? 0 : prev));
       startSlideShow();
     }
     return () => stopSlideShow();
@@ -257,12 +263,14 @@ export default function Home() {
 
   const handlePrevSlide = () => {
     stopSlideShow();
+    if (heroSlides.length === 0) return;
     setCurrentSlide((prev) => (prev === 0 ? heroSlides.length - 1 : prev - 1));
     startSlideShow();
   };
 
   const handleNextSlide = () => {
     stopSlideShow();
+    if (heroSlides.length === 0) return;
     setCurrentSlide((prev) => (prev + 1) % heroSlides.length);
     startSlideShow();
   };
@@ -283,7 +291,8 @@ export default function Home() {
     );
   }
 
-  const heroAnime = heroSlides[currentSlide] || trending[0];
+  const safeSlideIndex = currentSlide < heroSlides.length ? currentSlide : 0;
+  const heroAnime = heroSlides[safeSlideIndex] || null;
   const heroDescription = heroAnime?.description
     ? heroAnime.description.replace(/<[^>]*>/g, "").substring(0, 240) + "..."
     : "";
@@ -296,16 +305,30 @@ export default function Home() {
           key={heroAnime.id}
           className="hero-section"
           style={{
-            backgroundImage: `url(${heroAnime.bannerImage || heroAnime.coverImage?.extraLarge || heroAnime.coverImage?.large})`,
+            backgroundImage: `url(${heroAnime.bannerImage})`,
           }}
         >
+          {/* Silent image listener for broken/failed banner URLs */}
+          <img
+            src={heroAnime.bannerImage}
+            alt=""
+            style={{ display: "none" }}
+            onError={() => {
+              setFailedBannerIds((prev) => {
+                const next = new Set(prev);
+                next.add(heroAnime.id);
+                return next;
+              });
+            }}
+          />
+
           {/* Multi-layered cinematic gradient overlays */}
           <div className="hero-gradient-overlay" />
 
           <div className="hero-content">
             {/* Metadata Badges */}
             <div className="hero-meta-badges">
-              <span className="hero-badge">#{currentSlide + 1} TRENDING</span>
+              <span className="hero-badge">#{safeSlideIndex + 1} TRENDING</span>
               {heroAnime.status && (
                 <span className={`hero-meta-tag status-${heroAnime.status.toLowerCase()}`}>
                   {heroAnime.status}
@@ -350,29 +373,33 @@ export default function Home() {
           </div>
 
           {/* Carousel Indicators */}
-          <div className="carousel-indicators">
-            {heroSlides.map((_, index) => (
-              <span
-                key={index}
-                className={`indicator-dash ${index === currentSlide ? "active" : ""}`}
-                onClick={() => {
-                  stopSlideShow();
-                  setCurrentSlide(index);
-                  startSlideShow();
-                }}
-              />
-            ))}
-          </div>
+          {heroSlides.length > 1 && (
+            <div className="carousel-indicators">
+              {heroSlides.map((_, index) => (
+                <span
+                  key={index}
+                  className={`indicator-dash ${index === safeSlideIndex ? "active" : ""}`}
+                  onClick={() => {
+                    stopSlideShow();
+                    setCurrentSlide(index);
+                    startSlideShow();
+                  }}
+                />
+              ))}
+            </div>
+          )}
 
           {/* Carousel Arrows */}
-          <div className="carousel-arrows">
-            <button className="arrow-btn" onClick={handlePrevSlide} aria-label="Previous Slide">
-              ‹
-            </button>
-            <button className="arrow-btn" onClick={handleNextSlide} aria-label="Next Slide">
-              ›
-            </button>
-          </div>
+          {heroSlides.length > 1 && (
+            <div className="carousel-arrows">
+              <button className="arrow-btn" onClick={handlePrevSlide} aria-label="Previous Slide">
+                ‹
+              </button>
+              <button className="arrow-btn" onClick={handleNextSlide} aria-label="Next Slide">
+                ›
+              </button>
+            </div>
+          )}
         </div>
       )}
 
@@ -484,7 +511,7 @@ export default function Home() {
               <span className="section-bar">|</span> Trending Now
             </h2>
             <div className="anime-grid">
-              {trending.map((anime) => (
+              {trending.slice(0, 12).map((anime) => (
                 <AnimeCard key={anime.id} anime={anime} />
               ))}
             </div>
