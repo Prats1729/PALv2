@@ -56,6 +56,8 @@ const watchlistSchema = new mongoose.Schema({
   updatedAt: { type: Date, default: Date.now },
   addedAt: { type: Date, default: Date.now }
 });
+watchlistSchema.index({ userId: 1, lastWatchedAt: -1 });
+
 // Create the Model based on the Schema
 const Watchlist = mongoose.model('Watchlist', watchlistSchema);
 
@@ -107,7 +109,7 @@ app.post('/api/watchlist', authMiddleware, async (req, res) => {
       totalEpisodes,
       progress: progress || 0,
       rating,
-      lastWatchedAt: lastWatchedAt ? new Date(lastWatchedAt) : ((progress > 0 || status === "Watching") ? new Date() : null),
+      lastWatchedAt: lastWatchedAt ? new Date(lastWatchedAt) : null,
       updatedAt: new Date()
     });
     
@@ -137,8 +139,8 @@ app.put('/api/watchlist/:id', authMiddleware, async (req, res) => {
     delete updatePayload.userId;
     delete updatePayload.animeId;
 
-    if (req.body.progress !== undefined || req.body.status === "Watching" || req.body.lastWatchedAt) {
-      updatePayload.lastWatchedAt = req.body.lastWatchedAt ? new Date(req.body.lastWatchedAt) : new Date();
+    if (req.body.lastWatchedAt !== undefined) {
+      updatePayload.lastWatchedAt = req.body.lastWatchedAt ? new Date(req.body.lastWatchedAt) : null;
     }
 
     const updatedAnime = await Watchlist.findOneAndUpdate(

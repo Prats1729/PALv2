@@ -91,63 +91,41 @@ export default function Home() {
   const slideInterval = useRef(null);
   const continueListRef = useRef(null);
   const isTauri = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
-  const [historyTick, setHistoryTick] = useState(0);
-
-  useEffect(() => {
-    const handleHistory = () => setHistoryTick((t) => t + 1);
-    window.addEventListener("pal-history-updated", handleHistory);
-    return () => window.removeEventListener("pal-history-updated", handleHistory);
-  }, []);
-
   const handleRemoveFromContinue = (e, item) => {
     e.preventDefault();
     e.stopPropagation();
 
-    updateWatchlistItem(item.animeId, { status: "On Hold" });
-
-    try {
-      const history = JSON.parse(localStorage.getItem("pal_recent_history") || "{}");
-      delete history[item.animeId];
-      localStorage.setItem("pal_recent_history", JSON.stringify(history));
-      window.dispatchEvent(new CustomEvent("pal-history-updated", { detail: { animeId: item.animeId } }));
-    } catch {
-      // ignore
-    }
+    // Clear watch timestamp and position without modifying user's library category
+    updateWatchlistItem(item.animeId, {
+      lastWatchedAt: null,
+      lastPosition: 0,
+      lastPercent: 0,
+      lastDuration: 0,
+    });
 
     window.dispatchEvent(
       new CustomEvent("pal-toast", {
         detail: {
-          message: `Moved "${item.title}" to On Hold (Removed from Continue Watching)`,
+          message: `Removed "${item.title}" from Continue Watching`,
           type: "info",
         },
       })
     );
   };
 
-  const getRecentTimestamp = (anime) => {
-    try {
-      const history = JSON.parse(localStorage.getItem("pal_recent_history") || "{}");
-      if (history[anime.animeId]) return history[anime.animeId];
-    } catch {
-      // fallback
-    }
-    if (anime.lastWatchedAt) return new Date(anime.lastWatchedAt).getTime();
-    if (anime.updatedAt) return new Date(anime.updatedAt).getTime();
-    return 0;
-  };
-
   const continueWatching = (watchlist || [])
     .filter((w) => {
+      // Must have an actual recorded watch timestamp
+      if (!w.lastWatchedAt) return false;
       // Must not be Completed or Dropped
       if (w.status === "Completed" || w.status === "Dropped") return false;
       // If totalEpisodes is known and progress >= totalEpisodes, it is finished!
       if (w.totalEpisodes && w.progress >= w.totalEpisodes) return false;
-      // Must be explicitly Watching or have positive progress
-      return w.status === "Watching" || w.progress > 0;
+      return true;
     })
     .sort((a, b) => {
-      const timeA = getRecentTimestamp(a);
-      const timeB = getRecentTimestamp(b);
+      const timeA = new Date(a.lastWatchedAt).getTime();
+      const timeB = new Date(b.lastWatchedAt).getTime();
       return timeB - timeA;
     });
 

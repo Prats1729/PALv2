@@ -10,7 +10,7 @@ const isTauri = '__TAURI_INTERNALS__' in window;
 
 export default function AnimeDetails() {
   const { id } = useParams();
-  const { watchlist, addToWatchlist, updateWatchlistItem, removeFromWatchlist, touchWatchHistory } = useWatchlist();
+  const { watchlist, addToWatchlist, updateWatchlistItem, removeFromWatchlist } = useWatchlist();
 
   const [anime, setAnime] = useState(null);
   const [animeMapping, setAnimeMapping] = useState(null);
@@ -154,9 +154,6 @@ export default function AnimeDetails() {
 
         const mediaData = json.data.Media;
         setAnime(mediaData);
-        if (mediaData && mediaData.id) {
-          touchWatchHistory(mediaData.id);
-        }
 
         // Load AniZip mapping in background
         if (isTauri && mediaData) {
@@ -261,7 +258,15 @@ export default function AnimeDetails() {
                     </button>
                     <button 
                       className="ops-progress-btn"
-                      onClick={() => updateWatchlistItem(savedAnime.animeId, { progress: savedAnime.progress + 1 })}
+                      onClick={() => {
+                        const nextProgress = savedAnime.progress + 1;
+                        const isCompleted = savedAnime.totalEpisodes && nextProgress >= savedAnime.totalEpisodes;
+                        updateWatchlistItem(savedAnime.animeId, { 
+                          progress: nextProgress,
+                          status: isCompleted ? "Completed" : (savedAnime.status === "Plan to Watch" ? "Watching" : savedAnime.status),
+                          lastWatchedAt: new Date().toISOString()
+                        });
+                      }}
                       disabled={savedAnime.totalEpisodes ? savedAnime.progress >= savedAnime.totalEpisodes : false}
                       title="Watched another episode"
                     >
