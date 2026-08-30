@@ -45,34 +45,49 @@ export function WatchlistProvider({ children }) {
     }
   }, [token, user?.isGuest, logout]);
 
+  // Helper to get AniList token (cached or fetched on demand)
+  const getAnilistToken = useCallback(async () => {
+    if (anilistTokenRef.current) return anilistTokenRef.current;
+    if (!token || !user?.hasAnilistToken || user?.isGuest) return null;
+    try {
+      const res = await apiFetch('/api/auth/anilist-token', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.anilistToken) {
+          anilistTokenRef.current = data.anilistToken;
+          return data.anilistToken;
+        }
+      }
+    } catch (e) {
+      console.error("[WatchlistContext] Failed to get AniList token:", e);
+    }
+    return null;
+  }, [token, user?.hasAnilistToken, user?.isGuest]);
+
   // Fetch AniList token once on login (cached in ref to avoid re-renders)
   useEffect(() => {
     if (token && user?.hasAnilistToken && !user?.isGuest) {
-      apiFetch('/api/auth/anilist-token', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      })
-        .then(res => res.json())
-        .then(data => { 
-          anilistTokenRef.current = data.anilistToken; 
+      getAnilistToken().then(anilistToken => {
+        if (anilistToken) {
           // Silently trigger two-way sync in the background
-          if (data.anilistToken) {
-            apiFetch('/api/watchlist/import-anilist', {
-              method: 'POST',
-              headers: { 'Authorization': `Bearer ${token}` }
-            })
-            .then(res => res.json())
-            .then(syncData => {
-              console.log("Background sync complete:", syncData.message);
-              fetchWatchlist(); // Refresh local list after sync
-            })
-            .catch(err => console.error("Background sync failed", err));
-          }
-        })
-        .catch(() => { anilistTokenRef.current = null; });
+          apiFetch('/api/watchlist/import-anilist', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}` }
+          })
+          .then(res => res.json())
+          .then(syncData => {
+            console.log("Background sync complete:", syncData.message);
+            fetchWatchlist(); // Refresh local list after sync
+          })
+          .catch(err => console.error("Background sync failed", err));
+        }
+      });
     } else {
       anilistTokenRef.current = null;
     }
-  }, [token, user?.hasAnilistToken, user?.isGuest, fetchWatchlist]);
+  }, [token, user?.hasAnilistToken, user?.isGuest, fetchWatchlist, getAnilistToken]);
 
   useEffect(() => {
     if (token && user) {
@@ -144,9 +159,11 @@ export function WatchlistProvider({ children }) {
         }));
 
         // Background sync to AniList
-        if (anilistTokenRef.current) {
-          syncToAniList(anilistTokenRef.current, anime.id, status, progress, rating);
-        }
+        getAnilistToken().then(aToken => {
+          if (aToken) {
+            syncToAniList(aToken, anime.id, status, progress, rating);
+          }
+        });
       } else {
         const errorData = await response.json();
         window.dispatchEvent(new CustomEvent("pal-toast", { 
@@ -207,16 +224,18 @@ export function WatchlistProvider({ children }) {
         }
 
         // Background sync to AniList
-        if (anilistTokenRef.current && data.anime) {
-          const anime = data.anime;
-          syncToAniList(
-            anilistTokenRef.current,
-            anime.animeId,
-            anime.status,
-            anime.progress,
-            anime.rating
-          );
-        }
+        getAnilistToken().then(aToken => {
+          if (aToken && data.anime) {
+            const anime = data.anime;
+            syncToAniList(
+              aToken,
+              anime.animeId,
+              anime.status,
+              anime.progress,
+              anime.rating
+            );
+          }
+        });
       } else {
         fetchWatchlist();
         const errorData = await response.json().catch(() => ({}));
@@ -264,9 +283,11 @@ export function WatchlistProvider({ children }) {
         }));
 
         // Background sync: remove from AniList too
-        if (anilistTokenRef.current) {
-          deleteFromAniList(anilistTokenRef.current, animeId);
-        }
+        getAnilistToken().then(aToken => {
+          if (aToken) {
+            deleteFromAniList(aToken, animeId);
+          }
+        });
       } else {
         setWatchlist(previousWatchlist);
         const errorData = await response.json().catch(() => ({}));

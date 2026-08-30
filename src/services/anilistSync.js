@@ -1,25 +1,40 @@
 // AniList Sync Service — Mutations to update user's real AniList account
 const ANILIST_API = "https://graphql.anilist.co";
 
-// Map PALv2 status strings to AniList MediaListStatus enum
+// Map PALv2 status strings and AniList enums to AniList MediaListStatus enum
 const STATUS_MAP = {
   "Watching": "CURRENT",
+  "CURRENT": "CURRENT",
   "Completed": "COMPLETED",
+  "COMPLETED": "COMPLETED",
   "On Hold": "PAUSED",
+  "PAUSED": "PAUSED",
   "Dropped": "DROPPED",
+  "DROPPED": "DROPPED",
   "Plan to Watch": "PLANNING",
+  "PLANNING": "PLANNING",
+  "Planning": "PLANNING",
 };
 
 /**
  * Saves/updates an anime entry on the user's real AniList account.
  * @param {string} anilistToken - The user's decrypted AniList access token
- * @param {number} mediaId - The AniList media ID
+ * @param {number|string} mediaId - The AniList media ID
  * @param {string} status - PALv2 status string (e.g. "Watching")
- * @param {number} progress - Episodes watched
+ * @param {number|string} progress - Episodes watched
  * @param {number|null} score - Score out of 10 (AniList uses 10-point by default)
  */
 export async function syncToAniList(anilistToken, mediaId, status, progress, score) {
-  if (!anilistToken) return null;
+  if (!anilistToken) {
+    console.warn("AniList sync skipped: No AniList token available");
+    return null;
+  }
+
+  const parsedMediaId = parseInt(mediaId, 10);
+  if (!parsedMediaId || isNaN(parsedMediaId)) {
+    console.warn("AniList sync skipped: Invalid mediaId", mediaId);
+    return null;
+  }
 
   const mutation = `
     mutation ($mediaId: Int, $status: MediaListStatus, $progress: Int, $score: Float) {
@@ -32,16 +47,21 @@ export async function syncToAniList(anilistToken, mediaId, status, progress, sco
     }
   `;
 
+  const mappedStatus = STATUS_MAP[status] || "PLANNING";
+  const parsedProgress = parseInt(progress, 10) || 0;
+
   const variables = {
-    mediaId,
-    status: STATUS_MAP[status] || "PLANNING",
-    progress: progress || 0,
+    mediaId: parsedMediaId,
+    status: mappedStatus,
+    progress: parsedProgress,
   };
 
-  // Only send score if it's a valid number
-  if (score != null && score > 0) {
-    variables.score = score;
+  // Only send score if it's a valid positive number
+  if (score != null && Number(score) > 0) {
+    variables.score = Number(score);
   }
+
+  console.log(`[AniList Sync] Syncing mediaId ${parsedMediaId} -> Status: ${mappedStatus}, Ep: ${parsedProgress}`);
 
   try {
     const res = await fetch(ANILIST_API, {
@@ -56,12 +76,13 @@ export async function syncToAniList(anilistToken, mediaId, status, progress, sco
 
     const json = await res.json();
     if (json.errors) {
-      console.error("AniList sync error:", json.errors[0].message);
+      console.error("AniList sync GraphQL error:", json.errors[0]?.message || json.errors);
       return null;
     }
-    return json.data.SaveMediaListEntry;
+    console.log("[AniList Sync] Successfully synced to AniList:", json.data?.SaveMediaListEntry);
+    return json.data?.SaveMediaListEntry;
   } catch (err) {
-    console.error("AniList sync failed:", err);
+    console.error("AniList sync network/fetch failed:", err);
     return null;
   }
 }
@@ -70,7 +91,10 @@ export async function syncToAniList(anilistToken, mediaId, status, progress, sco
  * Deletes an anime entry from the user's real AniList account.
  */
 export async function deleteFromAniList(anilistToken, mediaId) {
-  if (!anilistToken) return null;
+  if (!anilistToken || !mediaId) return null;
+
+  const parsedMediaId = parseInt(mediaId, 10);
+  if (!parsedMediaId || isNaN(parsedMediaId)) return null;
 
   // First we need the list entry ID for this media
   const query = `
@@ -91,7 +115,7 @@ export async function deleteFromAniList(anilistToken, mediaId) {
         Accept: "application/json",
         Authorization: `Bearer ${anilistToken}`,
       },
-      body: JSON.stringify({ query, variables: { mediaId } }),
+      body: JSON.stringify({ query, variables: { mediaId: parsedMediaId } }),
     });
 
     const entryJson = await entryRes.json();
