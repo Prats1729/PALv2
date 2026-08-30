@@ -12,18 +12,18 @@ export default function AnimeCard({ anime }) {
   const hoverTimer = useRef(null);
 
   const handleMouseEnter = (e) => {
-    // Determine position before showing
+    // Determine position before showing (preview card width is 270px + padding)
     const rect = e.currentTarget.getBoundingClientRect();
-    if (rect.right + 270 > window.innerWidth) {
+    if (rect.right + 285 > window.innerWidth) {
       setHoverPosition("left");
     } else {
       setHoverPosition("right");
     }
 
-    // 450ms delay before triggering the detailed preview
+    // 400ms delay before triggering the detailed preview
     hoverTimer.current = setTimeout(() => {
       setShowPreview(true);
-    }, 450);
+    }, 400);
   };
 
   const handleMouseLeave = () => {
@@ -138,7 +138,7 @@ export default function AnimeCard({ anime }) {
       {/* FLOATING HOVER PREVIEW CARD */}
       {showPreview && (
         <div
-          className="card-hover-preview"
+          className={`card-hover-preview pos-${hoverPosition}`}
           style={{ 
             borderTop: `3px solid ${cardColor}`,
             left: hoverPosition === "right" ? "105%" : "auto",

@@ -633,12 +633,15 @@ body.theme-light .hero-badge {
   animation: fadeInHover 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-/* Position tooltip leftwards if card is on the right of screen */
-.home-main-col .anime-grid .anime-card-wrapper:nth-child(even) .card-hover-preview,
-.anime-grid .anime-card-wrapper:nth-child(6n) .card-hover-preview,
-.anime-grid .anime-card-wrapper:nth-child(6n-1) .card-hover-preview {
-  left: auto;
-  right: 105%;
+/* Position helper classes set dynamically via JS */
+.card-hover-preview.pos-left {
+  left: auto !important;
+  right: 105% !important;
+}
+
+.card-hover-preview.pos-right {
+  left: 105% !important;
+  right: auto !important;
 }
 
 @keyframes fadeInHover {
@@ -1358,15 +1361,17 @@ body.theme-oled .airing-quick-add-btn {
     margin-top: 20px;
   }
   
-  /* Disable hover previews on mobile/tablet since tap triggers it awkwardly */
-  .card-hover-preview {
-    display: none !important;
-  }
-
   .airing-list {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
     gap: 15px;
+  }
+}
+
+/* Disable hover previews on small mobile touch devices */
+@media (max-width: 600px), (hover: none) and (pointer: coarse) {
+  .card-hover-preview {
+    display: none !important;
   }
 }
 
