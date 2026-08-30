@@ -99,17 +99,10 @@ export function WatchlistProvider({ children }) {
   }, [token, user, fetchWatchlist]);
 
   const touchWatchHistory = (animeId) => {
-    try {
-      const history = JSON.parse(localStorage.getItem('pal_recent_history') || '{}');
-      history[animeId] = Date.now();
-      localStorage.setItem('pal_recent_history', JSON.stringify(history));
-      window.dispatchEvent(new CustomEvent('pal-history-updated', { detail: { animeId } }));
-    } catch (e) {
-      console.error("Failed to update local history", e);
-    }
+    // Deprecated: Recency is now managed via persistent MongoDB lastWatchedAt
   };
 
-  const addToWatchlist = async (anime, status = "Plan to Watch") => {
+  const addToWatchlist = async (anime, status = "Plan to Watch", lastWatchedAt = null) => {
     if (user?.isGuest) {
       window.dispatchEvent(new CustomEvent("pal-auth-prompt", {
         detail: {
@@ -120,7 +113,6 @@ export function WatchlistProvider({ children }) {
     }
 
     if (!token) return;
-    touchWatchHistory(anime.id || anime.animeId);
 
     const progress = status === "Completed" ? (anime.episodes || 0) : 0;
     const rating = anime.averageScore ? (anime.averageScore / 10) : null;
@@ -142,7 +134,7 @@ export function WatchlistProvider({ children }) {
           status,
           progress,
           rating,
-          lastWatchedAt: new Date().toISOString()
+          lastWatchedAt: lastWatchedAt || null
         })
       });
 
@@ -181,8 +173,7 @@ export function WatchlistProvider({ children }) {
   };
 
   const updateWatchlistItem = async (id, updates) => {
-    if (!token) return;
-    touchWatchHistory(id);
+    if (!token && !user?.isGuest) return;
 
     // Auto-fill progress if status is set to Completed
     if (updates.status === "Completed") {
@@ -190,10 +181,6 @@ export function WatchlistProvider({ children }) {
       if (item && item.totalEpisodes) {
         updates.progress = item.totalEpisodes;
       }
-    }
-
-    if (!updates.lastWatchedAt) {
-      updates.lastWatchedAt = new Date().toISOString();
     }
 
     if (user?.isGuest) {
