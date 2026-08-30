@@ -49,7 +49,9 @@ export default function AnimeCard({ anime }) {
   const hasDub = Boolean(
     anime?.hasDub ||
     anime?.characters?.edges?.some(
-      (edge) => edge.dubActors && edge.dubActors.length > 0
+      (edge) =>
+        (edge.voiceActors && edge.voiceActors.length > 0) ||
+        (edge.dubActors && edge.dubActors.length > 0)
     )
   );
 

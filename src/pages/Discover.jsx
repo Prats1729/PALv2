@@ -288,7 +288,10 @@ export default function Discover() {
               }
               characters(sort: [ROLE, RELEVANCE], perPage: 6) {
                 edges {
-                  dubActors: voiceActors(language: ENGLISH) {
+                  node {
+                    id
+                  }
+                  voiceActors(language: ENGLISH) {
                     id
                   }
                 }
