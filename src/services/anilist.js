@@ -41,7 +41,10 @@ const SEARCH_QUERY = gql`
             }
             characters(sort: [ROLE, RELEVANCE], perPage: 6) {
                 edges {
-                    dubActors: voiceActors(language: ENGLISH) {
+                    node {
+                        id
+                    }
+                    voiceActors(language: ENGLISH) {
                         id
                     }
                 }

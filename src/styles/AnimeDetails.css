@@ -279,9 +279,9 @@ body.theme-google-dark .details-audio-badge.both {
   border-color: rgba(138, 180, 248, 0.3);
 }
 body.theme-google-dark .details-audio-badge.sub-only {
-  background: #242424;
+  background: rgba(255, 255, 255, 0.06);
   color: #9aa0a6;
-  border-color: #333333;
+  border-color: rgba(255, 255, 255, 0.12);
 }
 
 body.theme-oled .details-audio-badge.both {
@@ -290,9 +290,9 @@ body.theme-oled .details-audio-badge.both {
   border-color: rgba(56, 189, 248, 0.3);
 }
 body.theme-oled .details-audio-badge.sub-only {
-  background: #111111;
+  background: rgba(255, 255, 255, 0.06);
   color: #a1a1aa;
-  border-color: #262626;
+  border-color: rgba(255, 255, 255, 0.12);
 }
 
 body.theme-light .details-audio-badge.both {
@@ -301,9 +301,9 @@ body.theme-light .details-audio-badge.both {
   border-color: rgba(79, 70, 229, 0.25);
 }
 body.theme-light .details-audio-badge.sub-only {
-  background: #f1f5f9;
-  color: #475569;
-  border-color: #e2e8f0;
+  background: rgba(0, 0, 0, 0.05);
+  color: #64748b;
+  border-color: rgba(0, 0, 0, 0.12);
 }
 /* Genres tag badges */
 .genres-container {

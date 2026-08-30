@@ -181,7 +181,8 @@ export default function Home() {
               tags { name isMediaSpoiler isGeneralSpoiler }
               characters(sort: [ROLE, RELEVANCE], perPage: 6) {
                 edges {
-                  dubActors: voiceActors(language: ENGLISH) { id }
+                  node { id }
+                  voiceActors(language: ENGLISH) { id }
                 }
               }
             }
@@ -199,7 +200,8 @@ export default function Home() {
               tags { name isMediaSpoiler isGeneralSpoiler }
               characters(sort: [ROLE, RELEVANCE], perPage: 6) {
                 edges {
-                  dubActors: voiceActors(language: ENGLISH) { id }
+                  node { id }
+                  voiceActors(language: ENGLISH) { id }
                 }
               }
             }
@@ -218,7 +220,8 @@ export default function Home() {
               tags { name isMediaSpoiler isGeneralSpoiler }
               characters(sort: [ROLE, RELEVANCE], perPage: 6) {
                 edges {
-                  dubActors: voiceActors(language: ENGLISH) { id }
+                  node { id }
+                  voiceActors(language: ENGLISH) { id }
                 }
               }
             }
