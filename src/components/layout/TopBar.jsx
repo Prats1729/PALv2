@@ -93,17 +93,66 @@ export default function TopBar() {
 
   const searchInputRef = useRef(null);
 
-  // Global Ctrl+K / Cmd+K shortcut listener to focus search
+  // Track if user can navigate back in React Router history
+  const [canGoBack, setCanGoBack] = useState(() => Boolean(window.history.state?.idx > 0));
+
+  useEffect(() => {
+    setCanGoBack(Boolean(window.history.state?.idx > 0));
+  }, [location]);
+
+  const handleNavBack = () => {
+    if (window.history.state?.idx > 0) {
+      navigate(-1);
+    } else if (location.pathname !== "/") {
+      navigate("/");
+    }
+  };
+
+  const handleNavForward = () => {
+    navigate(1);
+  };
+
+  // Global Ctrl+K / Cmd+K and Alt+Arrow / Mouse navigation listeners
   useEffect(() => {
     const handleGlobalKeyDown = (e) => {
+      // Ctrl+K to search
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
         e.preventDefault();
         searchInputRef.current?.focus();
+        return;
+      }
+
+      // Alt+Left/Right navigation shortcuts (skip if user is typing in an input/textarea)
+      const tag = document.activeElement?.tagName?.toLowerCase();
+      if (tag === "input" || tag === "textarea") return;
+
+      if (e.altKey && e.key === "ArrowLeft") {
+        e.preventDefault();
+        handleNavBack();
+      } else if (e.altKey && e.key === "ArrowRight") {
+        e.preventDefault();
+        handleNavForward();
       }
     };
+
+    const handleMouseNav = (e) => {
+      // Mouse 4 = Back, Mouse 5 = Forward
+      if (e.button === 3) {
+        e.preventDefault();
+        handleNavBack();
+      } else if (e.button === 4) {
+        e.preventDefault();
+        handleNavForward();
+      }
+    };
+
     window.addEventListener("keydown", handleGlobalKeyDown);
-    return () => window.removeEventListener("keydown", handleGlobalKeyDown);
-  }, []);
+    window.addEventListener("mouseup", handleMouseNav);
+    return () => {
+      window.removeEventListener("keydown", handleGlobalKeyDown);
+      window.removeEventListener("mouseup", handleMouseNav);
+    };
+  }, [location]);
 
   const [showDesktopModal, setShowDesktopModal] = useState(false);
   const isTauri = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
@@ -120,6 +169,31 @@ export default function TopBar() {
           <NavLink to="/" className="home-logo-link">
             <img className="home-logo" src={logo} alt="home-button" />
           </NavLink>
+
+          <div className="topbar-nav-history desktop-only">
+            <button
+              type="button"
+              className={`topbar-nav-btn ${!canGoBack ? "disabled" : ""}`}
+              onClick={handleNavBack}
+              title="Go Back (Alt+←)"
+              aria-label="Back"
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="15 18 9 12 15 6"></polyline>
+              </svg>
+            </button>
+            <button
+              type="button"
+              className="topbar-nav-btn"
+              onClick={handleNavForward}
+              title="Go Forward (Alt+→)"
+              aria-label="Forward"
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="9 18 15 12 9 6"></polyline>
+              </svg>
+            </button>
+          </div>
         </div>
 
         {/* Wrap search box and dropdown in a container for positioning */}
