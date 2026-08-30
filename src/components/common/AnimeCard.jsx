@@ -46,6 +46,20 @@ export default function AnimeCard({ anime }) {
   const cardColor = anime.coverImage?.color || "#6366f1";
   const isSaved = watchlist.some(w => w.animeId === anime.id);
 
+  const hasDub = Boolean(
+    anime?.hasDub ||
+    anime?.characters?.edges?.some(
+      (edge) => edge.dubActors && edge.dubActors.length > 0
+    )
+  );
+
+  const displayGenres = (anime.genres || []).slice(0, 3);
+  const displayTags = (anime.tags || [])
+    .filter(t => !t.isMediaSpoiler && !t.isGeneralSpoiler)
+    .map(t => typeof t === "string" ? t : t.name)
+    .filter(t => !displayGenres.includes(t))
+    .slice(0, 2);
+
   return (
     <div
       className={`anime-card-wrapper ${isAdding ? "dropdown-open" : ""}`}
@@ -133,7 +147,15 @@ export default function AnimeCard({ anime }) {
         >
           <div className="hover-preview-header">
             <h3>{anime.title?.english || anime.title?.romaji}</h3>
-            <span className="hover-format">{anime.format || "TV"}</span>
+            <div className="hover-badges-row">
+              <span className="hover-format">{anime.format || "TV"}</span>
+              <span 
+                className={`hover-audio-badge ${hasDub ? "both" : "sub-only"}`}
+                title={hasDub ? "Japanese Sub & English Dub available" : "Japanese Sub only"}
+              >
+                {hasDub ? "SUB | DUB" : "SUB"}
+              </span>
+            </div>
           </div>
           <div className="hover-preview-meta">
             <span className="hover-rating">
@@ -141,7 +163,29 @@ export default function AnimeCard({ anime }) {
             </span>
             <span>•</span>
             <span>{anime.episodes || "?"} Episodes</span>
+            {anime.status && (
+              <>
+                <span>•</span>
+                <span className="hover-status">{anime.status.replace(/_/g, " ")}</span>
+              </>
+            )}
           </div>
+
+          {(displayGenres.length > 0 || displayTags.length > 0) && (
+            <div className="hover-tags-container">
+              {displayGenres.map((genre) => (
+                <span key={genre} className="hover-chip hover-genre-chip">
+                  {genre}
+                </span>
+              ))}
+              {displayTags.map((tag) => (
+                <span key={tag} className="hover-chip hover-tag-chip">
+                  #{tag}
+                </span>
+              ))}
+            </div>
+          )}
+
           <p className="hover-preview-desc">{cleanDescription}</p>
         </div>
       )}
