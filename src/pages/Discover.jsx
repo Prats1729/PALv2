@@ -280,6 +280,19 @@ export default function Discover() {
               format
               episodes
               status
+              genres
+              tags {
+                name
+                isMediaSpoiler
+                isGeneralSpoiler
+              }
+              characters(sort: [ROLE, RELEVANCE], perPage: 6) {
+                edges {
+                  dubActors: voiceActors(language: ENGLISH) {
+                    id
+                  }
+                }
+              }
             }
           }
         }

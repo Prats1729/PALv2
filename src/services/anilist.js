@@ -23,6 +23,7 @@ const SEARCH_QUERY = gql`
              }
             coverImage {
                 large
+                color
             }
             description(asHtml: false)
             averageScore
@@ -31,6 +32,19 @@ const SEARCH_QUERY = gql`
             status
             nextAiringEpisode{
                 episode
+            }
+            genres
+            tags {
+                name
+                isMediaSpoiler
+                isGeneralSpoiler
+            }
+            characters(sort: [ROLE, RELEVANCE], perPage: 6) {
+                edges {
+                    dubActors: voiceActors(language: ENGLISH) {
+                        id
+                    }
+                }
             }
             }
         }}

@@ -614,19 +614,20 @@ body.theme-light .hero-badge {
 }
 
 /* Floating Hover Preview Card (Delayed Modal) */
+/* Floating Hover Preview Card (Delayed Modal) */
 .card-hover-preview {
   position: absolute;
   top: 25%;
   left: 105%;
   transform: translateY(-50%);
-  width: 250px;
-  background-color: rgba(11, 8, 19, 0.85);
+  width: 270px;
+  background-color: var(--bg-modal, rgba(17, 14, 28, 0.96));
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(99, 102, 241, 0.4);
+  border: 1px solid var(--border-card, rgba(255, 255, 255, 0.08));
   border-radius: 12px;
-  padding: 16px;
-  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.7);
+  padding: 14px 16px;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.6);
   z-index: 99;
   pointer-events: none; /* Mouse movements ignore this modal */
   animation: fadeInHover 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
@@ -655,52 +656,182 @@ body.theme-light .hero-badge {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  gap: 10px;
-  margin-bottom: 8px;
+  gap: 8px;
+  margin-bottom: 6px;
 }
 
 .hover-preview-header h3 {
-  color: #ffffff;
-  font-size: 14px;
+  color: var(--text-primary, #ffffff);
+  font-size: 13.5px;
   font-weight: 600;
   margin: 0;
   line-height: 1.3;
+  flex: 1;
+}
+
+.hover-badges-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
 }
 
 .hover-format {
-  background-color: rgba(255, 255, 255, 0.08);
-  color: #e2e8f0;
-  font-size: 10px;
+  background-color: var(--bg-input, rgba(255, 255, 255, 0.08));
+  color: var(--text-secondary, #e2e8f0);
+  border: 1px solid var(--border-card, rgba(255, 255, 255, 0.1));
+  font-size: 9.5px;
   font-weight: 700;
-  padding: 3px 6px;
+  padding: 2px 5px;
   border-radius: 4px;
   text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+/* Hover Audio Badge (SUB | DUB) */
+.hover-audio-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 5px;
+  border-radius: 4px;
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  line-height: 1.2;
+}
+
+.hover-audio-badge.both {
+  background: rgba(99, 102, 241, 0.16);
+  color: #c7d2fe;
+  border: 1px solid rgba(99, 102, 241, 0.35);
+}
+
+.hover-audio-badge.sub-only {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-secondary, #94a3b8);
+  border: 1px solid var(--border-card, rgba(255, 255, 255, 0.12));
+}
+
+/* Theme overrides for hover audio badge */
+body.theme-google-dark .hover-audio-badge.both {
+  background: rgba(138, 180, 248, 0.14);
+  color: #8ab4f8;
+  border-color: rgba(138, 180, 248, 0.3);
+}
+body.theme-google-dark .hover-audio-badge.sub-only {
+  background: #242424;
+  color: #9aa0a6;
+  border-color: #333333;
+}
+
+body.theme-oled .hover-audio-badge.both {
+  background: rgba(56, 189, 248, 0.12);
+  color: #38bdf8;
+  border-color: rgba(56, 189, 248, 0.3);
+}
+body.theme-oled .hover-audio-badge.sub-only {
+  background: #111111;
+  color: #a1a1aa;
+  border-color: #262626;
+}
+
+body.theme-light .hover-audio-badge.both,
+body.light-theme .hover-audio-badge.both {
+  background: rgba(79, 70, 229, 0.1);
+  color: #4f46e5;
+  border-color: rgba(79, 70, 229, 0.25);
+}
+body.theme-light .hover-audio-badge.sub-only,
+body.light-theme .hover-audio-badge.sub-only {
+  background: #f1f5f9;
+  color: #475569;
+  border-color: #e2e8f0;
 }
 
 .hover-preview-meta {
   display: flex;
-  gap: 8px;
-  color: #7a7690;
-  font-size: 12px;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-muted, #7a7690);
+  font-size: 11.5px;
   font-weight: 500;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
+}
+
+.hover-status {
+  text-transform: capitalize;
 }
 
 .hover-rating {
   color: #fbbf24;
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 3px;
 }
 
 .hover-rating img {
-  width: 14px;
-  height: 14px;
+  width: 12px;
+  height: 12px;
+}
+
+/* Hover Genres & Tags */
+.hover-tags-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+.hover-chip {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 12px;
+  line-height: 1.3;
+}
+
+.hover-genre-chip {
+  background: rgba(99, 102, 241, 0.14);
+  color: #a5b4fc;
+  border: 1px solid rgba(99, 102, 241, 0.25);
+}
+
+body.theme-google-dark .hover-genre-chip {
+  background: rgba(138, 180, 248, 0.12);
+  color: #8ab4f8;
+  border-color: rgba(138, 180, 248, 0.25);
+}
+
+body.theme-oled .hover-genre-chip {
+  background: rgba(56, 189, 248, 0.1);
+  color: #7dd3fc;
+  border-color: rgba(56, 189, 248, 0.25);
+}
+
+body.theme-light .hover-genre-chip,
+body.light-theme .hover-genre-chip {
+  background: rgba(79, 70, 229, 0.08);
+  color: #4f46e5;
+  border-color: rgba(79, 70, 229, 0.2);
+}
+
+.hover-tag-chip {
+  background: var(--bg-input, rgba(255, 255, 255, 0.05));
+  color: var(--text-secondary, #94a3b8);
+  border: 1px solid var(--border-card, rgba(255, 255, 255, 0.08));
+}
+
+body.theme-light .hover-tag-chip,
+body.light-theme .hover-tag-chip {
+  background: #f8fafc;
+  color: #64748b;
+  border-color: #e2e8f0;
 }
 
 .hover-preview-desc {
-  color: #959595;
-  font-size: 12px;
+  color: var(--text-secondary, #959595);
+  font-size: 11.5px;
   line-height: 1.4;
   margin: 0;
 }

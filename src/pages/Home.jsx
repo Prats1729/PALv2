@@ -178,6 +178,12 @@ export default function Home() {
               season
               seasonYear
               genres
+              tags { name isMediaSpoiler isGeneralSpoiler }
+              characters(sort: [ROLE, RELEVANCE], perPage: 6) {
+                edges {
+                  dubActors: voiceActors(language: ENGLISH) { id }
+                }
+              }
             }
           }
           popular: Page(page: 1, perPage: 10) {
@@ -189,6 +195,13 @@ export default function Home() {
               averageScore
               format
               episodes
+              genres
+              tags { name isMediaSpoiler isGeneralSpoiler }
+              characters(sort: [ROLE, RELEVANCE], perPage: 6) {
+                edges {
+                  dubActors: voiceActors(language: ENGLISH) { id }
+                }
+              }
             }
           }
           topAiring: Page(page: 1, perPage: 10) {
@@ -201,6 +214,13 @@ export default function Home() {
               format
               episodes
               nextAiringEpisode { episode }
+              genres
+              tags { name isMediaSpoiler isGeneralSpoiler }
+              characters(sort: [ROLE, RELEVANCE], perPage: 6) {
+                edges {
+                  dubActors: voiceActors(language: ENGLISH) { id }
+                }
+              }
             }
           }
         }
