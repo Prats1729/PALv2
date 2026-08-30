@@ -46,6 +46,11 @@ export default function AnimeDetails() {
   // Check if the current anime on the page is already saved in our database!
   const savedAnime = anime ? watchlist.find(item => item.animeId === anime.id || String(item.animeId) === String(anime.id)) : null;
   const suggestedTitles = anime ? getSuggestedTitles(anime, animeMapping?.raw) : [];
+  const hasDub = Boolean(
+    anime?.characters?.edges?.some(
+      (edge) => edge.dubActors && edge.dubActors.length > 0
+    )
+  );
 
   const [bannerError, setBannerError] = useState(false);
 
@@ -65,11 +70,12 @@ export default function AnimeDetails() {
       setLoading(true);
       setError(null);
 
-      // Simple GraphQL query for single anime
+      // Simple GraphQL query for single anime with Sub/Dub voice actor detection
       const query = `
                 query ($id: Int) {
                     Media(id: $id, type: ANIME) {
                         id
+                        countryOfOrigin
                         title {
                             english
                             romaji
@@ -88,7 +94,7 @@ export default function AnimeDetails() {
                         genres
                         averageScore
                         seasonYear
-                        characters(sort: [ROLE, RELEVANCE], perPage: 15) {
+                        characters(sort: [ROLE, RELEVANCE], perPage: 25) {
                             edges {
                                 role
                                 node {
@@ -108,6 +114,9 @@ export default function AnimeDetails() {
                                     image {
                                         large
                                     }
+                                }
+                                dubActors: voiceActors(language: ENGLISH) {
+                                    id
                                 }
                             }
                         }
@@ -281,6 +290,7 @@ export default function AnimeDetails() {
                     const isCompleted = savedAnime.totalEpisodes && savedAnime.progress >= savedAnime.totalEpisodes;
                     const nextEp = isCompleted ? 1 : (savedAnime.progress + 1);
                     setPlayEp(nextEp);
+                    if (!hasDub) setPlayDub(false);
                     const mapping = animeMapping || await getAnimeEpisodeMapping(anime.id);
                     if (mapping) setAnimeMapping(mapping);
                     const titles = getSuggestedTitles(anime, mapping?.raw);
@@ -308,6 +318,7 @@ export default function AnimeDetails() {
                   style={{ width: "100%", padding: "12px", backgroundColor: "#ff5252", color: "white", border: "none", borderRadius: "8px", cursor: "pointer", fontWeight: "bold" }}
                   onClick={async () => {
                     setPlayEp(1);
+                    if (!hasDub) setPlayDub(false);
                     const mapping = animeMapping || await getAnimeEpisodeMapping(anime.id);
                     if (mapping) setAnimeMapping(mapping);
                     const titles = getSuggestedTitles(anime, mapping?.raw);
@@ -336,6 +347,12 @@ export default function AnimeDetails() {
             <div className="details-rating">
               <img src={star} alt="rating" />
               {anime.averageScore ? `${anime.averageScore / 10}` : "N/A"}
+            </div>
+            <div 
+              className={`details-audio-badge ${hasDub ? "both" : "sub-only"}`}
+              title={hasDub ? "Japanese Sub & English Dub available" : "Japanese Sub only (No official English Dub registered)"}
+            >
+              {hasDub ? "SUB | DUB" : "SUB"}
             </div>
           </div>
 
@@ -538,7 +555,14 @@ export default function AnimeDetails() {
             <div className="pal-launcher-segmented-group">
               {/* Audio Segmented Control */}
               <div className="pal-launcher-field">
-                <label className="pal-launcher-label">Audio</label>
+                <div className="pal-launcher-label-row">
+                  <label className="pal-launcher-label">Audio</label>
+                  {!hasDub && (
+                    <span className="pal-launcher-sublabel pal-launcher-na-hint">
+                      Dub N/A
+                    </span>
+                  )}
+                </div>
                 <div className="pal-launcher-segmented">
                   <button 
                     type="button"
@@ -550,9 +574,13 @@ export default function AnimeDetails() {
                   <button 
                     type="button"
                     className={`pal-launcher-segment-btn ${playDub ? 'active' : ''}`}
-                    onClick={() => setPlayDub(true)}
+                    onClick={() => {
+                      if (hasDub) setPlayDub(true);
+                    }}
+                    disabled={!hasDub}
+                    title={!hasDub ? "English Dub is not available for this anime" : "Switch to English Dub"}
                   >
-                    Dub
+                    Dub {!hasDub && <span className="pal-launcher-na-tag">(N/A)</span>}
                   </button>
                 </div>
               </div>
