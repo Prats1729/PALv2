@@ -1,11 +1,13 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useWatchlist } from '../context/WatchlistContext';
+import AvatarPickerModal from '../components/common/AvatarPickerModal';
 import '../styles/Profile.css';
 
 export default function Profile() {
   const { user } = useAuth();
   const { watchlist } = useWatchlist();
+  const [showAvatarPicker, setShowAvatarPicker] = useState(false);
 
   const stats = useMemo(() => {
     if (!watchlist) return { total: 0, episodes: 0, meanScore: 0, statuses: {} };
@@ -54,19 +56,50 @@ export default function Profile() {
   // Calculate percentages for the status bars
   const maxStatusCount = Math.max(...Object.values(stats.statuses), 1); // Avoid division by zero
 
+  const userAvatar = user?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.username || 'User'}&backgroundColor=6366f1`;
+
   return (
     <div className="profile-container">
       <div className="profile-header">
-        <img 
-          src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}&backgroundColor=6366f1`} 
-          alt="Profile Avatar" 
-          className="profile-avatar" 
-        />
+        <div 
+          className="profile-avatar-wrapper"
+          onClick={() => !user.isGuest && setShowAvatarPicker(true)}
+          style={{ position: 'relative', cursor: user.isGuest ? 'default' : 'pointer' }}
+          title={user.isGuest ? 'Sign in to customize avatar' : 'Click to change avatar'}
+        >
+          <img 
+            src={userAvatar} 
+            alt="Profile Avatar" 
+            className="profile-avatar" 
+            style={{ objectFit: 'cover' }}
+          />
+          {!user.isGuest && (
+            <div className="profile-avatar-badge" title="Change Avatar">
+              ✎
+            </div>
+          )}
+        </div>
         <div className="profile-info">
-          <h1>{user.username}</h1>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <h1>{user.username}</h1>
+            {!user.isGuest && (
+              <button 
+                type="button"
+                className="profile-edit-avatar-btn"
+                onClick={() => setShowAvatarPicker(true)}
+              >
+                Change Avatar
+              </button>
+            )}
+          </div>
           <p>PALv2 Member • {stats.total} Anime Tracked</p>
         </div>
       </div>
+
+      <AvatarPickerModal 
+        isOpen={showAvatarPicker}
+        onClose={() => setShowAvatarPicker(false)}
+      />
 
       <div className="profile-stats-grid">
         <div className="stat-card">

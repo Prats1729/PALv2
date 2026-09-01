@@ -1,12 +1,15 @@
 import { useState, useMemo, useRef, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { useWatchlist } from "../context/WatchlistContext";
 import { useAuth } from "../context/AuthContext";
 import Pagination from "../components/common/Pagination";
+import { fetchAnimeBrief } from "../services/anilist";
+import star from "../assets/star.png";
 import "../styles/Library.css";
 
 const SORT_OPTIONS = [
-  { value: "recent", label: "Recently Watched / Updated" },
+  { value: "added_desc", label: "Recently Added" },
+  { value: "watched_desc", label: "Recently Watched" },
   { value: "title_asc", label: "Title: A to Z" },
   { value: "title_desc", label: "Title: Z to A" },
   { value: "score_desc", label: "Rating: High to Low" },
@@ -63,22 +66,231 @@ function LibrarySortDropdown({ value, onChange }) {
   );
 }
 
+// Reusable Library Anime Card with Hover Preview & Description
+function LibraryCard({ anime, activeMenuId, setActiveMenuId, updateWatchlistItem, removeFromWatchlist }) {
+  const [showPreview, setShowPreview] = useState(false);
+  const [hoverPosition, setHoverPosition] = useState("right");
+  const [briefData, setBriefData] = useState(null);
+  const hoverTimer = useRef(null);
+
+  const handleMouseEnter = (e) => {
+    if (activeMenuId === anime.animeId) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    if (rect.right + 285 > window.innerWidth) {
+      setHoverPosition("left");
+    } else {
+      setHoverPosition("right");
+    }
+
+    hoverTimer.current = setTimeout(() => {
+      setShowPreview(true);
+      // Fetch only after cursor rests for 400ms to avoid burst requests
+      fetchAnimeBrief(anime.animeId).then((data) => {
+        if (data) setBriefData(data);
+      });
+    }, 400);
+  };
+
+  const handleMouseLeave = () => {
+    if (hoverTimer.current) clearTimeout(hoverTimer.current);
+    setShowPreview(false);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (hoverTimer.current) clearTimeout(hoverTimer.current);
+    };
+  }, []);
+
+  const isMenuOpen = activeMenuId === anime.animeId;
+  const progressPercent = anime.totalEpisodes ? Math.min(100, Math.round((anime.progress / anime.totalEpisodes) * 100)) : null;
+
+  const cleanDescription = briefData?.description
+    ? briefData.description.replace(/<[^>]*>/g, "").substring(0, 130) + "..."
+    : (anime.description ? anime.description.replace(/<[^>]*>/g, "").substring(0, 130) + "..." : null);
+
+  const displayGenres = (briefData?.genres || anime.genres || []).slice(0, 3);
+
+  return (
+    <div
+      className={`anime-card-wrapper ${isMenuOpen ? "dropdown-open" : ""}`}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+      style={{
+        position: "relative",
+        zIndex: isMenuOpen ? 9999 : (showPreview ? 50 : 1)
+      }}
+    >
+      <Link
+        to={`/anime/${anime.animeId}`}
+        className={`card-link ${isMenuOpen ? "dropdown-open" : ""}`}
+        style={{ 
+          "--hover-color": anime.color || "#6366f1",
+          position: "relative",
+          zIndex: isMenuOpen ? 9999 : 1
+        }}
+      >
+        <div className={`anime-card ${isMenuOpen ? "dropdown-open" : ""}`}>
+          <img
+            src={anime.coverImage}
+            alt={anime.title}
+            loading="lazy"
+          />
+          
+          {!isMenuOpen && (
+            <div className="quick-add-container">
+              <button 
+                className="quick-add-trigger"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setShowPreview(false);
+                  setActiveMenuId(anime.animeId);
+                }}
+                title="Change Status"
+              >
+                {anime.status} ▼
+              </button>
+            </div>
+          )}
+          
+          {isMenuOpen && (
+            <div 
+              className="quick-add-menu" 
+              onMouseLeave={() => setActiveMenuId(null)}
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
+            >
+              {["Watching", "Plan to Watch", "Completed", "On Hold", "Dropped"].map(status => (
+                <button
+                  key={status}
+                  className="quick-add-option"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    updateWatchlistItem(anime.animeId, { status });
+                    setActiveMenuId(null);
+                  }}
+                >
+                  {status}
+                </button>
+              ))}
+              <button
+                className="quick-add-option"
+                style={{ color: "#f87171", borderTop: "1px solid rgba(239, 68, 68, 0.2)" }}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  removeFromWatchlist(anime.animeId);
+                  setActiveMenuId(null);
+                }}
+              >
+                Remove
+              </button>
+            </div>
+          )}
+          <div className="anime-info" style={{ height: "85px", justifyContent: "flex-start" }}>
+            <div className="anime-title" title={anime.title}>
+              {anime.title}
+            </div>
+            <div className="anime-meta" style={{ color: "var(--accent-primary, #6366f1)" }}>
+              <span>Progress: {anime.progress} / {anime.totalEpisodes || "?"}</span>
+            </div>
+          </div>
+        </div>
+      </Link>
+
+      {/* Floating Hover Details Preview Card */}
+      {showPreview && !isMenuOpen && (
+        <div
+          className={`card-hover-preview pos-${hoverPosition}`}
+          style={{ 
+            borderTop: `3px solid ${anime.color || "var(--accent-primary, #6366f1)"}`,
+            left: hoverPosition === "right" ? "105%" : "auto",
+            right: hoverPosition === "left" ? "105%" : "auto"
+          }}
+        >
+          <div className="hover-preview-header">
+            <h3>{anime.title}</h3>
+            <div className="hover-badges-row">
+              <span className="hover-format">{briefData?.format || "TV"}</span>
+              <span className="hover-status" style={{ backgroundColor: "rgba(99, 102, 241, 0.2)", color: "#818cf8", padding: "2px 8px", borderRadius: "4px", fontSize: "11px", fontWeight: "600" }}>
+                {anime.status}
+              </span>
+            </div>
+          </div>
+          <div className="hover-preview-meta">
+            <span className="hover-rating">
+              <img src={star} alt="star" /> {anime.rating ? `${anime.rating}/10` : "No rating"}
+            </span>
+            <span>•</span>
+            <span>Progress: {anime.progress}/{anime.totalEpisodes || "?"}</span>
+            {progressPercent !== null && (
+              <>
+                <span>•</span>
+                <span className="hover-status">{progressPercent}%</span>
+              </>
+            )}
+          </div>
+
+          {displayGenres.length > 0 && (
+            <div className="hover-tags-container" style={{ marginTop: '6px', marginBottom: '6px' }}>
+              {displayGenres.map((genre) => (
+                <span key={genre} className="hover-chip hover-genre-chip">
+                  {genre}
+                </span>
+              ))}
+            </div>
+          )}
+
+          {cleanDescription && (
+            <p className="hover-preview-desc" style={{ margin: "6px 0 0 0", fontSize: "12px", lineHeight: "1.4", color: "var(--text-secondary, #94a3b8)" }}>
+              {cleanDescription}
+            </p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function Library() {
   const { watchlist, updateWatchlistItem, removeFromWatchlist, loading } = useWatchlist();
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState("ALL");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [sortBy, setSortBy] = useState("recent");
-  const [activeMenuId, setActiveMenuId] = useState(null);
-  
-  const ITEMS_PER_PAGE = 24;
-  const [page, setPage] = useState(1);
+  const [searchParams, setSearchParams] = useSearchParams();
 
-  // Filter and Sort entries
+  // Read URL search params for back-button / bookmark persistence
+  const activeTab = searchParams.get("status") || "ALL";
+  const searchQuery = searchParams.get("q") || "";
+  const sortBy = searchParams.get("sort") || "added_desc";
+  const page = parseInt(searchParams.get("page"), 10) || 1;
+
+  const [activeMenuId, setActiveMenuId] = useState(null);
+  const ITEMS_PER_PAGE = 24;
+
+  const updateUrlParams = (newParams) => {
+    const next = new URLSearchParams(searchParams);
+    Object.entries(newParams).forEach(([k, v]) => {
+      if (
+        v === null ||
+        v === undefined ||
+        v === "" ||
+        (k === "status" && v === "ALL") ||
+        (k === "sort" && (v === "added_desc" || v === "recent")) ||
+        (k === "page" && v === 1)
+      ) {
+        next.delete(k);
+      } else {
+        next.set(k, String(v));
+      }
+    });
+    setSearchParams(next, { replace: true });
+  };
+
+  // Filter and Sort entries with exact status matching
   const filteredEntries = useMemo(() => {
     let list = [...watchlist];
 
-    // 1. Status Tab Filter
+    // 1. Status Tab Filter (uses exact item.status)
     if (activeTab !== "ALL") {
       list = list.filter((item) => item.status === activeTab);
     }
@@ -106,10 +318,37 @@ export default function Library() {
       if (sortBy === "progress_asc") {
         return (a.progress || 0) - (b.progress || 0);
       }
-      // Default: "recent"
-      const timeA = a.lastWatchedAt ? new Date(a.lastWatchedAt).getTime() : (a.updatedAt ? new Date(a.updatedAt).getTime() : 0);
-      const timeB = b.lastWatchedAt ? new Date(b.lastWatchedAt).getTime() : (b.updatedAt ? new Date(b.updatedAt).getTime() : 0);
-      return timeB - timeA;
+      if (sortBy === "watched_desc") {
+        const timeA = a.lastWatchedAt ? new Date(a.lastWatchedAt).getTime() : 0;
+        const timeB = b.lastWatchedAt ? new Date(b.lastWatchedAt).getTime() : 0;
+        if (timeA !== timeB) return timeB - timeA;
+        return Number(b.animeId || 0) - Number(a.animeId || 0);
+      }
+
+      // Default: "added_desc" / "recent" -> Sort by actual time added, falling back to release recency
+      const getAddedTime = (item) => {
+        if (item.addedAt) {
+          const t = new Date(item.addedAt).getTime();
+          if (!isNaN(t) && t > 0) return t;
+        }
+        if (item.createdAt) {
+          const t = new Date(item.createdAt).getTime();
+          if (!isNaN(t) && t > 0) return t;
+        }
+        return 0;
+      };
+
+      const timeA = getAddedTime(a);
+      const timeB = getAddedTime(b);
+
+      if (timeA > 0 && timeB > 0 && timeA !== timeB) {
+        return timeB - timeA;
+      }
+      if (timeA > 0 && timeB === 0) return -1;
+      if (timeB > 0 && timeA === 0) return 1;
+
+      // Fallback: sort by release recency (higher AniList animeId = more recently released)
+      return Number(b.animeId || 0) - Number(a.animeId || 0);
     });
 
     return list;
@@ -120,16 +359,13 @@ export default function Library() {
 
   const handlePageChange = (newPage) => {
     if (newPage >= 1 && newPage <= totalPages) {
-      setPage(newPage);
+      updateUrlParams({ page: newPage });
       window.scrollTo(0, 0);
     }
   };
 
   const handleResetFilters = () => {
-    setActiveTab("ALL");
-    setSearchQuery("");
-    setSortBy("recent");
-    setPage(1);
+    setSearchParams({}, { replace: true });
   };
 
   const isTauri = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
@@ -137,16 +373,16 @@ export default function Library() {
   if (!isTauri && user?.isGuest) {
     return (
       <div className="library-container" style={{ textAlign: "center", padding: "60px 20px" }}>
-        <div style={{ marginBottom: "16px", color: "#6366f1" }}>
+        <div style={{ marginBottom: "16px", color: "var(--accent-primary, #6366f1)" }}>
           <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
             <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
           </svg>
         </div>
-        <h2 style={{ color: "#ffffff", fontSize: "24px", fontWeight: "700", margin: "0 0 10px 0" }}>
+        <h2 style={{ color: "var(--text-primary, #ffffff)", fontSize: "24px", fontWeight: "700", margin: "0 0 10px 0" }}>
           Library is Locked in Guest Mode
         </h2>
-        <p style={{ color: "#94a3b8", fontSize: "14px", maxWidth: "460px", margin: "0 auto 24px auto", lineHeight: "1.6" }}>
+        <p style={{ color: "var(--text-secondary, #94a3b8)", fontSize: "14px", maxWidth: "460px", margin: "0 auto 24px auto", lineHeight: "1.6" }}>
           Sign in or create a free PAL account to build your personal watchlist, track episode progress, and sync with AniList.
         </p>
         <div style={{ display: "flex", gap: "12px", justifyContent: "center", maxWidth: "300px", margin: "0 auto" }}>
@@ -154,7 +390,7 @@ export default function Library() {
             to="/login"
             style={{
               flex: 1,
-              backgroundColor: "#6366f1",
+              backgroundColor: "var(--accent-primary, #6366f1)",
               color: "#fff",
               padding: "10px 18px",
               borderRadius: "6px",
@@ -171,8 +407,8 @@ export default function Library() {
             style={{
               flex: 1,
               backgroundColor: "rgba(255, 255, 255, 0.08)",
-              border: "1px solid rgba(255, 255, 255, 0.15)",
-              color: "#e2e8f0",
+              border: "1px solid var(--border-card, rgba(255, 255, 255, 0.15))",
+              color: "var(--text-primary, #e2e8f0)",
               padding: "10px 18px",
               borderRadius: "6px",
               textDecoration: "none",
@@ -209,15 +445,14 @@ export default function Library() {
             placeholder="Search your library..."
             value={searchQuery}
             onChange={(e) => {
-              setSearchQuery(e.target.value);
-              setPage(1);
+              updateUrlParams({ q: e.target.value, page: 1 });
             }}
             className="library-search-input"
           />
           {searchQuery && (
             <button
               type="button"
-              onClick={() => setSearchQuery("")}
+              onClick={() => updateUrlParams({ q: "", page: 1 })}
               className="library-search-clear"
             >
               ✕
@@ -228,8 +463,7 @@ export default function Library() {
         <LibrarySortDropdown
           value={sortBy}
           onChange={(val) => {
-            setSortBy(val);
-            setPage(1);
+            updateUrlParams({ sort: val, page: 1 });
           }}
         />
 
@@ -262,8 +496,7 @@ export default function Library() {
             <button
               key={tab.key}
               onClick={() => {
-                setActiveTab(tab.key);
-                setPage(1);
+                updateUrlParams({ status: tab.key, page: 1 });
               }}
               className={`library-tab-btn ${activeTab === tab.key ? "active" : ""}`}
             >
@@ -274,12 +507,12 @@ export default function Library() {
       </div>
 
       {!loading && filteredEntries.length > 0 && (
-        <p style={{ color: "#aaa", marginBottom: "15px", fontSize: "13px" }}>
+        <p style={{ color: "var(--text-secondary, #aaa)", marginBottom: "15px", fontSize: "13px" }}>
           Showing {filteredEntries.length} {filteredEntries.length === 1 ? "title" : "titles"}
         </p>
       )}
 
-      {/* Main Page Style Anime Card Grid */}
+      {/* Anime Card Grid */}
       {loading ? (
         <div className="anime-grid" style={{ padding: 0 }}>
           {Array.from({ length: 8 }).map((_, idx) => (
@@ -292,86 +525,16 @@ export default function Library() {
         </div>
       ) : (
         <div className="anime-grid" style={{ padding: 0 }}>
-          {paginatedEntries.map((anime) => {
-            return (
-              <Link
-                key={anime._id}
-                to={`/anime/${anime.animeId}`}
-                className={`card-link ${activeMenuId === anime.animeId ? "dropdown-open" : ""}`}
-                style={{ 
-                  "--hover-color": anime.color || "#6366f1",
-                  zIndex: activeMenuId === anime.animeId ? 200 : "auto"
-                }}
-              >
-                <div className={`anime-card ${activeMenuId === anime.animeId ? "dropdown-open" : ""}`}>
-                  <img
-                    src={anime.coverImage}
-                    alt={anime.title}
-                    loading="lazy"
-                  />
-                  
-                  {activeMenuId !== anime.animeId && (
-                    <div className="quick-add-container">
-                      <button 
-                        className="quick-add-trigger"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          setActiveMenuId(anime.animeId);
-                        }}
-                        title="Change Status"
-                      >
-                        {anime.status} ▼
-                      </button>
-                    </div>
-                  )}
-                  
-                  {activeMenuId === anime.animeId && (
-                    <div 
-                      className="quick-add-menu" 
-                      onMouseLeave={() => setActiveMenuId(null)}
-                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
-                    >
-                      {["Watching", "Plan to Watch", "Completed", "On Hold", "Dropped"].map(status => (
-                        <button
-                          key={status}
-                          className="quick-add-option"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            updateWatchlistItem(anime.animeId, { status });
-                            setActiveMenuId(null);
-                          }}
-                        >
-                          {status}
-                        </button>
-                      ))}
-                      <button
-                        className="quick-add-option"
-                        style={{ color: "#f87171", borderTop: "1px solid rgba(239, 68, 68, 0.2)" }}
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          removeFromWatchlist(anime.animeId);
-                          setActiveMenuId(null);
-                        }}
-                      >
-                        Remove
-                      </button>
-                    </div>
-                  )}
-                  <div className="anime-info" style={{ height: "85px", justifyContent: "flex-start" }}>
-                    <div className="anime-title" title={anime.title}>
-                      {anime.title}
-                    </div>
-                    <div className="anime-meta" style={{ color: "#6366f1" }}>
-                      <span>Progress: {anime.progress} / {anime.totalEpisodes || "?"}</span>
-                    </div>
-                  </div>
-                </div>
-              </Link>
-            );
-          })}
+          {paginatedEntries.map((anime) => (
+            <LibraryCard
+              key={anime._id || anime.animeId}
+              anime={anime}
+              activeMenuId={activeMenuId}
+              setActiveMenuId={setActiveMenuId}
+              updateWatchlistItem={updateWatchlistItem}
+              removeFromWatchlist={removeFromWatchlist}
+            />
+          ))}
         </div>
       )}
 

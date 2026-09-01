@@ -129,3 +129,32 @@ export async function fetchUserWatchlist(username) {
 
   return json.data.MediaListCollection.lists;
 }
+
+const BRIEF_QUERY = gql`
+  query ($id: Int) {
+    Media(id: $id, type: ANIME) {
+      id
+      description(asHtml: false)
+      genres
+      format
+    }
+  }
+`;
+
+const briefCache = new Map();
+
+export async function fetchAnimeBrief(id) {
+  if (!id) return null;
+  if (briefCache.has(id)) return briefCache.get(id);
+  try {
+    const data = await request(endpoint, BRIEF_QUERY, { id });
+    if (data?.Media) {
+      briefCache.set(id, data.Media);
+      return data.Media;
+    }
+  } catch (e) {
+    // Return null silently on network error
+  }
+  return null;
+}
+

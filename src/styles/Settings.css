@@ -141,22 +141,23 @@ body.theme-google-dark .anilist-connected-badge {
 }
 
 .settings-auth-btn.disconnect {
-  background-color: transparent;
-  color: #f87171;
-  border: 1px solid rgba(248, 113, 113, 0.3);
+  background-color: rgba(248, 113, 113, 0.1) !important;
+  color: #f87171 !important;
+  border: 1px solid rgba(248, 113, 113, 0.3) !important;
   box-shadow: none;
   font-size: 13px;
   padding: 8px 16px;
 }
 
 .settings-auth-btn.disconnect:hover {
-  background-color: rgba(248, 113, 113, 0.1);
+  background-color: rgba(248, 113, 113, 0.2) !important;
   transform: none;
 }
 
 body.theme-google-dark .settings-auth-btn.disconnect {
-  color: #f28b82;
-  border-color: rgba(242, 139, 130, 0.35);
+  background-color: rgba(242, 139, 130, 0.15) !important;
+  color: #f28b82 !important;
+  border-color: rgba(242, 139, 130, 0.35) !important;
 }
 
 .settings-linking-status {
@@ -166,20 +167,35 @@ body.theme-google-dark .settings-auth-btn.disconnect {
 }
 
 .settings-auth-btn.import {
-  background-color: transparent;
-  color: var(--accent-primary, #818cf8);
-  border: 1px solid var(--border-card-hover, rgba(129, 140, 248, 0.3));
+  background-color: transparent !important;
+  color: var(--accent-primary, #818cf8) !important;
+  border: 1px solid var(--border-card-hover, rgba(129, 140, 248, 0.4)) !important;
   box-shadow: none;
 }
 
 .settings-auth-btn.import:hover {
-  background-color: rgba(129, 140, 248, 0.1);
+  background-color: rgba(129, 140, 248, 0.12) !important;
   transform: none;
 }
 
 body.theme-google-dark .settings-auth-btn.import {
-  color: #8ab4f8;
-  border-color: rgba(138, 180, 248, 0.4);
+  background-color: transparent !important;
+  color: #8ab4f8 !important;
+  border: 1px solid rgba(138, 180, 248, 0.5) !important;
+}
+
+body.theme-google-dark .settings-auth-btn.import:hover {
+  background-color: rgba(138, 180, 248, 0.15) !important;
+}
+
+body.theme-oled .settings-auth-btn.import {
+  background-color: transparent !important;
+  color: #38bdf8 !important;
+  border: 1px solid rgba(56, 189, 248, 0.5) !important;
+}
+
+body.theme-oled .settings-auth-btn.import:hover {
+  background-color: rgba(56, 189, 248, 0.15) !important;
 }
 
 .settings-auth-btn.import:disabled {
@@ -355,4 +371,77 @@ body.theme-light .theme-badge-active {
   color: var(--text-secondary, #94a3b8);
   margin: 0;
   line-height: 1.4;
+}
+
+/* Account Settings Profile Card */
+.settings-account-profile-box {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.settings-account-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 14px;
+  background: var(--bg-input, rgba(255, 255, 255, 0.03));
+  border: 1px solid var(--border-card, rgba(255, 255, 255, 0.06));
+  border-radius: 10px;
+}
+
+.settings-account-avatar {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  border: 2px solid var(--accent-primary, #6366f1);
+  object-fit: cover;
+  cursor: pointer;
+  transition: transform 0.2s ease, border-color 0.2s ease;
+  background: var(--bg-card, #120e25);
+  flex-shrink: 0;
+}
+
+.settings-account-avatar:hover {
+  transform: scale(1.05);
+  border-color: var(--accent-primary-hover, #4f46e5);
+}
+
+.settings-account-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.settings-account-name {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-primary, #ffffff);
+}
+
+.settings-account-email {
+  font-size: 13px;
+  color: var(--text-secondary, #94a3b8);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.settings-account-buttons-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.settings-account-buttons-row .settings-secondary-btn {
+  flex: 1;
+  min-width: 140px;
+  text-align: center;
+}
+
+@media (max-width: 600px) {
+  .settings-account-buttons-row {
+    flex-direction: column;
+  }
 }

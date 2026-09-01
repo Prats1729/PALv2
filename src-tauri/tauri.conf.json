@@ -1,7 +1,7 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "PALv2",
-  "version": "2.1.5",
+  "version": "2.1.9",
   "identifier": "com.palv2.app",
   "build": {
     "frontendDist": "../dist",

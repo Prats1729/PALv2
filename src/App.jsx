@@ -37,6 +37,7 @@ export default function App() {
   const [authPrompt, setAuthPrompt] = useState(null);
   const [availableUpdate, setAvailableUpdate] = useState(null);
   const [patchNotes, setPatchNotes] = useState(null);
+  const [connectingStatus, setConnectingStatus] = useState(null);
 
   // Check for post-update patch notes & background updates on app launch
   useEffect(() => {
@@ -65,15 +66,25 @@ export default function App() {
       }
     };
 
+    const handleDirectAvailableUpdate = (e) => {
+      if (e?.detail) {
+        setAvailableUpdate(e.detail);
+      }
+    };
+
     window.addEventListener("pal-check-update", handleCheckUpdateEvent);
+    window.addEventListener("pal-available-update", handleDirectAvailableUpdate);
     return () => {
       clearTimeout(timer);
       window.removeEventListener("pal-check-update", handleCheckUpdateEvent);
+      window.removeEventListener("pal-available-update", handleDirectAvailableUpdate);
     };
   }, []);
 
   useEffect(() => {
     let timer;
+    let autoDismissConnectingTimer;
+
     const handleToast = (e) => {
       if (timer) clearTimeout(timer);
       setToast({ message: e.detail.message, type: e.detail.type });
@@ -86,12 +97,28 @@ export default function App() {
       setAuthPrompt(e.detail || { message: "Sign in or create an account to use this feature." });
     };
 
+    const handleConnectingStatus = (e) => {
+      if (autoDismissConnectingTimer) clearTimeout(autoDismissConnectingTimer);
+      if (e.detail?.isConnecting) {
+        setConnectingStatus(e.detail);
+        // Automatically hide after 6 seconds so it never lingers
+        autoDismissConnectingTimer = setTimeout(() => {
+          setConnectingStatus(null);
+        }, 6000);
+      } else {
+        setConnectingStatus(null);
+      }
+    };
+
     window.addEventListener("pal-toast", handleToast);
     window.addEventListener("pal-auth-prompt", handleAuthPrompt);
+    window.addEventListener("pal-connecting-status", handleConnectingStatus);
     return () => {
       window.removeEventListener("pal-toast", handleToast);
       window.removeEventListener("pal-auth-prompt", handleAuthPrompt);
+      window.removeEventListener("pal-connecting-status", handleConnectingStatus);
       if (timer) clearTimeout(timer);
+      if (autoDismissConnectingTimer) clearTimeout(autoDismissConnectingTimer);
     };
   }, []);
 
@@ -147,6 +174,22 @@ export default function App() {
             </main>
             
             <BottomNavBar />
+
+            {/* Connecting to Server (Cold Start) Status Banner */}
+            {connectingStatus && (
+              <div className="pal-connecting-banner">
+                <div className="pal-connecting-spinner" />
+                <span>{connectingStatus.message || "Connecting to server..."}</span>
+                <button
+                  type="button"
+                  className="pal-connecting-close"
+                  onClick={() => setConnectingStatus(null)}
+                  title="Dismiss"
+                >
+                  ✕
+                </button>
+              </div>
+            )}
 
             {/* Global Toast Alert */}
             {toast && (

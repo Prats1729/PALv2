@@ -10,9 +10,13 @@ export function WatchlistProvider({ children }) {
   const [watchlist, setWatchlist] = useState([]);
   const [loading, setLoading] = useState(true);
   const anilistTokenRef = useRef(null);
+  const hasSyncedRef = useRef(false);
 
-  const fetchWatchlist = useCallback(async () => {
-    if (!token) return;
+  const fetchWatchlist = useCallback(async (silent = false) => {
+    if (!token) {
+      setLoading(false);
+      return;
+    }
     if (user?.isGuest) {
       try {
         const localData = JSON.parse(localStorage.getItem('pal_guest_watchlist') || '[]');
@@ -26,7 +30,9 @@ export function WatchlistProvider({ children }) {
     }
 
     try {
-      setLoading(true);
+      if (!silent && watchlist.length === 0) {
+        setLoading(true);
+      }
       const response = await apiFetch('/api/watchlist', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -43,7 +49,7 @@ export function WatchlistProvider({ children }) {
     } finally {
       setLoading(false);
     }
-  }, [token, user?.isGuest, logout]);
+  }, [token, user?.isGuest, logout, watchlist.length]);
 
   // Helper to get AniList token (cached or fetched on demand)
   const getAnilistToken = useCallback(async () => {
@@ -51,7 +57,8 @@ export function WatchlistProvider({ children }) {
     if (!token || !user?.hasAnilistToken || user?.isGuest) return null;
     try {
       const res = await apiFetch('/api/auth/anilist-token', {
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: { 'Authorization': `Bearer ${token}` },
+        silent: true
       });
       if (res.ok) {
         const data = await res.json();
@@ -68,35 +75,39 @@ export function WatchlistProvider({ children }) {
 
   // Fetch AniList token once on login (cached in ref to avoid re-renders)
   useEffect(() => {
-    if (token && user?.hasAnilistToken && !user?.isGuest) {
+    if (token && user?.hasAnilistToken && !user?.isGuest && !hasSyncedRef.current) {
+      hasSyncedRef.current = true;
       getAnilistToken().then(anilistToken => {
         if (anilistToken) {
           // Silently trigger two-way sync in the background
           apiFetch('/api/watchlist/import-anilist', {
             method: 'POST',
-            headers: { 'Authorization': `Bearer ${token}` }
+            headers: { 'Authorization': `Bearer ${token}` },
+            silent: true
           })
           .then(res => res.json())
           .then(syncData => {
             console.log("Background sync complete:", syncData.message);
-            fetchWatchlist(); // Refresh local list after sync
+            fetchWatchlist(true); // Silent refresh
           })
           .catch(err => console.error("Background sync failed", err));
         }
       });
-    } else {
+    } else if (!token) {
       anilistTokenRef.current = null;
+      hasSyncedRef.current = false;
     }
   }, [token, user?.hasAnilistToken, user?.isGuest, fetchWatchlist, getAnilistToken]);
 
+  const userId = user?._id || user?.id || user?.username;
   useEffect(() => {
-    if (token && user) {
+    if (token && userId) {
       fetchWatchlist();
     } else if (!token) {
       setWatchlist([]);
       setLoading(false);
     }
-  }, [token, user, fetchWatchlist]);
+  }, [token, userId]);
 
   const touchWatchHistory = (animeId) => {
     // Deprecated: Recency is now managed via persistent MongoDB lastWatchedAt

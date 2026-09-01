@@ -3,22 +3,41 @@ import { useAuth } from "../context/AuthContext";
 import { useWatchlist } from "../context/WatchlistContext";
 import { useLocation, useNavigate } from "react-router-dom";
 import { apiFetch } from "../services/api";
-import { getCurrentAppVersion } from "../utils/updater";
+import { getCurrentAppVersion, checkForAppUpdates } from "../utils/updater";
+import AvatarPickerModal from "../components/common/AvatarPickerModal";
 import "../styles/Settings.css";
 
 const CLIENT_ID = import.meta.env.VITE_ANILIST_CLIENT_ID;
 const REDIRECT_URI = window.location.origin + "/settings";
 
 export default function Settings() {
-  const { token, user, setUser, deleteAccount } = useAuth();
+  const { token, user, setUser, updateUsername, updatePassword, deleteAccount } = useAuth();
   const { fetchWatchlist } = useWatchlist();
   const location = useLocation();
   const navigate = useNavigate();
-  const [appVersion, setAppVersion] = useState("2.0.0");
+  const [appVersion, setAppVersion] = useState("2.1.9");
   const [anilistLinked, setAnilistLinked] = useState(user?.hasAnilistToken || false);
   const [linkingStatus, setLinkingStatus] = useState(null);
   const [importStatus, setImportStatus] = useState(null); // null | 'importing' | 'done' | 'error'
   const [importMessage, setImportMessage] = useState('');
+  const [isCheckingUpdate, setIsCheckingUpdate] = useState(false);
+
+  // Avatar Modal State
+  const [showAvatarPicker, setShowAvatarPicker] = useState(false);
+
+  // Change Username Modal State
+  const [showUsernameModal, setShowUsernameModal] = useState(false);
+  const [newUsernameInput, setNewUsernameInput] = useState("");
+  const [usernameLoading, setUsernameLoading] = useState(false);
+  const [usernameError, setUsernameError] = useState(null);
+
+  // Change Password Modal State
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [currentPasswordInput, setCurrentPasswordInput] = useState("");
+  const [newPasswordInput, setNewPasswordInput] = useState("");
+  const [confirmPasswordInput, setConfirmPasswordInput] = useState("");
+  const [passwordLoading, setPasswordLoading] = useState(false);
+  const [passwordError, setPasswordError] = useState(null);
 
   // 2-Level Delete Account State
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -82,7 +101,8 @@ export default function Settings() {
   }, []);
 
   const handleConnectAniList = () => {
-    const authUrl = `https://anilist.co/api/v2/oauth/authorize?client_id=${CLIENT_ID}&response_type=token`;
+    const redirect = encodeURIComponent(REDIRECT_URI);
+    const authUrl = `https://anilist.co/api/v2/oauth/authorize?client_id=${CLIENT_ID}&redirect_uri=${redirect}&response_type=token`;
     window.location.href = authUrl;
   };
 
@@ -292,21 +312,68 @@ export default function Settings() {
 
         <div className="settings-card">
           <h3 className="settings-card-title">Account Settings</h3>
-          <p className="settings-card-desc">Manage your PAL account details.</p>
-          <div className="settings-button-group">
-            <button 
-              className="settings-secondary-btn" 
-              onClick={() => window.dispatchEvent(new CustomEvent("pal-toast", { detail: { message: "Change username feature coming soon!", type: "info" } }))}
-            >
-              Change Username
-            </button>
-            <button 
-              className="settings-secondary-btn" 
-              onClick={() => window.dispatchEvent(new CustomEvent("pal-toast", { detail: { message: "Change password feature coming soon!", type: "info" } }))}
-            >
-              Change Password
-            </button>
-          </div>
+          <p className="settings-card-desc">Manage your PAL profile picture, username, and password credentials.</p>
+          
+          {user && !user.isGuest ? (
+            <div className="settings-account-profile-box">
+              <div className="settings-account-header">
+                <img 
+                  src={user.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}&backgroundColor=6366f1`}
+                  alt="Profile"
+                  className="settings-account-avatar"
+                  onClick={() => setShowAvatarPicker(true)}
+                  title="Click to change avatar"
+                />
+                <div className="settings-account-meta">
+                  <div className="settings-account-name">{user.username}</div>
+                  <div className="settings-account-email">{user.email || "No email linked"}</div>
+                </div>
+              </div>
+
+              <div className="settings-account-buttons-row">
+                <button 
+                  className="settings-secondary-btn"
+                  onClick={() => setShowAvatarPicker(true)}
+                >
+                  Change Avatar
+                </button>
+                <button 
+                  className="settings-secondary-btn" 
+                  onClick={() => {
+                    setNewUsernameInput(user.username);
+                    setUsernameError(null);
+                    setShowUsernameModal(true);
+                  }}
+                >
+                  Change Username
+                </button>
+                <button 
+                  className="settings-secondary-btn" 
+                  onClick={() => {
+                    setCurrentPasswordInput("");
+                    setNewPasswordInput("");
+                    setConfirmPasswordInput("");
+                    setPasswordError(null);
+                    setShowPasswordModal(true);
+                  }}
+                >
+                  Change Password
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="settings-account-guest-hint">
+              <p style={{ color: "#94a3b8", fontSize: "13px", marginBottom: "10px" }}>
+                You are currently browsing in Guest Mode.
+              </p>
+              <button 
+                className="settings-auth-btn" 
+                onClick={() => navigate("/register")}
+              >
+                Create an Account
+              </button>
+            </div>
+          )}
         </div>
 
         <div className="settings-card">
@@ -325,12 +392,49 @@ export default function Settings() {
             </div>
             <button
               className="settings-auth-btn"
-              style={{ marginTop: '6px' }}
-              onClick={() => {
-                window.dispatchEvent(new CustomEvent("pal-check-update", { detail: { interactive: true } }));
+              style={{
+                marginTop: '8px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                minHeight: '38px',
+                opacity: isCheckingUpdate ? 0.8 : 1,
+                cursor: isCheckingUpdate ? 'wait' : 'pointer'
+              }}
+              disabled={isCheckingUpdate}
+              onClick={async () => {
+                setIsCheckingUpdate(true);
+                try {
+                  const update = await checkForAppUpdates(true);
+                  if (update) {
+                    window.dispatchEvent(new CustomEvent("pal-available-update", { detail: update }));
+                  }
+                } catch (err) {
+                  console.error("Update check error:", err);
+                } finally {
+                  setIsCheckingUpdate(false);
+                }
               }}
             >
-              Check for Updates
+              {isCheckingUpdate ? (
+                <>
+                  <span
+                    style={{
+                      width: '14px',
+                      height: '14px',
+                      border: '2px solid rgba(255, 255, 255, 0.3)',
+                      borderTopColor: '#ffffff',
+                      borderRadius: '50%',
+                      display: 'inline-block',
+                      animation: 'spin 0.8s linear infinite'
+                    }}
+                  />
+                  <span>Checking for updates...</span>
+                </>
+              ) : (
+                "Check for Updates"
+              )}
             </button>
           </div>
         </div>
@@ -473,6 +577,208 @@ export default function Settings() {
                 </div>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Avatar Picker Modal */}
+      <AvatarPickerModal 
+        isOpen={showAvatarPicker}
+        onClose={() => setShowAvatarPicker(false)}
+      />
+
+      {/* Change Username Modal */}
+      {showUsernameModal && (
+        <div 
+          className="auth-modal-overlay" 
+          onClick={() => { if (!usernameLoading) setShowUsernameModal(false); }}
+        >
+          <div className="auth-modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '420px' }}>
+            <button 
+              type="button" 
+              className="auth-modal-close"
+              onClick={() => setShowUsernameModal(false)}
+              disabled={usernameLoading}
+            >
+              ✕
+            </button>
+
+            <h3 style={{ color: 'var(--text-primary, #fff)', margin: '0 0 8px 0', fontSize: '1.25rem', textAlign: 'center' }}>
+              Change Username
+            </h3>
+            <p style={{ color: 'var(--text-secondary, #94a3b8)', fontSize: '0.85rem', lineHeight: '1.4', marginBottom: '18px', textAlign: 'center' }}>
+              Choose a new username for your PAL account.
+            </p>
+
+            {usernameError && <div className="auth-error" style={{ marginBottom: '14px' }}>{usernameError}</div>}
+
+            <form onSubmit={async (e) => {
+              e.preventDefault();
+              if (newUsernameInput.trim() === user?.username) {
+                setShowUsernameModal(false);
+                return;
+              }
+              setUsernameLoading(true);
+              setUsernameError(null);
+              try {
+                await updateUsername(newUsernameInput.trim());
+                window.dispatchEvent(
+                  new CustomEvent("pal-toast", {
+                    detail: { message: `Username updated to ${newUsernameInput.trim()}!`, type: "success" },
+                  })
+                );
+                setShowUsernameModal(false);
+              } catch (err) {
+                setUsernameError(err.message || "Failed to update username");
+              } finally {
+                setUsernameLoading(false);
+              }
+            }}>
+              <div className="form-group" style={{ marginBottom: '20px' }}>
+                <label style={{ display: 'block', marginBottom: '6px', fontSize: '12px', color: 'var(--text-secondary, #94a3b8)' }}>New Username</label>
+                <input
+                  type="text"
+                  placeholder="Enter new username"
+                  value={newUsernameInput}
+                  onChange={(e) => setNewUsernameInput(e.target.value)}
+                  minLength={3}
+                  maxLength={30}
+                  required
+                  autoFocus
+                />
+              </div>
+
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <button
+                  type="button"
+                  className="settings-auth-btn"
+                  style={{ flex: 1, backgroundColor: 'rgba(255,255,255,0.08)', color: 'var(--text-primary, #fff)' }}
+                  onClick={() => setShowUsernameModal(false)}
+                  disabled={usernameLoading}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="settings-auth-btn"
+                  style={{ flex: 1.2 }}
+                  disabled={usernameLoading || !newUsernameInput.trim() || newUsernameInput.trim() === user?.username}
+                >
+                  {usernameLoading ? "Updating..." : "Save Username"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Change Password Modal */}
+      {showPasswordModal && (
+        <div 
+          className="auth-modal-overlay" 
+          onClick={() => { if (!passwordLoading) setShowPasswordModal(false); }}
+        >
+          <div className="auth-modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '420px' }}>
+            <button 
+              type="button" 
+              className="auth-modal-close"
+              onClick={() => setShowPasswordModal(false)}
+              disabled={passwordLoading}
+            >
+              ✕
+            </button>
+
+            <h3 style={{ color: 'var(--text-primary, #fff)', margin: '0 0 8px 0', fontSize: '1.25rem', textAlign: 'center' }}>
+              Change Password
+            </h3>
+            <p style={{ color: 'var(--text-secondary, #94a3b8)', fontSize: '0.85rem', lineHeight: '1.4', marginBottom: '18px', textAlign: 'center' }}>
+              Enter your current password and choose a secure new password.
+            </p>
+
+            {passwordError && <div className="auth-error" style={{ marginBottom: '14px' }}>{passwordError}</div>}
+
+            <form onSubmit={async (e) => {
+              e.preventDefault();
+              if (newPasswordInput !== confirmPasswordInput) {
+                setPasswordError("New passwords do not match");
+                return;
+              }
+              if (newPasswordInput.length < 6) {
+                setPasswordError("Password must be at least 6 characters long");
+                return;
+              }
+
+              setPasswordLoading(true);
+              setPasswordError(null);
+              try {
+                await updatePassword(currentPasswordInput, newPasswordInput);
+                window.dispatchEvent(
+                  new CustomEvent("pal-toast", {
+                    detail: { message: "Password updated successfully!", type: "success" },
+                  })
+                );
+                setShowPasswordModal(false);
+              } catch (err) {
+                setPasswordError(err.message || "Failed to update password");
+              } finally {
+                setPasswordLoading(false);
+              }
+            }}>
+              <div className="form-group" style={{ marginBottom: '12px' }}>
+                <label style={{ display: 'block', marginBottom: '6px', fontSize: '12px', color: 'var(--text-secondary, #94a3b8)' }}>Current Password</label>
+                <input
+                  type="password"
+                  placeholder="Enter current password"
+                  value={currentPasswordInput}
+                  onChange={(e) => setCurrentPasswordInput(e.target.value)}
+                  required
+                />
+              </div>
+
+              <div className="form-group" style={{ marginBottom: '12px' }}>
+                <label style={{ display: 'block', marginBottom: '6px', fontSize: '12px', color: 'var(--text-secondary, #94a3b8)' }}>New Password</label>
+                <input
+                  type="password"
+                  placeholder="Minimum 6 characters"
+                  value={newPasswordInput}
+                  onChange={(e) => setNewPasswordInput(e.target.value)}
+                  minLength={6}
+                  required
+                />
+              </div>
+
+              <div className="form-group" style={{ marginBottom: '20px' }}>
+                <label style={{ display: 'block', marginBottom: '6px', fontSize: '12px', color: 'var(--text-secondary, #94a3b8)' }}>Confirm New Password</label>
+                <input
+                  type="password"
+                  placeholder="Re-enter new password"
+                  value={confirmPasswordInput}
+                  onChange={(e) => setConfirmPasswordInput(e.target.value)}
+                  minLength={6}
+                  required
+                />
+              </div>
+
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <button
+                  type="button"
+                  className="settings-auth-btn"
+                  style={{ flex: 1, backgroundColor: 'rgba(255,255,255,0.08)', color: 'var(--text-primary, #fff)' }}
+                  onClick={() => setShowPasswordModal(false)}
+                  disabled={passwordLoading}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="settings-auth-btn"
+                  style={{ flex: 1.2 }}
+                  disabled={passwordLoading || !newPasswordInput || !confirmPasswordInput}
+                >
+                  {passwordLoading ? "Updating..." : "Update Password"}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

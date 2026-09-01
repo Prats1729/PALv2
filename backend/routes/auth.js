@@ -25,11 +25,141 @@ router.get('/me', authMiddleware, async (req, res) => {
         id: user._id,
         username: user.username,
         email: user.email,
+        avatar: user.avatar || null,
         hasAnilistToken: !!user.anilistToken
       }
     });
   } catch (err) {
     res.status(401).json({ error: 'Invalid or expired session' });
+  }
+});
+
+// Update Profile Picture / Avatar
+router.put('/avatar', authMiddleware, async (req, res) => {
+  try {
+    const { avatar } = req.body;
+    if (avatar && typeof avatar === 'string' && avatar.length > 2.5 * 1024 * 1024) {
+      return res.status(400).json({ error: "Avatar image is too large. Max size is 2MB." });
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(
+      req.user.id,
+      { avatar: avatar || null },
+      { new: true }
+    ).select('-password');
+
+    if (!updatedUser) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    res.json({
+      message: "Profile picture updated successfully!",
+      user: {
+        id: updatedUser._id,
+        username: updatedUser.username,
+        email: updatedUser.email,
+        avatar: updatedUser.avatar,
+        hasAnilistToken: !!updatedUser.anilistToken
+      }
+    });
+  } catch (err) {
+    console.error("Update avatar error:", err);
+    res.status(500).json({ error: "Failed to update profile picture" });
+  }
+});
+
+// Change Username
+router.put('/change-username', authMiddleware, async (req, res) => {
+  try {
+    const { newUsername } = req.body;
+    const cleanUsername = (newUsername || '').trim();
+
+    if (!cleanUsername) {
+      return res.status(400).json({ error: "Username cannot be empty" });
+    }
+
+    if (cleanUsername.length < 3) {
+      return res.status(400).json({ error: "Username must be at least 3 characters long" });
+    }
+
+    if (cleanUsername.length > 30) {
+      return res.status(400).json({ error: "Username cannot exceed 30 characters" });
+    }
+
+    if (!/^[a-zA-Z0-9_\-\.]+$/.test(cleanUsername)) {
+      return res.status(400).json({ error: "Username can only contain letters, numbers, dots, hyphens, and underscores" });
+    }
+
+    // Check if username is already taken by another account
+    const existing = await User.findOne({ 
+      username: { $regex: new RegExp(`^${cleanUsername}$`, 'i') }, 
+      _id: { $ne: req.user.id } 
+    });
+
+    if (existing) {
+      return res.status(400).json({ error: "Username is already taken" });
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(
+      req.user.id,
+      { username: cleanUsername },
+      { new: true }
+    ).select('-password');
+
+    if (!updatedUser) {
+      return res.status(404).json({ error: "User account not found" });
+    }
+
+    res.json({
+      message: "Username updated successfully!",
+      user: {
+        id: updatedUser._id,
+        username: updatedUser.username,
+        email: updatedUser.email,
+        avatar: updatedUser.avatar,
+        hasAnilistToken: !!updatedUser.anilistToken
+      }
+    });
+  } catch (err) {
+    console.error("Change username error:", err);
+    res.status(500).json({ error: "Failed to update username" });
+  }
+});
+
+// Change Password
+router.put('/change-password', authMiddleware, async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+
+    if (!newPassword || newPassword.length < 6) {
+      return res.status(400).json({ error: "New password must be at least 6 characters long" });
+    }
+
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ error: "User account not found" });
+    }
+
+    // If user already has a password, verify current password
+    if (user.password) {
+      if (!currentPassword) {
+        return res.status(400).json({ error: "Current password is required" });
+      }
+
+      const isMatch = await bcrypt.compare(currentPassword, user.password);
+      if (!isMatch) {
+        return res.status(400).json({ error: "Incorrect current password" });
+      }
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    user.password = await bcrypt.hash(newPassword, salt);
+    await user.save();
+
+    res.json({ message: "Password updated successfully!" });
+  } catch (err) {
+    console.error("Change password error:", err);
+    res.status(500).json({ error: "Failed to update password" });
   }
 });
 
@@ -84,6 +214,7 @@ router.post('/register', async (req, res) => {
         id: newUser._id, 
         username: newUser.username, 
         email: newUser.email,
+        avatar: newUser.avatar || null,
         hasAnilistToken: false 
       } 
     });
@@ -143,6 +274,7 @@ router.post('/login', async (req, res) => {
         id: user._id, 
         username: user.username, 
         email: user.email,
+        avatar: user.avatar || null,
         hasAnilistToken: !!user.anilistToken 
       } 
     });
@@ -204,13 +336,17 @@ router.post('/anilist-login', async (req, res) => {
       // Update linked token & anilistId
       user.anilistId = viewer.id;
       user.anilistToken = encryptedToken;
+      if (!user.avatar && viewer.avatar?.large) {
+        user.avatar = viewer.avatar.large;
+      }
       await user.save();
     } else {
       // Auto-create new PALv2 user from AniList profile
       user = new User({
         username: viewer.name,
         anilistId: viewer.id,
-        anilistToken: encryptedToken
+        anilistToken: encryptedToken,
+        avatar: viewer.avatar?.large || null
       });
       await user.save();
     }
@@ -231,7 +367,7 @@ router.post('/anilist-login', async (req, res) => {
         username: user.username,
         email: user.email,
         hasAnilistToken: true,
-        avatar: viewer.avatar?.large
+        avatar: user.avatar || viewer.avatar?.large || null
       }
     });
   } catch (err) {

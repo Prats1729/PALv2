@@ -286,6 +286,29 @@ export default function AnimeDetails() {
                 </button>
               </div>
 
+              {/* User Score / Rating Selector */}
+              <div className="ops-score-container" style={{ marginTop: '8px' }}>
+                <div className="ops-score-row">
+                  <div className="ops-score-label">
+                    <img src={star} alt="score" style={{ width: '13px', height: '13px' }} />
+                    <span>Your Rating</span>
+                  </div>
+                  <select
+                    className="ops-score-select"
+                    value={savedAnime.rating != null ? String(savedAnime.rating) : ""}
+                    onChange={(e) => {
+                      const val = e.target.value !== "" ? parseFloat(e.target.value) : null;
+                      updateWatchlistItem(savedAnime.animeId, { rating: val });
+                    }}
+                  >
+                    <option value="">No rating (-/10)</option>
+                    {[10, 9.5, 9, 8.5, 8, 7.5, 7, 6.5, 6, 5.5, 5, 4.5, 4, 3, 2, 1].map((s) => (
+                      <option key={s} value={s}>{s} / 10</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
               {/* Tauri Desktop Companion */}
               {isTauri && (
                 <button 
@@ -344,15 +367,28 @@ export default function AnimeDetails() {
           </h1>
 
           <div className="details-meta">
-            <span>{anime.format}</span>
+            <span>{anime.format || "TV"}</span>
             <span>•</span>
             <span>{anime.episodes || "?"} Episodes</span>
             <span>•</span>
-            <span>{anime.seasonYear}</span>
+            <span>{anime.seasonYear || "N/A"}</span>
             <div className="details-rating">
               <img src={star} alt="rating" />
               {anime.averageScore ? `${anime.averageScore / 10}` : "N/A"}
             </div>
+            
+            {/* Airing / Media Status */}
+            {anime.status && (
+              <span className={`details-airing-badge status-${anime.status.toLowerCase()}`}>
+                {anime.status.replace(/_/g, " ")}
+              </span>
+            )}
+
+            {/* Watchlist User Status */}
+            <span className={`details-user-status-badge ${savedAnime ? 'saved' : 'not-saved'}`}>
+              {savedAnime ? `✓ ${savedAnime.status}` : '+ Not in Watchlist'}
+            </span>
+
             <div 
               className={`details-audio-badge ${hasDub ? "both" : "sub-only"}`}
               title={hasDub ? "Japanese Sub & English Dub available" : "Japanese Sub only (No official English Dub registered)"}
