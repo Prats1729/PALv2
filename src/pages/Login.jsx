@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { useNavigate, Link } from "react-router-dom";
-import logo from "../assets/pal-logo.svg";
+import { isDesktop, isAndroid } from "../utils/platform";
 import "../styles/Auth.css";
+import logo from "../assets/pal-logo.svg";
 
 export default function Login() {
   const [identifier, setIdentifier] = useState("");
@@ -22,7 +23,6 @@ export default function Login() {
 
   const { user, login, forgotPassword, resetPassword, continueAsGuest } = useAuth();
   const navigate = useNavigate();
-  const isTauri = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
 
   // Navigate to home if user is logged in
   useEffect(() => {
@@ -91,9 +91,11 @@ export default function Login() {
         </div>
         <h2>Welcome Back</h2>
         <p className="auth-subtitle">
-          {isTauri 
+          {isDesktop() 
             ? "Desktop Edition • Sign in to sync your library & play locally"
-            : "Sign in to your PALv2 account"}
+            : isAndroid()
+            ? "Android Edition • Sign in to sync your library & tracking"
+            : "Sign in to your PAL account"}
         </p>
 
         {error && <div className="auth-error">{error}</div>}
@@ -141,7 +143,7 @@ export default function Login() {
           </button>
         </form>
 
-        {!isTauri && (
+        {!isDesktop() && (
           <div style={{ marginTop: "16px", textAlign: "center" }}>
             <div className="auth-divider">OR</div>
             <button

@@ -4,6 +4,7 @@ import { useWatchlist } from "../context/WatchlistContext";
 import { useLocation, useNavigate } from "react-router-dom";
 import { apiFetch } from "../services/api";
 import { getCurrentAppVersion, checkForAppUpdates } from "../utils/updater";
+import { isAndroid, isTauri } from "../utils/platform";
 import AvatarPickerModal from "../components/common/AvatarPickerModal";
 import "../styles/Settings.css";
 
@@ -15,7 +16,7 @@ export default function Settings() {
   const { fetchWatchlist } = useWatchlist();
   const location = useLocation();
   const navigate = useNavigate();
-  const [appVersion, setAppVersion] = useState("2.1.9");
+  const [appVersion, setAppVersion] = useState("3.0.0");
   const [anilistLinked, setAnilistLinked] = useState(user?.hasAnilistToken || false);
   const [linkingStatus, setLinkingStatus] = useState(null);
   const [importStatus, setImportStatus] = useState(null); // null | 'importing' | 'done' | 'error'
@@ -379,7 +380,7 @@ export default function Settings() {
         <div className="settings-card">
           <h3 className="settings-card-title">Application & Updates</h3>
           <p className="settings-card-desc">
-            Keep PALv2 updated with the latest features, bug fixes, and improvements.
+            Keep PAL updated with the latest features, bug fixes, and improvements.
           </p>
           <div className="settings-updates-container">
             <div className="settings-update-row">
@@ -387,8 +388,10 @@ export default function Settings() {
               <span className="settings-version-badge">v{appVersion}</span>
             </div>
             <div className="settings-update-row">
-              <span>OTA Updates:</span>
-              <span className="settings-ota-status">● Enabled</span>
+              <span>Update Channel:</span>
+              <span className="settings-ota-status">
+                {isTauri() ? "● Desktop OTA" : isAndroid() ? "● GitHub APK Releases" : "● Web Live"}
+              </span>
             </div>
             <button
               className="settings-auth-btn"

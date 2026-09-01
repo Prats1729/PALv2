@@ -1,135 +1,67 @@
-import { check } from "@tauri-apps/plugin-updater";
-import { relaunch } from "@tauri-apps/plugin-process";
+import { isTauri, isAndroid, isWeb, platformCapabilities } from "./platform.js";
+import { checkDesktopUpdates, downloadAndApplyDesktopUpdate, getDesktopAppVersion } from "./desktopUpdater.js";
+import { checkAndroidUpdates, downloadAndApplyAndroidUpdate, getAndroidAppVersion } from "./androidUpdater.js";
 
-export const isTauri = () => {
-  return typeof window !== "undefined" && Boolean(window.__TAURI_INTERNALS__);
-};
+// Re-export platform helpers for backward compatibility
+export { isTauri, isAndroid, isWeb, platformCapabilities };
 
 /**
- * Checks for updates on GitHub Releases
+ * Checks for updates on the active platform (Tauri on Desktop, GitHub Releases on Android).
  * @param {boolean} notifyIfLatest - whether to alert the user if they're already on the latest version
  */
 export async function checkForAppUpdates(notifyIfLatest = false) {
-  // In development mode, skip auto-update so it doesn't interrupt local coding
-  if (import.meta.env.DEV) {
-    if (notifyIfLatest) {
-      window.dispatchEvent(
-        new CustomEvent("pal-toast", {
-          detail: { message: "Running in local Dev mode. Updates apply to installed builds.", type: "info" },
-        })
-      );
-    }
-    return null;
+  if (isTauri()) {
+    return checkDesktopUpdates(notifyIfLatest);
   }
 
-  if (!isTauri()) {
-    if (notifyIfLatest) {
-      window.dispatchEvent(
-        new CustomEvent("pal-toast", {
-          detail: { message: "Auto-updater is active in Desktop App builds.", type: "info" },
-        })
-      );
-    }
-    return null;
+  if (isAndroid()) {
+    return checkAndroidUpdates(notifyIfLatest);
   }
 
-  try {
-    const update = await check();
-    if (update?.available) {
-      // If release notes are empty or brief, fetch full changelog from GitHub Release
-      if (!update.body || update.body.trim().length < 15) {
-        try {
-          const res = await fetch(
-            `https://api.github.com/repos/Prats1729/PALv2/releases/tags/v${update.version}`
-          );
-          if (res.ok) {
-            const data = await res.json();
-            if (data.body) {
-              update.body = data.body;
-            }
-          }
-        } catch (e) {
-          console.warn("[Updater] Could not fetch extended changelog:", e);
-        }
-      }
-      return update;
-    } else {
-      if (notifyIfLatest) {
-        window.dispatchEvent(
-          new CustomEvent("pal-toast", {
-            detail: { message: "You are on the latest version of PALv2!", type: "success" },
-          })
-        );
-      }
-      return null;
-    }
-  } catch (error) {
-    console.error("[Updater] Failed to check for updates:", error);
-    if (notifyIfLatest) {
-      window.dispatchEvent(
-        new CustomEvent("pal-toast", {
-          detail: { message: `Update check: ${error?.message || error}`, type: "error" },
-        })
-      );
-    }
-    return null;
+  if (notifyIfLatest) {
+    window.dispatchEvent(
+      new CustomEvent("pal-toast", {
+        detail: { message: "The web edition is always updated automatically on load.", type: "info" },
+      })
+    );
   }
+  return null;
 }
 
 /**
- * Downloads and applies the update, then restarts the app.
- * @param {object} update - Update instance returned from check()
- * @param {function} onProgress - Progress callback ({ percent, downloaded, total })
+ * Downloads and applies the update based on platform.
+ * @param {object} update - Update object returned by checkForAppUpdates
+ * @param {function} onProgress - Progress callback ({ percent, downloaded, total, finished })
  */
 export async function downloadAndApplyUpdate(update, onProgress) {
   if (!update) return;
 
-  try {
-    let downloaded = 0;
-    let contentLength = 0;
-
-    await update.downloadAndInstall((event) => {
-      switch (event.event) {
-        case "Started":
-          contentLength = event.data.contentLength || 0;
-          if (onProgress) onProgress({ percent: 0, downloaded: 0, total: contentLength });
-          break;
-        case "Progress":
-          downloaded += event.data.chunkLength;
-          const percent = contentLength > 0 ? Math.round((downloaded / contentLength) * 100) : 0;
-          if (onProgress) onProgress({ percent, downloaded, total: contentLength });
-          break;
-        case "Finished":
-          if (onProgress) onProgress({ percent: 100, downloaded, total: contentLength, finished: true });
-          break;
-      }
-    });
-
-    // Relaunch the desktop app after installation
-    await relaunch();
-  } catch (err) {
-    console.error("[Updater] Failed to install update:", err);
-    throw err;
+  if (isTauri() || update.platform === "desktop") {
+    return downloadAndApplyDesktopUpdate(update, onProgress);
   }
+
+  if (isAndroid() || update.platform === "android") {
+    return downloadAndApplyAndroidUpdate(update, onProgress);
+  }
+
+  throw new Error("Updates are not supported on this platform.");
 }
 
 /**
- * Gets the current app version
+ * Gets the current app version for the active platform.
  */
 export async function getCurrentAppVersion() {
   if (isTauri()) {
-    try {
-      const { getVersion } = await import("@tauri-apps/api/app");
-      return await getVersion();
-    } catch (e) {
-      console.warn("Could not get Tauri app version:", e);
-    }
+    return getDesktopAppVersion();
   }
-  return "2.1.9";
+  if (isAndroid()) {
+    return getAndroidAppVersion();
+  }
+  return "3.0.0";
 }
 
 /**
- * Checks if the app was recently updated and returns the patch notes to display once on startup
+ * Checks if the app was recently updated and returns the patch notes to display once on startup.
  */
 export async function checkPatchNotesOnStartup() {
   const currentVersion = await getCurrentAppVersion();
@@ -145,19 +77,19 @@ export async function checkPatchNotesOnStartup() {
         const data = await res.json();
         return {
           version: currentVersion,
-          title: data.name || `PALv2 v${currentVersion}`,
+          title: data.name || `PAL v${currentVersion}`,
           body: data.body || "Performance improvements, bug fixes, and general enhancements.",
           publishedAt: data.published_at,
         };
       }
     } catch (err) {
-      console.warn("Could not fetch release notes from GitHub:", err);
+      console.warn("[Updater] Could not fetch release notes from GitHub:", err);
     }
 
     return {
       version: currentVersion,
-      title: `PALv2 v${currentVersion}`,
-      body: "Welcome to the latest version of PALv2 with performance enhancements and bug fixes.",
+      title: `PAL v${currentVersion}`,
+      body: "Welcome to the latest version of PAL with performance enhancements and bug fixes.",
     };
   }
 

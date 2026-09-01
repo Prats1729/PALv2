@@ -3,6 +3,7 @@ import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 
 import { searchAnime } from "../../services/anilist";
+import { platformCapabilities, isDesktop } from "../../utils/platform";
 import "../../styles/TopBar.css";
 import searchIcon from "../../assets/search-button-svgrepo-com.svg";
 import logo from "../../assets/pal-logo.svg";
@@ -155,7 +156,6 @@ export default function TopBar() {
   }, [location]);
 
   const [showDesktopModal, setShowDesktopModal] = useState(false);
-  const isTauri = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
 
   const handleLogout = () => {
     logout();
@@ -280,7 +280,7 @@ export default function TopBar() {
         </div>
 
         <div className="right-section">
-          {!isTauri && (
+          {platformCapabilities.canShowDesktopDownload && (
             <button
               type="button"
               className="desktop-only"
@@ -308,7 +308,7 @@ export default function TopBar() {
                 e.currentTarget.style.background = "rgba(255, 255, 255, 0.06)";
                 e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.15)";
               }}
-              title="Get PALv2 Desktop App for Windows"
+              title="Get PAL Desktop App for Windows"
             >
               Desktop App
             </button>
@@ -325,7 +325,7 @@ export default function TopBar() {
           <NavLink
             to={`/library`}
             onClick={(e) => {
-              if (!isTauri && user?.isGuest) {
+              if (!isDesktop() && user?.isGuest) {
                 e.preventDefault();
                 window.dispatchEvent(new CustomEvent("pal-auth-prompt", {
                   detail: {

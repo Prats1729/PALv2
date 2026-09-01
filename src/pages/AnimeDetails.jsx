@@ -4,9 +4,7 @@ import star from "../assets/star.png";
 import "../styles/AnimeDetails.css";
 import { useWatchlist } from "../context/WatchlistContext";
 import { getAnimeEpisodeMapping, getSuggestedTitles } from "../services/animeMapping";
-
-// Detect Tauri at module level (safe for both browser and desktop)
-const isTauri = '__TAURI_INTERNALS__' in window;
+import { platformCapabilities } from "../utils/platform";
 
 export default function AnimeDetails() {
   const { id } = useParams();
@@ -155,8 +153,8 @@ export default function AnimeDetails() {
         const mediaData = json.data.Media;
         setAnime(mediaData);
 
-        // Load AniZip mapping in background
-        if (isTauri && mediaData) {
+        // Load AniZip mapping in background for desktop playback
+        if (platformCapabilities.playback && mediaData) {
           getAnimeEpisodeMapping(mediaData.id).then((mapping) => {
             if (mapping) setAnimeMapping(mapping);
           });
@@ -310,7 +308,7 @@ export default function AnimeDetails() {
               </div>
 
               {/* Tauri Desktop Companion */}
-              {isTauri && (
+              {platformCapabilities.playback && (
                 <button 
                   className="ops-play-btn"
                   style={{ width: "100%", marginTop: "10px", padding: "12px", backgroundColor: "#ff5252", color: "white", border: "none", borderRadius: "8px", cursor: "pointer", fontWeight: "bold" }}
@@ -340,7 +338,7 @@ export default function AnimeDetails() {
               </button>
               
               {/* Tauri Desktop Companion (for non-saved anime) */}
-              {isTauri && (
+              {platformCapabilities.playback && (
                 <button 
                   className="ops-play-btn"
                   style={{ width: "100%", padding: "12px", backgroundColor: "#ff5252", color: "white", border: "none", borderRadius: "8px", cursor: "pointer", fontWeight: "bold" }}

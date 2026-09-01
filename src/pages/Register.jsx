@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate, Link } from "react-router-dom";
+import { isDesktop, isAndroid } from "../utils/platform";
 import logo from "../assets/pal-logo.svg";
 import "../styles/Auth.css";
 
@@ -13,7 +14,6 @@ export default function Register() {
   const [loading, setLoading] = useState(false);
   const { user, register, continueAsGuest } = useAuth();
   const navigate = useNavigate();
-  const isTauri = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
 
   // Navigate to home if user is logged in
   useEffect(() => {
@@ -60,9 +60,11 @@ export default function Register() {
         </div>
         <h2>Create Account</h2>
         <p className="auth-subtitle">
-          {isTauri
+          {isDesktop()
             ? "Desktop Edition • Create an account to sync your library & play locally"
-            : "Join PALv2 and start tracking your anime"}
+            : isAndroid()
+            ? "Android Edition • Create an account to sync your library & tracking"
+            : "Join PAL and start tracking your anime"}
         </p>
 
         {error && <div className="auth-error">{error}</div>}
@@ -117,7 +119,7 @@ export default function Register() {
           </button>
         </form>
 
-        {!isTauri && (
+        {!isDesktop() && (
           <div style={{ marginTop: "16px", textAlign: "center" }}>
             <div className="auth-divider">OR</div>
             <button

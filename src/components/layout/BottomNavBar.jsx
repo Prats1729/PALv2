@@ -1,14 +1,14 @@
 import { NavLink, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
+import { platformCapabilities } from "../../utils/platform";
 import "../../styles/BottomNavBar.css";
 
 export default function BottomNavBar() {
   const { user } = useAuth();
   const location = useLocation();
-  const isTauri = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
 
-  // Never show mobile bottom bar on desktop Tauri app or on unauthenticated auth pages
-  if (isTauri || !user || location.pathname === "/login" || location.pathname === "/register") {
+  // Show mobile bottom bar only on mobile web and Android, and only when authenticated
+  if (!platformCapabilities.isMobileNav || !user || location.pathname === "/login" || location.pathname === "/register") {
     return null;
   }
 
