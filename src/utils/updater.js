@@ -36,6 +36,22 @@ export async function checkForAppUpdates(notifyIfLatest = false) {
   try {
     const update = await check();
     if (update?.available) {
+      // If release notes are empty or brief, fetch full changelog from GitHub Release
+      if (!update.body || update.body.trim().length < 15) {
+        try {
+          const res = await fetch(
+            `https://api.github.com/repos/Prats1729/PALv2/releases/tags/v${update.version}`
+          );
+          if (res.ok) {
+            const data = await res.json();
+            if (data.body) {
+              update.body = data.body;
+            }
+          }
+        } catch (e) {
+          console.warn("[Updater] Could not fetch extended changelog:", e);
+        }
+      }
       return update;
     } else {
       if (notifyIfLatest) {
@@ -52,7 +68,7 @@ export async function checkForAppUpdates(notifyIfLatest = false) {
     if (notifyIfLatest) {
       window.dispatchEvent(
         new CustomEvent("pal-toast", {
-          detail: { message: `Update check error: ${error?.message || error}`, type: "error" },
+          detail: { message: `Update check: ${error?.message || error}`, type: "error" },
         })
       );
     }
@@ -109,7 +125,7 @@ export async function getCurrentAppVersion() {
       console.warn("Could not get Tauri app version:", e);
     }
   }
-  return "2.0.0";
+  return "2.1.9";
 }
 
 /**

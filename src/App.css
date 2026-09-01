@@ -1490,6 +1490,71 @@ body.theme-oled .airing-quick-add-btn {
   }
 }
 
+/* Cold Start Connecting Status Banner */
+.pal-connecting-banner {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--bg-modal, #151222);
+  border: 1px solid var(--accent-primary, #6366f1);
+  color: var(--text-primary, #ffffff);
+  padding: 10px 18px;
+  border-radius: 30px;
+  font-size: 13px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  z-index: 10000;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6);
+  animation: banner-fade-up 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes banner-fade-up {
+  from {
+    transform: translate(-50%, 20px);
+    opacity: 0;
+  }
+  to {
+    transform: translate(-50%, 0);
+    opacity: 1;
+  }
+}
+
+.pal-connecting-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-top-color: var(--accent-primary, #6366f1);
+  border-radius: 50%;
+  animation: pal-spin 0.8s linear infinite;
+  flex-shrink: 0;
+}
+
+.pal-connecting-close {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary, #94a3b8);
+  font-size: 13px;
+  cursor: pointer;
+  padding: 0 0 0 6px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  transition: color 0.15s ease;
+}
+
+.pal-connecting-close:hover {
+  color: var(--text-primary, #ffffff);
+}
+
+@keyframes pal-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 /* LIGHT THEME OVERRIDES */
 body.light-theme {
   background-color: #f6f5f9;

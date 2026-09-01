@@ -196,6 +196,7 @@ export default function Discover() {
   const [pageInfo, setPageInfo] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [retryTrigger, setRetryTrigger] = useState(0);
 
   useEffect(() => {
     setSearchQuery(urlQuery);
@@ -344,6 +345,7 @@ export default function Discover() {
     year,
     sortBy,
     page,
+    retryTrigger,
   ]);
 
   // Clear All Filters
@@ -544,7 +546,31 @@ export default function Discover() {
       </div>
 
       {/* RENDER GRID */}
-      {error && <p style={{ color: "red" }}>Error: {error}</p>}
+      {error && (
+        <div style={{ textAlign: "center", padding: "40px 20px", color: "var(--text-primary, #fff)" }}>
+          <p style={{ color: "#f87171", fontSize: "15px", marginBottom: "14px" }}>
+            {error.includes("Failed to fetch") || error.includes("Network")
+              ? "Unable to reach AniList API. Please check your connection or wait a moment."
+              : error}
+          </p>
+          <button
+            type="button"
+            onClick={() => setRetryTrigger(c => c + 1)}
+            style={{
+              backgroundColor: "var(--accent-primary, #6366f1)",
+              color: "#fff",
+              border: "none",
+              padding: "8px 20px",
+              borderRadius: "6px",
+              cursor: "pointer",
+              fontWeight: "600",
+              fontSize: "13px"
+            }}
+          >
+            Retry
+          </button>
+        </div>
+      )}
 
       {!loading && !error && pageInfo?.total !== undefined && (
         <p style={{ color: "#aaa", marginBottom: "10px" }}>

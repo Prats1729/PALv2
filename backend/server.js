@@ -13,7 +13,7 @@ app.use(cors({
   credentials: true
 }));
 // express.json() allows your server to read JSON data sent in the request body.
-app.use(express.json());
+app.use(express.json({ limit: '5mb' }));
 
 // --- Routes ---
 // This is a basic route. When a user or frontend visits http://localhost:5000/api/health
@@ -30,6 +30,7 @@ const userSchema = new mongoose.Schema({
   username: { type: String, required: true, unique: true, trim: true },
   email: { type: String, unique: true, sparse: true, lowercase: true, trim: true },
   password: { type: String, required: false }, // Optional if authenticated solely via AniList OAuth
+  avatar: { type: String, default: null }, // Custom image (base64/data URL) or preset URL
   anilistId: { type: Number, unique: true, sparse: true },
   anilistToken: { type: String, default: null }, // Encrypted token
   resetPasswordToken: { type: String, default: null },

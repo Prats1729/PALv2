@@ -56,12 +56,16 @@ export async function syncToAniList(anilistToken, mediaId, status, progress, sco
     progress: parsedProgress,
   };
 
-  // Only send score if it's a valid positive number
-  if (score != null && Number(score) > 0) {
-    variables.score = Number(score);
+  // Handle bidirectional score synchronization
+  if (score !== undefined) {
+    if (score != null && Number(score) > 0) {
+      variables.score = Number(score);
+    } else {
+      variables.score = 0; // Clears rating on AniList
+    }
   }
 
-  console.log(`[AniList Sync] Syncing mediaId ${parsedMediaId} -> Status: ${mappedStatus}, Ep: ${parsedProgress}`);
+  console.log(`[AniList Sync] Syncing mediaId ${parsedMediaId} -> Status: ${mappedStatus}, Ep: ${parsedProgress}, Score: ${variables.score ?? 'unchanged'}`);
 
   try {
     const res = await fetch(ANILIST_API, {

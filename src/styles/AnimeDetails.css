@@ -239,6 +239,104 @@
   font-weight: 700;
   font-size: 13px;
 }
+
+/* Airing status badge */
+.details-airing-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  background: rgba(99, 102, 241, 0.15);
+  color: var(--accent-primary, #818cf8);
+  border: 1px solid rgba(99, 102, 241, 0.3);
+}
+
+.details-airing-badge.status-releasing {
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+  border-color: rgba(16, 185, 129, 0.3);
+}
+
+.details-airing-badge.status-finished {
+  background: rgba(148, 163, 184, 0.12);
+  color: #cbd5e1;
+  border-color: rgba(148, 163, 184, 0.25);
+}
+
+.details-airing-badge.status-not_yet_released {
+  background: rgba(245, 158, 11, 0.15);
+  color: #fbbf24;
+  border-color: rgba(245, 158, 11, 0.3);
+}
+
+/* User Watchlist Status Badge */
+.details-user-status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+}
+
+.details-user-status-badge.saved {
+  background: rgba(99, 102, 241, 0.2);
+  color: #a5b4fc;
+  border: 1px solid rgba(99, 102, 241, 0.4);
+}
+
+.details-user-status-badge.not-saved {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-secondary, #94a3b8);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Score Selector in Ops Panel */
+.ops-score-container {
+  width: 100%;
+}
+
+.ops-score-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border-card, rgba(255, 255, 255, 0.08));
+  padding: 6px 10px;
+  border-radius: 8px;
+}
+
+.ops-score-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary, #94a3b8);
+}
+
+.ops-score-select {
+  background: var(--bg-input, #0d0b14);
+  color: var(--text-primary, #ffffff);
+  border: 1px solid var(--border-card, rgba(255, 255, 255, 0.15));
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.ops-score-select:focus {
+  border-color: var(--accent-primary, #6366f1);
+}
 .details-rating img {
   width: 13px;
   height: 13px;

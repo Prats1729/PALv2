@@ -1,7 +1,7 @@
 {
   "name": "palv2",
   "private": true,
-  "version": "2.1.5",
+  "version": "2.1.9",
   "type": "module",
   "scripts": {
     "dev": "vite",

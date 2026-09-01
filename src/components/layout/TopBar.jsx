@@ -354,7 +354,7 @@ export default function TopBar() {
               }}
             >
               <img 
-                src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}&backgroundColor=6366f1`} 
+                src={user.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}&backgroundColor=6366f1`} 
                 alt="My Profile" 
                 onClick={() => setIsProfileOpen(!isProfileOpen)}
                 style={{ 
@@ -364,7 +364,8 @@ export default function TopBar() {
                   border: "1px solid rgba(255,255,255,0.2)",
                   boxShadow: "none",
                   cursor: "pointer",
-                  display: "block"
+                  display: "block",
+                  objectFit: "cover"
                 }}
               />
               

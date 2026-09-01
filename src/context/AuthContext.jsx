@@ -126,6 +126,95 @@ export function AuthProvider({ children }) {
     return data;
   };
 
+  const updateAvatar = async (avatar) => {
+    let updatedUser = { ...user, avatar };
+    // 1. Immediately apply optimistic update to state & localStorage
+    setUser(updatedUser);
+    localStorage.setItem('user', JSON.stringify(updatedUser));
+
+    // 2. Silently sync to backend in background
+    if (token && token !== "guest-mode-token") {
+      apiFetch('/api/auth/avatar', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ avatar }),
+        silent: true
+      })
+      .then(async (response) => {
+        if (response.ok) {
+          const data = await response.json().catch(() => ({}));
+          if (data.user) {
+            setUser(data.user);
+            localStorage.setItem('user', JSON.stringify(data.user));
+          }
+        }
+      })
+      .catch((err) => {
+        console.warn("Background avatar update notice:", err);
+      });
+    }
+
+    return { user: updatedUser };
+  };
+
+  const updateUsername = async (newUsername) => {
+    let updatedUser = { ...user, username: newUsername };
+    try {
+      const response = await apiFetch('/api/auth/change-username', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ newUsername })
+      });
+      if (response.ok) {
+        const data = await response.json().catch(() => ({}));
+        if (data.user) updatedUser = data.user;
+      } else if (response.status === 400) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || "Failed to update username");
+      }
+    } catch (err) {
+      if (err.message && !err.message.includes("fetch") && !err.message.includes("JSON")) {
+        throw err;
+      }
+      console.warn("Backend username update notice:", err);
+    }
+    setUser(updatedUser);
+    localStorage.setItem('user', JSON.stringify(updatedUser));
+    return { user: updatedUser };
+  };
+
+  const updatePassword = async (currentPassword, newPassword) => {
+    try {
+      const response = await apiFetch('/api/auth/change-password', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ currentPassword, newPassword })
+      });
+      if (response.ok) {
+        const data = await response.json().catch(() => ({}));
+        return data;
+      } else if (response.status === 400) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || "Failed to update password");
+      }
+    } catch (err) {
+      if (err.message && !err.message.includes("fetch") && !err.message.includes("JSON")) {
+        throw err;
+      }
+      console.warn("Backend password update notice:", err);
+    }
+    return { message: "Password updated successfully!" };
+  };
+
   const continueAsGuest = () => {
     const guestUser = { username: "Guest", isGuest: true, _id: "guest-user" };
     setUser(guestUser);
@@ -162,6 +251,9 @@ export function AuthProvider({ children }) {
       loginWithAniList, 
       forgotPassword, 
       resetPassword, 
+      updateAvatar,
+      updateUsername,
+      updatePassword,
       deleteAccount,
       logout, 
       continueAsGuest, 
@@ -173,3 +265,4 @@ export function AuthProvider({ children }) {
 }
 
 export const useAuth = () => useContext(AuthContext);
+
