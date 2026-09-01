@@ -115,44 +115,12 @@ jobs:
           chmod +x ./gradlew
           ./gradlew assembleRelease --stacktrace
 
-      - name: Sign APK
-        id: sign_apk
-        env:
-          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
-          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
-          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+      - name: Prepare Release Artifact
+        id: prepare_apk
         run: |
-          UNSIGNED_PATH="android/app/build/outputs/apk/release/app-release-unsigned.apk"
-          DEFAULT_PATH="android/app/build/outputs/apk/release/app-release.apk"
+          RELEASE_APK="android/app/build/outputs/apk/release/app-release.apk"
           TARGET_APK="android/app/build/outputs/apk/release/PAL-${{ steps.get_tag.outputs.version }}.apk"
-          
-          if [ -n "$KEYSTORE_BASE64" ]; then
-            echo "$KEYSTORE_BASE64" | base64 --decode > /tmp/release.jks
-            SOURCE_APK="$UNSIGNED_PATH"
-            if [ ! -f "$SOURCE_APK" ]; then
-              SOURCE_APK="$DEFAULT_PATH"
-            fi
-            jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA-256 \
-              -keystore /tmp/release.jks \
-              -storepass "$KEYSTORE_PASSWORD" \
-              -keypass "$KEY_PASSWORD" \
-              -signedjar "$TARGET_APK" \
-              "$SOURCE_APK" "$KEY_ALIAS"
-          else
-            echo "No custom keystore provided in secrets. Generating standard release key for package installer."
-            keytool -genkey -v -keystore /tmp/pal-build.keystore -storepass palpassword -alias pal -keypass palpassword -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=PAL, OU=App, O=PAL, L=City, S=State, C=US"
-            SOURCE_APK="$UNSIGNED_PATH"
-            if [ ! -f "$SOURCE_APK" ]; then
-              SOURCE_APK="$DEFAULT_PATH"
-            fi
-            jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA-256 \
-              -keystore /tmp/pal-build.keystore \
-              -storepass palpassword \
-              -keypass palpassword \
-              -signedjar "$TARGET_APK" \
-              "$SOURCE_APK" pal
-          fi
+          cp "$RELEASE_APK" "$TARGET_APK"
           echo "apk_path=$TARGET_APK" >> $GITHUB_OUTPUT
 
       - name: Upload APK to GitHub Release
@@ -161,4 +129,4 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: ${{ steps.get_tag.outputs.tag }}
-          files: ${{ steps.sign_apk.outputs.apk_path }}
+          files: ${{ steps.prepare_apk.outputs.apk_path }}
