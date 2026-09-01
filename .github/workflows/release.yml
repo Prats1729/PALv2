@@ -1,4 +1,4 @@
-name: Automated OTA Release
+name: Automated Release (Desktop & Android)
 
 on:
   push:
@@ -7,16 +7,18 @@ on:
     paths:
       - 'src/**'
       - 'src-tauri/**'
+      - 'android/**'
       - 'public/**'
       - 'index.html'
       - 'package.json'
       - 'package-lock.json'
       - 'vite.config.js'
+      - 'capacitor.config.json'
       - 'scripts/**'
   workflow_dispatch:
 
 jobs:
-  release:
+  release-desktop:
     permissions:
       contents: write
     runs-on: windows-latest
@@ -60,7 +62,93 @@ jobs:
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
           tagName: v__VERSION__
-          releaseName: 'PALv2 v__VERSION__'
-          releaseBody: 'Automated release for commit ${{ github.sha }}. Existing app installations will update over-the-air.'
+          releaseName: 'PAL v__VERSION__'
+          releaseBody: 'Automated release for commit ${{ github.sha }}. Desktop and Android APK updates available.'
           releaseDraft: false
           prerelease: false
+
+  release-android:
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    needs: release-desktop
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: Setup Java JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install frontend dependencies
+        run: npm install
+
+      - name: Sync release version
+        env:
+          GITHUB_RUN_NUMBER: ${{ github.run_number }}
+        run: node scripts/bump-version.js
+
+      - name: Build Frontend Web Assets
+        run: npm run build
+
+      - name: Capacitor Sync
+        run: npx cap sync android
+
+      - name: Build Android Release APK
+        run: |
+          cd android
+          chmod +x ./gradlew
+          ./gradlew assembleRelease
+
+      - name: Sign APK (if Keystore Secret is available)
+        id: sign_apk
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          UNSIGNED_PATH="android/app/build/outputs/apk/release/app-release-unsigned.apk"
+          DEFAULT_PATH="android/app/build/outputs/apk/release/app-release.apk"
+          TARGET_APK="android/app/build/outputs/apk/release/PAL-Release.apk"
+          
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            echo "$KEYSTORE_BASE64" | base64 --decode > /tmp/release.jks
+            SOURCE_APK="$UNSIGNED_PATH"
+            if [ ! -f "$SOURCE_APK" ]; then
+              SOURCE_APK="$DEFAULT_PATH"
+            fi
+            jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA-256 \
+              -keystore /tmp/release.jks \
+              -storepass "$KEYSTORE_PASSWORD" \
+              -keypass "$KEY_PASSWORD" \
+              -signedjar "$TARGET_APK" \
+              "$SOURCE_APK" "$KEY_ALIAS"
+            echo "apk_path=$TARGET_APK" >> $GITHUB_OUTPUT
+          else
+            echo "No keystore provided, packaging unsigned release build."
+            if [ -f "$UNSIGNED_PATH" ]; then
+              cp "$UNSIGNED_PATH" "$TARGET_APK"
+            else
+              cp "$DEFAULT_PATH" "$TARGET_APK"
+            fi
+            echo "apk_path=$TARGET_APK" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Upload APK to GitHub Release
+        uses: softprops/action-gh-release@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          files: ${{ steps.sign_apk.outputs.apk_path }}

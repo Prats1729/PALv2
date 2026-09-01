@@ -1,0 +1,8 @@
+{
+  "appId": "com.palv2.app",
+  "appName": "PAL",
+  "webDir": "dist",
+  "server": {
+    "androidScheme": "https"
+  }
+}

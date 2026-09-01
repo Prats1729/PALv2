@@ -1,5 +1,6 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import { apiFetch } from '../services/api';
+import { isDesktop } from '../utils/platform';
 
 const AuthContext = createContext();
 
@@ -9,14 +10,12 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const isTauri = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
-    
     // Validate session token with backend
     if (token) {
       if (token === "guest-mode-token") {
         try {
           const storedUser = JSON.parse(localStorage.getItem('user'));
-          if (isTauri && storedUser?.isGuest) {
+          if (isDesktop() && storedUser?.isGuest) {
             logout();
           } else {
             setUser(storedUser);

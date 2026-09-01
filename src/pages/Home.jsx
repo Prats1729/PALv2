@@ -81,6 +81,8 @@ function AiringCard({ anime }) {
 }
 
 // MAIN PAGE COMPONENT
+import { platformCapabilities } from "../utils/platform";
+
 export default function Home() {
   const { watchlist, updateWatchlistItem } = useWatchlist();
   const [trending, setTrending] = useState([]);
@@ -90,7 +92,6 @@ export default function Home() {
   const [currentSlide, setCurrentSlide] = useState(0);
   const slideInterval = useRef(null);
   const continueListRef = useRef(null);
-  const isTauri = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
   const handleRemoveFromContinue = (e, item) => {
     e.preventDefault();
     e.stopPropagation();
@@ -405,7 +406,7 @@ export default function Home() {
       )}
 
       {/* 1.5 CONTINUE WATCHING SECTION (DESKTOP APP ONLY) */}
-      {isTauri && continueWatching.length > 0 && (
+      {platformCapabilities.continueWatching && continueWatching.length > 0 && (
         <section className="continue-watching-section">
           <div className="continue-header-row">
             <h2 className="continue-heading">

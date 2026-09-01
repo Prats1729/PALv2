@@ -9,9 +9,9 @@ try {
   // 1. Update tauri.conf.json
   const tauriConfPath = "./src-tauri/tauri.conf.json";
   const tauriConf = JSON.parse(fs.readFileSync(tauriConfPath, "utf8"));
-  const parts = (tauriConf.version || "2.1.0").split(".");
-  const major = parts[0] || "2";
-  const minor = parts[1] || "1";
+  const parts = (tauriConf.version || "3.0.0").split(".");
+  const major = parts[0] || "3";
+  const minor = parts[1] || "0";
   const newVersion = `${major}.${minor}.${patch}`;
   tauriConf.version = newVersion;
   fs.writeFileSync(tauriConfPath, JSON.stringify(tauriConf, null, 2));
@@ -24,9 +24,21 @@ try {
 
   // 3. Update Cargo.toml
   const cargoPath = "./src-tauri/Cargo.toml";
-  let cargo = fs.readFileSync(cargoPath, "utf8");
-  cargo = cargo.replace(/^version\s*=\s*"[^"]*"/m, `version = "${newVersion}"`);
-  fs.writeFileSync(cargoPath, cargo);
+  if (fs.existsSync(cargoPath)) {
+    let cargo = fs.readFileSync(cargoPath, "utf8");
+    cargo = cargo.replace(/^version\s*=\s*"[^"]*"/m, `version = "${newVersion}"`);
+    fs.writeFileSync(cargoPath, cargo);
+  }
+
+  // 4. Update Android build.gradle if exists
+  const gradlePath = "./android/app/build.gradle";
+  if (fs.existsSync(gradlePath)) {
+    let gradle = fs.readFileSync(gradlePath, "utf8");
+    const versionCode = parseInt(major, 10) * 10000 + parseInt(minor, 10) * 100 + patch;
+    gradle = gradle.replace(/versionCode\s+\d+/g, `versionCode ${versionCode}`);
+    gradle = gradle.replace(/versionName\s+"[^"]*"/g, `versionName "${newVersion}"`);
+    fs.writeFileSync(gradlePath, gradle);
+  }
 
   console.log(`[Version Bump] Successfully bumped release version to ${newVersion}`);
 } catch (err) {

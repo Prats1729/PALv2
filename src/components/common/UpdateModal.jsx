@@ -79,7 +79,7 @@ export default function UpdateModal({ update, onClose }) {
               Update Available
             </h3>
             <span style={{ fontSize: "0.85rem", color: "#94a3b8" }}>
-              PALv2 {update.version} is now available!
+              PAL {update.version} is now available!
             </span>
           </div>
         </div>
@@ -108,7 +108,13 @@ export default function UpdateModal({ update, onClose }) {
         {downloading && (
           <div style={{ marginBottom: "18px" }}>
             <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.8rem", color: "#94a3b8", marginBottom: "6px" }}>
-              <span>{progress?.finished ? "Finalizing installation..." : "Downloading update..."}</span>
+              <span>
+                {progress?.finished
+                  ? update.platform === "android"
+                    ? "Opening installer..."
+                    : "Finalizing installation..."
+                  : "Downloading update..."}
+              </span>
               <span>{progress?.percent ? `${progress.percent}%` : "0%"}</span>
             </div>
             <div
@@ -185,7 +191,15 @@ export default function UpdateModal({ update, onClose }) {
               gap: "8px",
             }}
           >
-            {downloading ? (progress?.finished ? "Restarting..." : "Downloading...") : "Update & Restart"}
+            {downloading
+              ? progress?.finished
+                ? update.platform === "android"
+                  ? "Opening installer..."
+                  : "Restarting..."
+                : "Downloading..."
+              : update.platform === "android"
+              ? "Download & Install"
+              : "Update & Restart"}
           </button>
         </div>
       </div>

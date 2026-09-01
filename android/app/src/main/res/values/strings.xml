@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">PAL</string>
+    <string name="title_activity_main">PAL</string>
+    <string name="package_name">com.palv2.app</string>
+    <string name="custom_url_scheme">com.palv2.app</string>
+</resources>

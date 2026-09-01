@@ -4,6 +4,7 @@ import { useWatchlist } from "../context/WatchlistContext";
 import { useAuth } from "../context/AuthContext";
 import Pagination from "../components/common/Pagination";
 import { fetchAnimeBrief } from "../services/anilist";
+import { isDesktop } from "../utils/platform";
 import star from "../assets/star.png";
 import "../styles/Library.css";
 
@@ -368,9 +369,7 @@ export default function Library() {
     setSearchParams({}, { replace: true });
   };
 
-  const isTauri = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
-
-  if (!isTauri && user?.isGuest) {
+  if (!isDesktop() && user?.isGuest) {
     return (
       <div className="library-container" style={{ textAlign: "center", padding: "60px 20px" }}>
         <div style={{ marginBottom: "16px", color: "var(--accent-primary, #6366f1)" }}>
