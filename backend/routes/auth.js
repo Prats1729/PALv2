@@ -12,6 +12,19 @@ const User = mongoose.model('User');
 const Watchlist = mongoose.model('Watchlist');
 const JWT_SECRET = process.env.JWT_SECRET;
 
+function validatePassword(password) {
+  if (!password || password.length < 8) {
+    return 'Password must be at least 8 characters long';
+  }
+  if (!/[A-Z]/.test(password)) {
+    return 'Password must contain at least one uppercase letter';
+  }
+  if (!/[0-9]/.test(password)) {
+    return 'Password must contain at least one number';
+  }
+  return null;
+}
+
 // 0. Verify Session / Current User
 router.get('/me', authMiddleware, async (req, res) => {
   try {
@@ -92,9 +105,9 @@ router.put('/change-username', authMiddleware, async (req, res) => {
 
     // Check if username is already taken by another account
     const existing = await User.findOne({ 
-      username: { $regex: new RegExp(`^${cleanUsername}$`, 'i') }, 
+      username: cleanUsername, 
       _id: { $ne: req.user.id } 
-    });
+    }).collation({ locale: 'en', strength: 2 });
 
     if (existing) {
       return res.status(400).json({ error: "Username is already taken" });
@@ -131,8 +144,9 @@ router.put('/change-password', authMiddleware, async (req, res) => {
   try {
     const { currentPassword, newPassword } = req.body;
 
-    if (!newPassword || newPassword.length < 6) {
-      return res.status(400).json({ error: "New password must be at least 6 characters long" });
+    const pwError = validatePassword(newPassword);
+    if (pwError) {
+      return res.status(400).json({ error: pwError });
     }
 
     const user = await User.findById(req.user.id);
@@ -172,6 +186,11 @@ router.post('/register', async (req, res) => {
       return res.status(400).json({ error: "Username and password are required" });
     }
 
+    const pwError = validatePassword(password);
+    if (pwError) {
+      return res.status(400).json({ error: pwError });
+    }
+
     // Validate email format if provided
     const cleanEmail = email && email.trim().length > 0 ? email.trim().toLowerCase() : undefined;
     if (cleanEmail) {
@@ -206,7 +225,11 @@ router.post('/register', async (req, res) => {
 
     await newUser.save();
 
-    const token = jwt.sign({ id: newUser._id }, JWT_SECRET, { expiresIn: '7d' });
+    const token = jwt.sign({ id: newUser._id }, JWT_SECRET, { 
+      expiresIn: '7d',
+      issuer: 'palv2-api',
+      audience: 'palv2-client'
+    });
     
     res.status(201).json({ 
       token, 
@@ -266,7 +289,11 @@ router.post('/login', async (req, res) => {
       return res.status(400).json({ error: "Invalid username/email or password" });
     }
 
-    const token = jwt.sign({ id: user._id }, JWT_SECRET, { expiresIn: '7d' });
+    const token = jwt.sign({ id: user._id }, JWT_SECRET, { 
+      expiresIn: '7d',
+      issuer: 'palv2-api',
+      audience: 'palv2-client'
+    });
 
     res.json({ 
       token, 
@@ -358,7 +385,11 @@ router.post('/anilist-login', async (req, res) => {
       console.warn("Initial AniList watchlist sync note:", syncErr.message);
     }
 
-    const token = jwt.sign({ id: user._id }, JWT_SECRET, { expiresIn: '7d' });
+    const token = jwt.sign({ id: user._id }, JWT_SECRET, { 
+      expiresIn: '7d',
+      issuer: 'palv2-api',
+      audience: 'palv2-client'
+    });
 
     res.json({
       token,
@@ -401,11 +432,12 @@ router.post('/forgot-password', async (req, res) => {
     await user.save();
 
     // Log the generated reset code for local development & return confirmation
-    console.log(`🔑 Password Reset Token for ${user.username} (${user.email}): ${resetToken}`);
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(`🔑 Password Reset Token for ${user.username} (${user.email}): ${resetToken}`);
+    }
 
     res.json({
-      message: "If an account exists with this email, password reset instructions have been generated.",
-      devToken: resetToken // Provided for local convenience
+      message: "If an account exists with this email, password reset instructions have been generated."
     });
   } catch (err) {
     console.error("Forgot password error:", err);
@@ -421,8 +453,9 @@ router.post('/reset-password', async (req, res) => {
       return res.status(400).json({ error: "Token and new password are required" });
     }
 
-    if (newPassword.length < 6) {
-      return res.status(400).json({ error: "Password must be at least 6 characters long" });
+    const pwError = validatePassword(newPassword);
+    if (pwError) {
+      return res.status(400).json({ error: pwError });
     }
 
     const hashedToken = crypto.createHash('sha256').update(token).digest('hex');

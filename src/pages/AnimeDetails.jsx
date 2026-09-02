@@ -5,6 +5,7 @@ import "../styles/AnimeDetails.css";
 import { useWatchlist } from "../context/WatchlistContext";
 import { getAnimeEpisodeMapping, getSuggestedTitles } from "../services/animeMapping";
 import { platformCapabilities } from "../utils/platform";
+import DOMPurify from "dompurify";
 
 export default function AnimeDetails() {
   const { id } = useParams();
@@ -177,8 +178,8 @@ export default function AnimeDetails() {
     );
   if (!anime) return <div className="details-status">No anime found.</div>;
 
-  // AniList returns HTML in the description, so we can render it directly
-  const descriptionHtml = anime.description || "No description available";
+  // Sanitize AniList HTML description with DOMPurify to eliminate XSS risks
+  const descriptionHtml = DOMPurify.sanitize(anime.description || "No description available");
 
   return (
     <div className="details-container">

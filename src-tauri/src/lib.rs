@@ -203,20 +203,18 @@ except Exception:
         }
     }
 
-    // 4. Write runner script to C:\tmp\pal_run.sh
-    let run_sh = format!(
-        "#!/bin/bash\nmkdir -p /mnt/c/tmp /tmp ~/.config/mpv/scripts && cp /mnt/c/tmp/pal_tracker.lua ~/.config/mpv/scripts/pal_tracker.lua 2>/dev/null || true\nexport ANI_CLI_PLAYER_FLAGS='{}'\npython3 /mnt/c/tmp/pal_launcher.py '{}' '{}' '{}' '{}' '{}'\n",
-        player_flags,
-        title.replace("'", "'\\''"),
-        target_ep_str,
-        is_dub,
-        quality,
-        skip_intro
-    );
+    // 4. Write runner script that safely receives arguments via "$@"
+    let run_sh = r#"#!/bin/bash
+mkdir -p /mnt/c/tmp /tmp ~/.config/mpv/scripts 2>/dev/null
+cp /mnt/c/tmp/pal_tracker.lua ~/.config/mpv/scripts/pal_tracker.lua 2>/dev/null || true
+export ANI_CLI_PLAYER_FLAGS="$1"
+shift
+python3 /mnt/c/tmp/pal_launcher.py "$@"
+"#;
 
     let _ = fs::write("C:\\tmp\\pal_run.sh", run_sh);
 
-    // 5. Execute in a visible terminal window
+    // 5. Execute in a visible terminal window with discrete argument vector (no shell interpolation)
     let _ = Command::new("cmd")
         .arg("/C")
         .arg("start")
@@ -225,6 +223,12 @@ except Exception:
         .arg("wsl")
         .arg("bash")
         .arg("/mnt/c/tmp/pal_run.sh")
+        .arg(&player_flags)
+        .arg(&title)
+        .arg(&target_ep_str)
+        .arg(if is_dub { "true" } else { "false" })
+        .arg(&quality)
+        .arg(if skip_intro { "true" } else { "false" })
         .status()
         .map_err(|e| format!("Failed to execute: {}", e))?;
 

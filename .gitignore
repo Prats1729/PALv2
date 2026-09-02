@@ -33,3 +33,14 @@ src-tauri/*.key
 
 # Binaries
 *.exe
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Android signing
+android/app/release.keystore
+*.keystore
+*.jks
+keystore.properties

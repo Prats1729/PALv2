@@ -1,5 +1,11 @@
 apply plugin: 'com.android.application'
 
+def keystorePropertiesFile = rootProject.file("keystore.properties")
+def keystoreProperties = new Properties()
+if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+}
+
 android {
     namespace = "com.palv2.app"
     compileSdk = rootProject.ext.compileSdkVersion
@@ -18,10 +24,11 @@ android {
     }
     signingConfigs {
         release {
-            storeFile file('release.keystore')
-            storePassword '[REDACTED]'
-            keyAlias 'pal'
-            keyPassword '[REDACTED]'
+            def kFile = keystoreProperties['storeFile'] ?: 'release.keystore'
+            storeFile file(kFile)
+            storePassword keystoreProperties['storePassword'] ?: ''
+            keyAlias keystoreProperties['keyAlias'] ?: 'pal'
+            keyPassword keystoreProperties['keyPassword'] ?: ''
             v1SigningEnabled true
             v2SigningEnabled true
         }

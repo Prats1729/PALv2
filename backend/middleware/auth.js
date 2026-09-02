@@ -12,7 +12,10 @@ const authMiddleware = (req, res, next) => {
     if (!rawToken || rawToken === 'null' || rawToken === 'undefined') {
       return res.status(401).json({ error: 'Token is not valid' });
     }
-    const decoded = jwt.verify(rawToken, process.env.JWT_SECRET);
+    const decoded = jwt.verify(rawToken, process.env.JWT_SECRET, {
+      issuer: 'palv2-api',
+      audience: 'palv2-client'
+    });
     req.user = decoded; // Contains id
     next();
   } catch (err) {

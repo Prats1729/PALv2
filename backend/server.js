@@ -6,14 +6,73 @@ const mongoose = require('mongoose'); // Mongoose helps us talk to MongoDB
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// --- Middleware ---
-// CORS allows React frontend and Tauri desktop clients to make requests
+// --- Security & Middleware ---
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
+
+// Helmet adds secure HTTP headers (XSS filter, frameguard, etc.)
+app.use(helmet());
+
+const ALLOWED_ORIGINS = [
+  'https://palv2.vercel.app',
+  'https://palv2.onrender.com',
+  'tauri://localhost',
+  'https://tauri.localhost',
+  'http://tauri.localhost',
+  'capacitor://localhost',
+  'http://localhost',
+  'http://localhost:5173',
+  'http://127.0.0.1:5173',
+  'http://localhost:5000',
+  'http://127.0.0.1:5000'
+];
+
+// CORS restricted to allowed domains + native clients
 app.use(cors({
-  origin: true,
+  origin: function (origin, callback) {
+    if (!origin || ALLOWED_ORIGINS.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('CORS policy: Not allowed by CORS'));
+    }
+  },
   credentials: true
 }));
-// express.json() allows your server to read JSON data sent in the request body.
-app.use(express.json({ limit: '5mb' }));
+
+// Rate limiting: general API limiter
+const generalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 150,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many requests, please try again later.' }
+});
+app.use('/api/', generalLimiter);
+
+// Auth limiter for sensitive routes (login / register)
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many authentication attempts, please try again later.' }
+});
+app.use('/api/auth/login', authLimiter);
+app.use('/api/auth/register', authLimiter);
+
+// Strict limiter for forgot password requests
+const forgotPasswordLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many password reset requests. Please try again later.' }
+});
+app.use('/api/auth/forgot-password', forgotPasswordLimiter);
+
+// Granular body parser limits: 3mb for avatar uploads, 1mb default
+app.use('/api/auth/avatar', express.json({ limit: '3mb' }));
+app.use(express.json({ limit: '1mb' }));
 
 // --- Routes ---
 // This is a basic route. When a user or frontend visits http://localhost:5000/api/health
