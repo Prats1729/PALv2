@@ -39,10 +39,8 @@ export async function checkDesktopUpdates(notifyIfLatest = false) {
           console.warn("[Desktop Updater] Could not fetch extended changelog:", e);
         }
       }
-      return {
-        ...update,
-        platform: "desktop",
-      };
+      update.platform = "desktop";
+      return update;
     } else {
       if (notifyIfLatest) {
         window.dispatchEvent(
@@ -78,7 +76,14 @@ export async function downloadAndApplyDesktopUpdate(update, onProgress) {
     let downloaded = 0;
     let contentLength = 0;
 
-    await update.downloadAndInstall((event) => {
+    const targetUpdate =
+      typeof update.downloadAndInstall === "function" ? update : await check();
+
+    if (!targetUpdate || typeof targetUpdate.downloadAndInstall !== "function") {
+      throw new Error("Tauri updater instance is not available.");
+    }
+
+    await targetUpdate.downloadAndInstall((event) => {
       switch (event.event) {
         case "Started": {
           contentLength = event.data.contentLength || 0;
