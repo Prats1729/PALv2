@@ -104,13 +104,34 @@ function LibraryCard({ anime, activeMenuId, setActiveMenuId, updateWatchlistItem
   }, []);
 
   const isMenuOpen = activeMenuId === anime.animeId;
-  const progressPercent = anime.totalEpisodes ? Math.min(100, Math.round((anime.progress / anime.totalEpisodes) * 100)) : null;
 
-  const cleanDescription = briefData?.description
-    ? briefData.description.replace(/<[^>]*>/g, "").substring(0, 130) + "..."
-    : (anime.description ? anime.description.replace(/<[^>]*>/g, "").substring(0, 130) + "..." : null);
+  const rawDescription = briefData?.description || anime.description;
+  const cleanDescription = rawDescription
+    ? rawDescription.replace(/<[^>]*>/g, "").substring(0, 120) + "..."
+    : "No synopsis available.";
+
+  const cardColor = anime.color || "#6366f1";
+
+  const hasDub = Boolean(
+    briefData?.hasDub ||
+    briefData?.characters?.edges?.some(
+      (edge) =>
+        (edge.voiceActors && edge.voiceActors.length > 0) ||
+        (edge.dubActors && edge.dubActors.length > 0)
+    )
+  );
 
   const displayGenres = (briefData?.genres || anime.genres || []).slice(0, 3);
+  const displayTags = (briefData?.tags || anime.tags || [])
+    .filter((t) => !t.isMediaSpoiler && !t.isGeneralSpoiler)
+    .map((t) => (typeof t === "string" ? t : t.name))
+    .filter((t) => !displayGenres.includes(t))
+    .slice(0, 2);
+
+  const animeStatus = briefData?.status || anime.mediaStatus || anime.animeStatus;
+  const averageScore = briefData?.averageScore || anime.averageScore;
+  const totalEpisodes = briefData?.episodes || anime.totalEpisodes;
+  const format = briefData?.format || anime.format || "TV";
 
   return (
     <div
@@ -126,7 +147,7 @@ function LibraryCard({ anime, activeMenuId, setActiveMenuId, updateWatchlistItem
         to={`/anime/${anime.animeId}`}
         className={`card-link ${isMenuOpen ? "dropdown-open" : ""}`}
         style={{ 
-          "--hover-color": anime.color || "#6366f1",
+          "--hover-color": cardColor,
           position: "relative",
           zIndex: isMenuOpen ? 9999 : 1
         }}
@@ -205,7 +226,7 @@ function LibraryCard({ anime, activeMenuId, setActiveMenuId, updateWatchlistItem
         <div
           className={`card-hover-preview pos-${hoverPosition}`}
           style={{ 
-            borderTop: `3px solid ${anime.color || "var(--accent-primary, #6366f1)"}`,
+            borderTop: `3px solid ${cardColor}`,
             left: hoverPosition === "right" ? "105%" : "auto",
             right: hoverPosition === "left" ? "105%" : "auto"
           }}
@@ -213,41 +234,45 @@ function LibraryCard({ anime, activeMenuId, setActiveMenuId, updateWatchlistItem
           <div className="hover-preview-header">
             <h3>{anime.title}</h3>
             <div className="hover-badges-row">
-              <span className="hover-format">{briefData?.format || "TV"}</span>
-              <span className="hover-status" style={{ backgroundColor: "rgba(99, 102, 241, 0.2)", color: "#818cf8", padding: "2px 8px", borderRadius: "4px", fontSize: "11px", fontWeight: "600" }}>
-                {anime.status}
+              <span className="hover-format">{format}</span>
+              <span 
+                className={`hover-audio-badge ${hasDub ? "both" : "sub-only"}`}
+                title={hasDub ? "Japanese Sub & English Dub available" : "Japanese Sub only"}
+              >
+                {hasDub ? "SUB | DUB" : "SUB"}
               </span>
             </div>
           </div>
           <div className="hover-preview-meta">
             <span className="hover-rating">
-              <img src={star} alt="star" /> {anime.rating ? `${anime.rating}/10` : "No rating"}
+              <img src={star} alt="star" /> {averageScore ? `${averageScore / 10}` : (anime.rating ? `${anime.rating}/10` : "N/A")}
             </span>
             <span>•</span>
-            <span>Progress: {anime.progress}/{anime.totalEpisodes || "?"}</span>
-            {progressPercent !== null && (
+            <span>{totalEpisodes || "?"} Episodes</span>
+            {animeStatus && (
               <>
                 <span>•</span>
-                <span className="hover-status">{progressPercent}%</span>
+                <span className="hover-status">{animeStatus.replace(/_/g, " ")}</span>
               </>
             )}
           </div>
 
-          {displayGenres.length > 0 && (
-            <div className="hover-tags-container" style={{ marginTop: '6px', marginBottom: '6px' }}>
+          {(displayGenres.length > 0 || displayTags.length > 0) && (
+            <div className="hover-tags-container">
               {displayGenres.map((genre) => (
                 <span key={genre} className="hover-chip hover-genre-chip">
                   {genre}
                 </span>
               ))}
+              {displayTags.map((tag) => (
+                <span key={tag} className="hover-chip hover-tag-chip">
+                  #{tag}
+                </span>
+              ))}
             </div>
           )}
 
-          {cleanDescription && (
-            <p className="hover-preview-desc" style={{ margin: "6px 0 0 0", fontSize: "12px", lineHeight: "1.4", color: "var(--text-secondary, #94a3b8)" }}>
-              {cleanDescription}
-            </p>
-          )}
+          <p className="hover-preview-desc">{cleanDescription}</p>
         </div>
       )}
     </div>
