@@ -137,6 +137,24 @@ const BRIEF_QUERY = gql`
       description(asHtml: false)
       genres
       format
+      status
+      averageScore
+      episodes
+      tags {
+        name
+        isMediaSpoiler
+        isGeneralSpoiler
+      }
+      characters(sort: [ROLE, RELEVANCE], perPage: 6) {
+        edges {
+          node {
+            id
+          }
+          voiceActors(language: ENGLISH) {
+            id
+          }
+        }
+      }
     }
   }
 `;
