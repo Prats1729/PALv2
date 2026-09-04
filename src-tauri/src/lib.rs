@@ -11,9 +11,20 @@ async fn play_anime(
     skip_intro: bool,
     start_time: Option<u32>,
 ) -> Result<String, String> {
+    // Sanitize input strings to disallow shell metacharacters for cmd.exe and bash
+    let safe_title: String = title
+        .chars()
+        .filter(|c| !matches!(*c, '\r' | '\n' | '&' | '|' | '^' | '<' | '>' | '%' | '"' | '`' | '$' | ';'))
+        .collect();
+    let safe_quality: String = if quality.chars().all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '-') {
+        quality
+    } else {
+        "best".to_string()
+    };
+
     println!(
-        "[PAL] title={} ep={:?} dub={} quality={} skip={} start={:?}",
-        title, episode, is_dub, quality, skip_intro, start_time
+        "[PAL] title={} (safe={}) ep={:?} dub={} quality={} skip={} start={:?}",
+        title, safe_title, episode, is_dub, safe_quality, skip_intro, start_time
     );
 
     let target_ep_str = match episode {
@@ -224,10 +235,10 @@ python3 /mnt/c/tmp/pal_launcher.py "$@"
         .arg("bash")
         .arg("/mnt/c/tmp/pal_run.sh")
         .arg(&player_flags)
-        .arg(&title)
+        .arg(&safe_title)
         .arg(&target_ep_str)
         .arg(if is_dub { "true" } else { "false" })
-        .arg(&quality)
+        .arg(&safe_quality)
         .arg(if skip_intro { "true" } else { "false" })
         .status()
         .map_err(|e| format!("Failed to execute: {}", e))?;

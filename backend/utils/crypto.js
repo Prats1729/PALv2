@@ -1,36 +1,59 @@
 const crypto = require("crypto");
 
-const ALGORITHM = "aes-256-cbc";
-// Must be exactly 32 bytes (64 hex characters)
-const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY;
-const IV_LENGTH = 16;
+const ALGORITHM_GCM = "aes-256-gcm";
+const ALGORITHM_CBC = "aes-256-cbc";
+const GCM_IV_LENGTH = 12; // 96-bit IV recommended for GCM
+
+function getKeyBuffer() {
+  const key = (process.env.ENCRYPTION_KEY || '').trim();
+  if (!key || key.length !== 64) {
+    throw new Error("ENCRYPTION_KEY environment variable must be a 64-character hexadecimal string.");
+  }
+  return Buffer.from(key, "hex");
+}
 
 function encrypt(text) {
   if (!text) return null;
-  const iv = crypto.randomBytes(IV_LENGTH);
-  const cipher = crypto.createCipheriv(
-    ALGORITHM,
-    Buffer.from(ENCRYPTION_KEY, "hex"),
-    iv
-  );
-  let encrypted = cipher.update(text);
+  const keyBuffer = getKeyBuffer();
+  const iv = crypto.randomBytes(GCM_IV_LENGTH);
+  const cipher = crypto.createCipheriv(ALGORITHM_GCM, keyBuffer, iv);
+  
+  let encrypted = cipher.update(text, "utf8");
   encrypted = Buffer.concat([encrypted, cipher.final()]);
-  return iv.toString("hex") + ":" + encrypted.toString("hex");
+  const authTag = cipher.getAuthTag();
+
+  // Format: iv:authTag:ciphertext (all hex)
+  return iv.toString("hex") + ":" + authTag.toString("hex") + ":" + encrypted.toString("hex");
 }
 
 function decrypt(text) {
   if (!text) return null;
+  const keyBuffer = getKeyBuffer();
   const textParts = text.split(":");
-  const iv = Buffer.from(textParts.shift(), "hex");
-  const encryptedText = Buffer.from(textParts.join(":"), "hex");
-  const decipher = crypto.createDecipheriv(
-    ALGORITHM,
-    Buffer.from(ENCRYPTION_KEY, "hex"),
-    iv
-  );
-  let decrypted = decipher.update(encryptedText);
-  decrypted = Buffer.concat([decrypted, decipher.final()]);
-  return decrypted.toString();
+
+  // Authenticated GCM format: iv:authTag:ciphertext
+  if (textParts.length === 3) {
+    const iv = Buffer.from(textParts[0], "hex");
+    const authTag = Buffer.from(textParts[1], "hex");
+    const encryptedText = Buffer.from(textParts[2], "hex");
+    const decipher = crypto.createDecipheriv(ALGORITHM_GCM, keyBuffer, iv);
+    decipher.setAuthTag(authTag);
+    let decrypted = decipher.update(encryptedText);
+    decrypted = Buffer.concat([decrypted, decipher.final()]);
+    return decrypted.toString("utf8");
+  }
+
+  // Backward compatibility fallback for legacy CBC format: iv:ciphertext
+  if (textParts.length === 2) {
+    const iv = Buffer.from(textParts[0], "hex");
+    const encryptedText = Buffer.from(textParts[1], "hex");
+    const decipher = crypto.createDecipheriv(ALGORITHM_CBC, keyBuffer, iv);
+    let decrypted = decipher.update(encryptedText);
+    decrypted = Buffer.concat([decrypted, decipher.final()]);
+    return decrypted.toString("utf8");
+  }
+
+  throw new Error("Invalid encrypted text format");
 }
 
 module.exports = { encrypt, decrypt };
