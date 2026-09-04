@@ -109,6 +109,20 @@ jobs:
       - name: Capacitor Sync
         run: npx cap sync android
 
+      - name: Configure Android Signing Keystore
+        if: env.ANDROID_KEYSTORE_BASE64 != ''
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+        run: |
+          echo "$ANDROID_KEYSTORE_BASE64" | base64 --decode > android/app/release.keystore
+          cat <<EOF > android/keystore.properties
+          storeFile=release.keystore
+          storePassword=$ANDROID_KEYSTORE_PASSWORD
+          keyAlias=pal
+          keyPassword=$ANDROID_KEYSTORE_PASSWORD
+          EOF
+
       - name: Build Android Release APK
         run: |
           cd android
