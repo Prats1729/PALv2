@@ -15,11 +15,13 @@ app.use(helmet());
 
 const ALLOWED_ORIGINS = [
   'https://palv2.vercel.app',
+  'https://pal-v2-cyan.vercel.app',
   'https://palv2.onrender.com',
   'tauri://localhost',
   'https://tauri.localhost',
   'http://tauri.localhost',
   'capacitor://localhost',
+  'https://localhost',
   'http://localhost',
   'http://localhost:5173',
   'http://127.0.0.1:5173',
