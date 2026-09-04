@@ -58,10 +58,25 @@ export default function Settings() {
 
     const params = new URLSearchParams(hash.replace("#", "?"));
     const accessToken = params.get("access_token");
+    const returnedState = params.get("state");
+    const savedState = sessionStorage.getItem("pal_oauth_state");
+
+    // Clear hash from URL immediately to prevent token exposure in history
+    window.history.replaceState(null, "", window.location.pathname);
+    sessionStorage.removeItem("pal_oauth_state");
+
     if (!accessToken) return;
 
-    // Clear hash from URL
-    window.history.replaceState(null, "", window.location.pathname);
+    // Verify OAuth state to prevent CSRF / account linking attacks
+    if (savedState && returnedState && savedState !== returnedState) {
+      console.error("OAuth state mismatch: potential CSRF detected");
+      window.dispatchEvent(
+        new CustomEvent("pal-toast", {
+          detail: { message: "Security error: invalid OAuth session state.", type: "error" },
+        })
+      );
+      return;
+    }
 
     // Send to backend for encrypted storage
     setLinkingStatus("linking");
@@ -103,7 +118,9 @@ export default function Settings() {
 
   const handleConnectAniList = () => {
     const redirect = encodeURIComponent(REDIRECT_URI);
-    const authUrl = `https://anilist.co/api/v2/oauth/authorize?client_id=${CLIENT_ID}&redirect_uri=${redirect}&response_type=token`;
+    const state = Math.random().toString(36).substring(2) + Date.now().toString(36);
+    sessionStorage.setItem("pal_oauth_state", state);
+    const authUrl = `https://anilist.co/api/v2/oauth/authorize?client_id=${CLIENT_ID}&redirect_uri=${redirect}&response_type=token&state=${state}`;
     window.location.href = authUrl;
   };
 

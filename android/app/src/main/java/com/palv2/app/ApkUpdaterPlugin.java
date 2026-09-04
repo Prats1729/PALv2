@@ -29,10 +29,16 @@ public class ApkUpdaterPlugin extends Plugin {
     @PluginMethod
     public void downloadAndInstall(PluginCall call) {
         String downloadUrl = call.getString("url");
-        String fileName = call.getString("fileName", "PAL-update.apk");
+        String rawFileName = call.getString("fileName", "PAL-update.apk");
 
         if (downloadUrl == null || downloadUrl.isEmpty()) {
             call.reject("Download URL is required");
+            return;
+        }
+
+        // Validate that downloadUrl originates from official GitHub releases
+        if (!downloadUrl.startsWith("https://github.com/Prats1729/PALv2/releases/download/")) {
+            call.reject("Untrusted download source: only official PALv2 GitHub releases are allowed.");
             return;
         }
 
@@ -48,7 +54,13 @@ public class ApkUpdaterPlugin extends Plugin {
                     downloadDir.mkdirs();
                 }
 
-                File apkFile = new File(downloadDir, fileName);
+                // Sanitize filename to prevent directory traversal
+                String safeFileName = new File(rawFileName != null ? rawFileName : "PAL-update.apk").getName();
+                if (!safeFileName.endsWith(".apk")) {
+                    safeFileName += ".apk";
+                }
+
+                File apkFile = new File(downloadDir, safeFileName);
                 if (apkFile.exists()) {
                     apkFile.delete();
                 }
@@ -62,12 +74,19 @@ public class ApkUpdaterPlugin extends Plugin {
                 connection.connect();
 
                 int responseCode = connection.getResponseCode();
-                // Handle 301/302 redirects if needed
+                // Handle 301/302 redirects safely
                 if (responseCode == HttpURLConnection.HTTP_MOVED_TEMP || 
                     responseCode == HttpURLConnection.HTTP_MOVED_PERM || 
                     responseCode == HttpURLConnection.HTTP_SEE_OTHER) {
                     String redirectUrl = connection.getHeaderField("Location");
                     connection.disconnect();
+
+                    // Ensure redirect destination is trusted GitHub or GitHub User Content
+                    if (redirectUrl == null || (!redirectUrl.startsWith("https://github.com/") && !redirectUrl.startsWith("https://objects.githubusercontent.com/"))) {
+                        call.reject("Invalid redirect target in updater");
+                        return;
+                    }
+
                     url = new URL(redirectUrl);
                     connection = (HttpURLConnection) url.openConnection();
                     connection.setRequestProperty("User-Agent", "Mozilla/5.0 (PAL-Android-Updater)");
