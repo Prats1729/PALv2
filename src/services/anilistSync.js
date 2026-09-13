@@ -57,8 +57,8 @@ export async function syncToAniList(anilistToken, mediaId, status, progress, sco
   };
 
   // Handle bidirectional score synchronization
-  if (score !== undefined) {
-    if (score != null && Number(score) > 0) {
+  if (score !== undefined && score !== null) {
+    if (Number(score) > 0) {
       variables.score = Number(score);
     } else {
       variables.score = 0; // Clears rating on AniList

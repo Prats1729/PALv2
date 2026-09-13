@@ -110,6 +110,7 @@ const watchlistSchema = new mongoose.Schema({
   color: { type: String, default: "#6366f1" },
   status: { type: String, default: "Plan to Watch" },
   progress: { type: Number, default: 0 },
+  rating: { type: Number, default: null },
   totalEpisodes: { type: Number, default: null },
   lastPosition: { type: Number, default: 0 },
   lastDuration: { type: Number, default: 0 },

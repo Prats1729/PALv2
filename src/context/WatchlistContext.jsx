@@ -75,6 +75,12 @@ export function WatchlistProvider({ children }) {
 
   // Fetch AniList token once on login (cached in ref to avoid re-renders)
   useEffect(() => {
+    if (!token || !user?.hasAnilistToken || user?.isGuest) {
+      anilistTokenRef.current = null;
+      hasSyncedRef.current = false;
+      return;
+    }
+
     if (token && user?.hasAnilistToken && !user?.isGuest && !hasSyncedRef.current) {
       hasSyncedRef.current = true;
       getAnilistToken().then(anilistToken => {
@@ -93,9 +99,6 @@ export function WatchlistProvider({ children }) {
           .catch(err => console.error("Background sync failed", err));
         }
       });
-    } else if (!token) {
-      anilistTokenRef.current = null;
-      hasSyncedRef.current = false;
     }
   }, [token, user?.hasAnilistToken, user?.isGuest, fetchWatchlist, getAnilistToken]);
 
@@ -126,7 +129,7 @@ export function WatchlistProvider({ children }) {
     if (!token) return;
 
     const progress = status === "Completed" ? (anime.episodes || 0) : 0;
-    const rating = anime.averageScore ? (anime.averageScore / 10) : null;
+    const rating = anime.rating !== undefined ? anime.rating : null;
 
     try {
       const response = await apiFetch('/api/watchlist', {

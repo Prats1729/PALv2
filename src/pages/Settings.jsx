@@ -8,7 +8,7 @@ import { isAndroid, isTauri } from "../utils/platform";
 import AvatarPickerModal from "../components/common/AvatarPickerModal";
 import "../styles/Settings.css";
 
-const CLIENT_ID = import.meta.env.VITE_ANILIST_CLIENT_ID;
+const CLIENT_ID = import.meta.env.VITE_ANILIST_CLIENT_ID || "42196";
 const REDIRECT_URI = window.location.origin + "/settings";
 
 export default function Settings() {
