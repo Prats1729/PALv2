@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from "react";
-import { useSearchParams } from "react-router-dom";
-import { searchAnime } from "../services/anilist";
+import { useSearchParams, useNavigate } from "react-router-dom";
+import { searchAnime, fetchRandomAnime } from "../services/anilist";
 import Pagination from "../components/common/Pagination";
 import AnimeCard from "../components/common/AnimeCard";
 import "../styles/Discover.css";
@@ -132,8 +132,31 @@ function SingleSelectDropdown({ label, options, selected, onChange, placeholder 
 
 // 2. MAIN CATALOG PAGE
 export default function Discover() {
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const urlQuery = searchParams.get("q") || "";
+  const [isRandomLoading, setIsRandomLoading] = useState(false);
+
+  const handleRandomAnime = async () => {
+    if (isRandomLoading) return;
+    setIsRandomLoading(true);
+    try {
+      const randomId = await fetchRandomAnime();
+      if (randomId) {
+        navigate(`/anime/${randomId}`);
+      } else {
+        window.dispatchEvent(
+          new CustomEvent("pal-toast", {
+            detail: { message: "Could not find a random anime right now. Please try again.", type: "error" },
+          })
+        );
+      }
+    } catch (err) {
+      console.error("Error fetching random anime:", err);
+    } finally {
+      setIsRandomLoading(false);
+    }
+  };
 
   // Filter States
   // Read values directly from searchParams
@@ -423,7 +446,24 @@ export default function Discover() {
 
   return (
     <div className="discover-container">
-      <h1 className="catalog-title">Catalog</h1>
+      <div className="discover-header-row">
+        <h1 className="catalog-title">Catalog</h1>
+        <button
+          type="button"
+          className="discover-random-btn"
+          onClick={handleRandomAnime}
+          disabled={isRandomLoading}
+          title="Pick a random anime to watch"
+        >
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="2" y="2" width="20" height="20" rx="4" ry="4"></rect>
+            <circle cx="8" cy="8" r="1.5" fill="currentColor"></circle>
+            <circle cx="16" cy="16" r="1.5" fill="currentColor"></circle>
+            <circle cx="12" cy="12" r="1.5" fill="currentColor"></circle>
+          </svg>
+          <span>{isRandomLoading ? "Picking..." : "Random Anime"}</span>
+        </button>
+      </div>
 
       {/* Mobile Collapsible Filter Toggle */}
       <button 

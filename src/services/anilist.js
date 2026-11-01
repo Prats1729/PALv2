@@ -176,3 +176,64 @@ export async function fetchAnimeBrief(id) {
   return null;
 }
 
+const RANDOM_BATCH_QUERY = gql`
+  query ($id_in: [Int]) {
+    Page(page: 1, perPage: 50) {
+      media(id_in: $id_in, type: ANIME, isAdult: false) {
+        id
+      }
+    }
+  }
+`;
+
+/**
+ * Fetches a genuinely random anime from the entire AniList catalog (not biased to popular).
+ * AniList uses sequential IDs up to ~220,000 across all media (anime, manga, specials).
+ * We generate batches of truly random IDs across the entire span and query in a single
+ * network call using `id_in`. Any valid anime returned is randomly selected.
+ */
+export async function fetchRandomAnime(maxAttempts = 3) {
+  const MAX_ANILIST_ID = 220000;
+  const BATCH_SIZE = 60;
+
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    // Generate 60 completely random uniform ID candidates
+    const randomIds = Array.from(
+      { length: BATCH_SIZE },
+      () => Math.floor(Math.random() * MAX_ANILIST_ID) + 1
+    );
+
+    try {
+      const data = await request(endpoint, RANDOM_BATCH_QUERY, { id_in: randomIds });
+      const mediaList = data?.Page?.media || [];
+      if (mediaList.length > 0) {
+        // Pick one completely at random from the matched valid anime
+        const picked = mediaList[Math.floor(Math.random() * mediaList.length)];
+        return picked.id;
+      }
+    } catch (err) {
+      console.warn(`Random anime attempt ${attempt + 1} failed:`, err);
+    }
+  }
+
+  // Robust fallback: Pick a completely random page with uniform ID sorting
+  try {
+    const fallbackPage = Math.floor(Math.random() * 5000) + 1;
+    const fallbackQuery = gql`
+      query ($page: Int) {
+        Page(page: $page, perPage: 1) {
+          media(type: ANIME, sort: [ID], isAdult: false) {
+            id
+          }
+        }
+      }
+    `;
+    const fallbackData = await request(endpoint, fallbackQuery, { page: fallbackPage });
+    return fallbackData?.Page?.media?.[0]?.id || null;
+  } catch (e) {
+    console.error("fetchRandomAnime fallback failed:", e);
+    return null;
+  }
+}
+
+

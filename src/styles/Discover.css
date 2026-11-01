@@ -3,14 +3,63 @@
   box-sizing: border-box;
 }
 
-/* Catalog Title Styling */
+/* Catalog Header & Random Button */
+.discover-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
 .catalog-title {
   color: var(--text-primary, #ffffff);
   font-size: 28px;
   font-weight: 700;
-  margin-top: 0;
-  margin-bottom: 24px;
+  margin: 0;
   letter-spacing: 0.5px;
+}
+
+.discover-random-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: var(--bg-card, rgba(255, 255, 255, 0.05));
+  border: 1px solid var(--border-card, rgba(255, 255, 255, 0.1));
+  border-radius: 6px;
+  color: var(--text-primary, #ffffff);
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: var(--card-shadow, 0 2px 8px rgba(0, 0, 0, 0.2));
+  user-select: none;
+}
+
+.discover-random-btn svg {
+  color: var(--accent-primary, #6366f1);
+  transition: transform 0.3s ease;
+}
+
+.discover-random-btn:hover:not(:disabled) {
+  background: var(--bg-card-hover, rgba(255, 255, 255, 0.1));
+  border-color: var(--border-card-hover, rgba(99, 102, 241, 0.4));
+  transform: translateY(-1px);
+}
+
+.discover-random-btn:hover:not(:disabled) svg {
+  transform: rotate(20deg) scale(1.1);
+}
+
+.discover-random-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.discover-random-btn:disabled {
+  opacity: 0.6;
+  cursor: wait;
 }
 
 /* Filter Bar box */
