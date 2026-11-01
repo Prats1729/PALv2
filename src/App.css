@@ -26,6 +26,8 @@ body.theme-midnight {
   --text-muted: #64748b;
   --card-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
   --topbar-blur: blur(14px);
+  --skeleton-base: #171422;
+  --skeleton-pulse: #231f33;
 }
 
 /* 2. GOOGLE SLATE DARK (Clean, Matte Material Design) */
@@ -49,6 +51,8 @@ body.theme-google-dark {
   --text-muted: #5f6368;
   --card-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
   --topbar-blur: none;
+  --skeleton-base: #1e1e1e;
+  --skeleton-pulse: #2c2c2c;
 }
 
 /* 3. OLED PITCH BLACK */
@@ -72,6 +76,8 @@ body.theme-oled {
   --text-muted: #71717a;
   --card-shadow: none;
   --topbar-blur: none;
+  --skeleton-base: #0f0f0f;
+  --skeleton-pulse: #1f1f1f;
 }
 
 /* 4. NORDIC CLEAN LIGHT (Crisp Porcelain Studio) */
@@ -95,6 +101,8 @@ body.theme-light {
   --text-muted: #94a3b8;
   --card-shadow: 0 4px 16px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.02);
   --topbar-blur: blur(16px);
+  --skeleton-base: #e2e8f0;
+  --skeleton-pulse: #cbd5e1;
 }
 
 body {
@@ -1308,13 +1316,13 @@ body.theme-oled .airing-quick-add-btn {
 /* Pulsing Skeleton Loader Animation */
 @keyframes skeleton-pulse {
   0% {
-    background-color: #1a1822;
+    background-color: var(--skeleton-base, #171422);
   }
   50% {
-    background-color: #2b2838;
+    background-color: var(--skeleton-pulse, #231f33);
   }
   100% {
-    background-color: #1a1822;
+    background-color: var(--skeleton-base, #171422);
   }
 }
 
@@ -1323,9 +1331,9 @@ body.theme-oled .airing-quick-add-btn {
   width: 100%;
   height: 325px; /* Matches exact height of .anime-card */
   border-radius: 7px;
-  background-color: #1a1822;
+  background-color: var(--skeleton-base, #171422);
   animation: skeleton-pulse 1.5s ease-in-out infinite;
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-card, rgba(255, 255, 255, 0.05));
 }
 
 /* Windows 10 style flat rectangular scrollbar */
@@ -1438,7 +1446,7 @@ body.theme-oled .airing-quick-add-btn {
   width: 100%;
   margin: 0;
   border-radius: 0;
-  background-color: #1a1822;
+  background-color: var(--skeleton-base, #171422);
   animation: skeleton-pulse 1.5s ease-in-out infinite;
   border: none;
 }

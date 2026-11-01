@@ -4,7 +4,7 @@ import { useWatchlist } from "../context/WatchlistContext";
 import { useLocation, useNavigate } from "react-router-dom";
 import { apiFetch } from "../services/api";
 import { getCurrentAppVersion, checkForAppUpdates } from "../utils/updater";
-import { isAndroid, isTauri } from "../utils/platform";
+import { isAndroid, isTauri, platformCapabilities } from "../utils/platform";
 import AvatarPickerModal from "../components/common/AvatarPickerModal";
 import "../styles/Settings.css";
 
@@ -350,12 +350,6 @@ export default function Settings() {
 
               <div className="settings-account-buttons-row">
                 <button 
-                  className="settings-secondary-btn"
-                  onClick={() => setShowAvatarPicker(true)}
-                >
-                  Change Avatar
-                </button>
-                <button 
                   className="settings-secondary-btn" 
                   onClick={() => {
                     setNewUsernameInput(user.username);
@@ -410,52 +404,58 @@ export default function Settings() {
                 {isTauri() ? "● Desktop OTA" : isAndroid() ? "● GitHub APK Releases" : "● Web Live"}
               </span>
             </div>
-            <button
-              className="settings-auth-btn"
-              style={{
-                marginTop: '8px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '8px',
-                minHeight: '38px',
-                opacity: isCheckingUpdate ? 0.8 : 1,
-                cursor: isCheckingUpdate ? 'wait' : 'pointer'
-              }}
-              disabled={isCheckingUpdate}
-              onClick={async () => {
-                setIsCheckingUpdate(true);
-                try {
-                  const update = await checkForAppUpdates(true);
-                  if (update) {
-                    window.dispatchEvent(new CustomEvent("pal-available-update", { detail: update }));
+            {platformCapabilities.hasUpdater ? (
+              <button
+                className="settings-auth-btn"
+                style={{
+                  marginTop: '8px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  minHeight: '38px',
+                  opacity: isCheckingUpdate ? 0.8 : 1,
+                  cursor: isCheckingUpdate ? 'wait' : 'pointer'
+                }}
+                disabled={isCheckingUpdate}
+                onClick={async () => {
+                  setIsCheckingUpdate(true);
+                  try {
+                    const update = await checkForAppUpdates(true);
+                    if (update) {
+                      window.dispatchEvent(new CustomEvent("pal-available-update", { detail: update }));
+                    }
+                  } catch (err) {
+                    console.error("Update check error:", err);
+                  } finally {
+                    setIsCheckingUpdate(false);
                   }
-                } catch (err) {
-                  console.error("Update check error:", err);
-                } finally {
-                  setIsCheckingUpdate(false);
-                }
-              }}
-            >
-              {isCheckingUpdate ? (
-                <>
-                  <span
-                    style={{
-                      width: '14px',
-                      height: '14px',
-                      border: '2px solid rgba(255, 255, 255, 0.3)',
-                      borderTopColor: '#ffffff',
-                      borderRadius: '50%',
-                      display: 'inline-block',
-                      animation: 'spin 0.8s linear infinite'
-                    }}
-                  />
-                  <span>Checking for updates...</span>
-                </>
-              ) : (
-                "Check for Updates"
-              )}
-            </button>
+                }}
+              >
+                {isCheckingUpdate ? (
+                  <>
+                    <span
+                      style={{
+                        width: '14px',
+                        height: '14px',
+                        border: '2px solid rgba(255, 255, 255, 0.3)',
+                        borderTopColor: '#ffffff',
+                        borderRadius: '50%',
+                        display: 'inline-block',
+                        animation: 'spin 0.8s linear infinite'
+                      }}
+                    />
+                    <span>Checking for updates...</span>
+                  </>
+                ) : (
+                  "Check for Updates"
+                )}
+              </button>
+            ) : (
+              <p style={{ margin: "10px 0 0", fontSize: "12.5px", color: "var(--text-secondary, #94a3b8)" }}>
+                You are running PAL on the web, which automatically deploys the latest live updates.
+              </p>
+            )}
           </div>
         </div>
 

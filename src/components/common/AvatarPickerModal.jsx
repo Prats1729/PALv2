@@ -44,28 +44,18 @@ export default function AvatarPickerModal({ isOpen, onClose }) {
     reader.onload = (event) => {
       const img = new Image();
       img.onload = () => {
-        // Compress & resize image to 256x256 via canvas for optimal DB storage & speed
+        // Center-crop to a clean 1:1 square (256x256) for optimal circular avatar framing
         const canvas = document.createElement("canvas");
-        const MAX_SIZE = 256;
-        let width = img.width;
-        let height = img.height;
+        const TARGET_SIZE = 256;
+        canvas.width = TARGET_SIZE;
+        canvas.height = TARGET_SIZE;
 
-        if (width > height) {
-          if (width > MAX_SIZE) {
-            height = Math.round((height * MAX_SIZE) / width);
-            width = MAX_SIZE;
-          }
-        } else {
-          if (height > MAX_SIZE) {
-            width = Math.round((width * MAX_SIZE) / height);
-            height = MAX_SIZE;
-          }
-        }
-
-        canvas.width = width;
-        canvas.height = height;
         const ctx = canvas.getContext("2d");
-        ctx.drawImage(img, 0, 0, width, height);
+        const minDim = Math.min(img.width, img.height);
+        const sx = (img.width - minDim) / 2;
+        const sy = (img.height - minDim) / 2;
+
+        ctx.drawImage(img, sx, sy, minDim, minDim, 0, 0, TARGET_SIZE, TARGET_SIZE);
 
         const compressedDataUrl = canvas.toDataURL("image/jpeg", 0.85);
         setSelectedAvatar(compressedDataUrl);
