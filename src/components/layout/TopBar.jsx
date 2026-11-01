@@ -283,34 +283,16 @@ export default function TopBar() {
           {platformCapabilities.canShowDesktopDownload && (
             <button
               type="button"
-              className="desktop-only"
+              className="topbar-desktop-download-btn desktop-only"
               onClick={() => setShowDesktopModal(true)}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "6px",
-                background: "rgba(255, 255, 255, 0.06)",
-                border: "1px solid rgba(255, 255, 255, 0.15)",
-                color: "#e2e8f0",
-                padding: "6px 12px",
-                borderRadius: "6px",
-                fontSize: "12px",
-                fontWeight: "600",
-                cursor: "pointer",
-                transition: "background-color 0.2s ease, border-color 0.2s ease",
-                boxShadow: "none"
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = "rgba(255, 255, 255, 0.12)";
-                e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.25)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = "rgba(255, 255, 255, 0.06)";
-                e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.15)";
-              }}
               title="Get PAL Desktop App for Windows"
             >
-              Desktop App
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                <line x1="8" y1="21" x2="16" y2="21"></line>
+                <line x1="12" y1="17" x2="12" y2="21"></line>
+              </svg>
+              <span>Desktop App</span>
             </button>
           )}
 
