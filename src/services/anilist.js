@@ -237,3 +237,108 @@ export async function fetchRandomAnime(maxAttempts = 3) {
 }
 
 
+
+
+/**
+ * Fetches AniList's direct peer recommendations for an anime.
+ */
+const ANIME_RECOMMENDATIONS_QUERY = gql`
+  query ($id: Int) {
+    Media(id: $id, type: ANIME) {
+      id
+      title {
+        romaji
+        english
+      }
+      recommendations(perPage: 8, sort: [RATING_DESC]) {
+        nodes {
+          mediaRecommendation {
+            id
+            title {
+              romaji
+              english
+              native
+            }
+            coverImage {
+              large
+              color
+            }
+            description(asHtml: false)
+            averageScore
+            episodes
+            format
+            status
+            genres
+            tags {
+              name
+              isMediaSpoiler
+              isGeneralSpoiler
+            }
+          }
+        }
+      }
+    }
+  }
+`;
+
+export async function fetchAnimeRecommendations(id) {
+  if (!id) return [];
+  try {
+    const data = await request(endpoint, ANIME_RECOMMENDATIONS_QUERY, { id });
+    const nodes = data?.Media?.recommendations?.nodes || [];
+    return nodes
+      .map(n => n.mediaRecommendation)
+      .filter(m => Boolean(m && m.id));
+  } catch (err) {
+    console.warn("fetchAnimeRecommendations error:", err);
+    return [];
+  }
+}
+
+/**
+ * Fetches high-rated catalog titles for given genres (excluding already watched ones).
+ */
+const GENRE_RECOMMENDATIONS_QUERY = gql`
+  query ($genre_in: [String], $page: Int, $perPage: Int) {
+    Page(page: $page, perPage: $perPage) {
+      media(genre_in: $genre_in, type: ANIME, isAdult: false, sort: [SCORE_DESC, POPULARITY_DESC]) {
+        id
+        title {
+          romaji
+          english
+          native
+        }
+        coverImage {
+          large
+          color
+        }
+        description(asHtml: false)
+        averageScore
+        episodes
+        format
+        status
+        genres
+        tags {
+          name
+          isMediaSpoiler
+          isGeneralSpoiler
+        }
+      }
+    }
+  }
+`;
+
+export async function fetchGenreRecommendations(genres, page = 1, perPage = 12) {
+  if (!genres || genres.length === 0) return [];
+  try {
+    const data = await request(endpoint, GENRE_RECOMMENDATIONS_QUERY, {
+      genre_in: genres,
+      page,
+      perPage
+    });
+    return data?.Page?.media || [];
+  } catch (err) {
+    console.warn("fetchGenreRecommendations error:", err);
+    return [];
+  }
+}
