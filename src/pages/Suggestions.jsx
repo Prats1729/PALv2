@@ -102,6 +102,7 @@ export default function Suggestions() {
   // RECOMMENDATIONS TAB STATE & ENGINE
   // ----------------------------------------------------
   const [recommendationsLoading, setRecommendationsLoading] = useState(false);
+  const [genreLoading, setGenreLoading] = useState(false);
   const [peerClusters, setPeerClusters] = useState([]); // [{ anchorTitle, items: [] }]
   const [genreCluster, setGenreCluster] = useState({ genre: "", items: [] });
   const [refreshTrigger, setRefreshTrigger] = useState(0);
@@ -136,13 +137,12 @@ export default function Suggestions() {
     }
   }, [availableGenres, selectedGenre]);
 
-  const loadRecommendations = useCallback(async () => {
+  // Load peer clusters based on completed titles
+  const loadPeerClusters = useCallback(async () => {
     if (currentTab !== "recommendations") return;
 
     setRecommendationsLoading(true);
     try {
-      // 1. Pick up to 3 distinct completed anchors to fetch AniList peer recommendations
-      // Shuffle anchors so rerolling gives fresh clusters every time
       const completedAnchors = [...completedList]
         .sort(() => 0.5 - Math.random())
         .slice(0, 3);
@@ -157,29 +157,49 @@ export default function Suggestions() {
       });
 
       const resolvedClusters = await Promise.all(clusterPromises);
-
-      // 2. Fetch high-rated titles in the selected genre
-      const leadGenre = selectedGenre || availableGenres[0] || "Action";
-      // Pick a random page offset (1-3) on refresh so results are diverse
-      const randomGenrePage = Math.floor(Math.random() * 3) + 1;
-      const genreMedia = await fetchGenreRecommendations([leadGenre], randomGenrePage, 12);
-      const unseenGenreItems = genreMedia.filter(m => !watchedIds.has(m.id)).slice(0, 6);
-
       setPeerClusters(resolvedClusters.filter(c => c.items.length > 0));
-      setGenreCluster({
-        genre: leadGenre,
-        items: unseenGenreItems
-      });
     } catch (err) {
-      console.error("Failed to load recommendations:", err);
+      console.error("Failed to load peer recommendations:", err);
     } finally {
       setRecommendationsLoading(false);
     }
-  }, [currentTab, completedList, selectedGenre, availableGenres, watchedIds]);
+  }, [currentTab, completedList, watchedIds]);
 
+  // Load high-rated titles in the selected genre/tag
+  const loadGenreCluster = useCallback(async (genreToFetch) => {
+    if (currentTab !== "recommendations") return;
+    const target = genreToFetch || selectedGenre || availableGenres[0] || "Action";
+
+    setGenreLoading(true);
+    try {
+      const randomGenrePage = Math.floor(Math.random() * 3) + 1;
+      const genreMedia = await fetchGenreRecommendations([target], randomGenrePage, 12);
+      const unseenGenreItems = genreMedia.filter(m => !watchedIds.has(m.id)).slice(0, 6);
+
+      setGenreCluster({
+        genre: target,
+        items: unseenGenreItems
+      });
+    } catch (err) {
+      console.error("Failed to load genre recommendations:", err);
+    } finally {
+      setGenreLoading(false);
+    }
+  }, [currentTab, selectedGenre, availableGenres, watchedIds]);
+
+  // Reroll both on tab change or New Suggestions trigger
   useEffect(() => {
-    loadRecommendations();
-  }, [loadRecommendations, refreshTrigger]);
+    if (currentTab === "recommendations") {
+      loadPeerClusters();
+      loadGenreCluster(selectedGenre);
+    }
+  }, [currentTab, refreshTrigger]);
+
+  // Switch genre immediately when user selects a different pill
+  const handleSelectGenre = (genre) => {
+    setSelectedGenre(genre);
+    loadGenreCluster(genre);
+  };
 
   const setTab = (tabName) => {
     const next = new URLSearchParams(searchParams);
@@ -409,11 +429,44 @@ export default function Suggestions() {
                 key={genre}
                 type="button"
                 className={`genre-selector-pill ${selectedGenre === genre ? "active" : ""}`}
-                onClick={() => setSelectedGenre(genre)}
+                onClick={() => handleSelectGenre(genre)}
               >
                 <span>{genre}</span>
               </button>
             ))}
+          </div>
+
+          {/* Genre Cluster: User-chosen genre recommendations placed right at the top */}
+          <div className="recommendations-cluster">
+            <div className="recommendations-cluster-header">
+              <div>
+                <h2 className="recommendations-cluster-title">
+                  <span>Top Rated in</span>
+                  <span style={{ color: "var(--accent-primary, #6366f1)" }}>{selectedGenre || genreCluster.genre}</span>
+                </h2>
+                <p className="recommendations-cluster-desc">
+                  Acclaimed {selectedGenre || genreCluster.genre} anime not yet on your watchlist.
+                </p>
+              </div>
+            </div>
+
+            {genreLoading ? (
+              <div className="anime-grid" style={{ padding: 0 }}>
+                {Array.from({ length: 6 }).map((_, idx) => (
+                  <div key={idx} className="skeleton-card" />
+                ))}
+              </div>
+            ) : genreCluster.items.length > 0 ? (
+              <div className="anime-grid" style={{ padding: 0 }}>
+                {genreCluster.items.map(anime => (
+                  <AnimeCard key={anime.id} anime={anime} />
+                ))}
+              </div>
+            ) : (
+              <p style={{ color: "var(--text-secondary)", fontSize: "13px", margin: "10px 0" }}>
+                No unseen titles found in this category.
+              </p>
+            )}
           </div>
 
           {recommendationsLoading && (
@@ -438,29 +491,7 @@ export default function Suggestions() {
 
           {!recommendationsLoading && (
             <>
-              {/* Genre Cluster: User-chosen genre recommendations */}
-              {genreCluster.items.length > 0 && (
-                <div className="recommendations-cluster">
-                  <div className="recommendations-cluster-header">
-                    <div>
-                      <h2 className="recommendations-cluster-title">
-                        <span>Top Rated in</span>
-                        <span style={{ color: "var(--accent-primary, #6366f1)" }}>{genreCluster.genre}</span>
-                      </h2>
-                      <p className="recommendations-cluster-desc">
-                        Acclaimed {genreCluster.genre} anime not yet on your watchlist.
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="anime-grid" style={{ padding: 0 }}>
-                    {genreCluster.items.map(anime => (
-                      <AnimeCard key={anime.id} anime={anime} />
-                    ))}
-                  </div>
-                </div>
-              )}
-            {/* Peer Clusters: "Because you finished [Anchor Title]" */}
+              {/* Peer Clusters: "Because you finished [Anchor Title]" */}
               {peerClusters.map((cluster, cIdx) => (
                 <div key={cIdx} className="recommendations-cluster">
                   <div className="recommendations-cluster-header">
@@ -482,8 +513,7 @@ export default function Suggestions() {
                   </div>
                 </div>
               ))}
-
-              </>
+            </>
           )}
         </div>
       )}

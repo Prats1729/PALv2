@@ -296,12 +296,12 @@ export async function fetchAnimeRecommendations(id) {
 }
 
 /**
- * Fetches high-rated catalog titles for given genres (excluding already watched ones).
+ * Fetches high-rated catalog titles for given genres or tags (excluding already watched ones).
  */
 const GENRE_RECOMMENDATIONS_QUERY = gql`
-  query ($genre_in: [String], $page: Int, $perPage: Int) {
+  query ($genre_in: [String], $tag_in: [String], $page: Int, $perPage: Int) {
     Page(page: $page, perPage: $perPage) {
-      media(genre_in: $genre_in, type: ANIME, isAdult: false, sort: [SCORE_DESC, POPULARITY_DESC]) {
+      media(genre_in: $genre_in, tag_in: $tag_in, type: ANIME, isAdult: false, sort: [SCORE_DESC, POPULARITY_DESC]) {
         id
         title {
           romaji
@@ -328,14 +328,22 @@ const GENRE_RECOMMENDATIONS_QUERY = gql`
   }
 `;
 
+const ANILIST_STANDARD_GENRES = new Set([
+  "Action", "Adventure", "Comedy", "Drama", "Ecchi", "Fantasy",
+  "Horror", "Mahou Shoujo", "Mecha", "Music", "Mystery", "Psychological",
+  "Romance", "Sci-Fi", "Slice of Life", "Sports", "Supernatural", "Thriller"
+]);
+
 export async function fetchGenreRecommendations(genres, page = 1, perPage = 12) {
   if (!genres || genres.length === 0) return [];
   try {
-    const data = await request(endpoint, GENRE_RECOMMENDATIONS_QUERY, {
-      genre_in: genres,
+    const isStandard = genres.every(g => ANILIST_STANDARD_GENRES.has(g));
+    const variables = {
       page,
-      perPage
-    });
+      perPage,
+      ...(isStandard ? { genre_in: genres } : { tag_in: genres })
+    };
+    const data = await request(endpoint, GENRE_RECOMMENDATIONS_QUERY, variables);
     return data?.Page?.media || [];
   } catch (err) {
     console.warn("fetchGenreRecommendations error:", err);
