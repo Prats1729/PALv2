@@ -10,6 +10,7 @@ import Profile from "./pages/Profile.jsx";
 import AnimeDetails from "./pages/AnimeDetails.jsx";
 import Search from "./pages/Search.jsx";
 import ContinueWatching from "./pages/ContinueWatching.jsx";
+import Suggestions from "./pages/Suggestions.jsx";
 
 import Login from "./pages/Login.jsx";
 import Register from "./pages/Register.jsx";
@@ -164,6 +165,8 @@ export default function App() {
                 <Route path="/library" element={<ProtectedRoute><Library /></ProtectedRoute>} />
                 <Route path="/continue-watching" element={<ProtectedRoute><ContinueWatching /></ProtectedRoute>} />
                 <Route path="/discover" element={<ProtectedRoute><Discover /></ProtectedRoute>} />
+                <Route path="/for-you" element={<ProtectedRoute><Suggestions /></ProtectedRoute>} />
+                <Route path="/suggestions" element={<ProtectedRoute><Suggestions /></ProtectedRoute>} />
                 <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
                 <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
                 <Route path="/statistics" element={<ProtectedRoute><Profile /></ProtectedRoute>} />

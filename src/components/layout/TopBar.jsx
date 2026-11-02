@@ -322,6 +322,14 @@ export default function TopBar() {
           >
             Library
           </NavLink>
+          <NavLink
+            to="/for-you"
+            className={({ isActive }) =>
+              isActive ? "nav-link-active desktop-only" : "nav-link desktop-only"
+            }
+          >
+            For You
+          </NavLink>
 
           {/* --- Profile Picture & Dropdown --- */}
           {user ? (
