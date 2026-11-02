@@ -411,10 +411,10 @@ body.theme-light .details-audio-badge.sub-only {
   margin-bottom: 30px;
 }
 .genre-badge {
-  background-color: rgba(99, 102, 241, 0.15); /* Premium indigo overlay */
+  background-color: rgba(99, 102, 241, 0.15);
   color: #a5b4fc;
-  padding: 6px 14px;
-  border-radius: 20px;
+  padding: 6px 12px;
+  border-radius: 6px;
   font-size: 13px;
   font-weight: 500;
 }

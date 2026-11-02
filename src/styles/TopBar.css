@@ -103,7 +103,7 @@
   align-items: center;
   background-color: var(--bg-input, rgba(255, 255, 255, 0.04));
   border: 1px solid var(--border-card, rgba(255, 255, 255, 0.1));
-  border-radius: 24px;
+  border-radius: 8px;
   padding: 0 12px 0 15px;
   height: 40px;
   width: 250px;
