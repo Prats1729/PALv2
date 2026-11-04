@@ -30,7 +30,7 @@ export default function Suggestions() {
   // REWATCH TAB STATE
   // ----------------------------------------------------
   const [activeVibe, setActiveVibe] = useState("all");
-  const [spotlightIndex, setSpotlightIndex] = useState(0);
+  const [spotlightIndex, setSpotlightIndex] = useState(() => Math.floor(Math.random() * 10000));
 
   // Filter completed anime from user's watchlist
   const completedList = useMemo(() => {
@@ -71,9 +71,10 @@ export default function Suggestions() {
     if (filteredRewatchCandidates.length <= 1) return;
     setSpotlightIndex(prev => {
       let next;
+      const currentMod = ((prev % filteredRewatchCandidates.length) + filteredRewatchCandidates.length) % filteredRewatchCandidates.length;
       do {
         next = Math.floor(Math.random() * filteredRewatchCandidates.length);
-      } while (next === prev && filteredRewatchCandidates.length > 1);
+      } while (next === currentMod && filteredRewatchCandidates.length > 1);
       return next;
     });
   };
@@ -220,6 +221,21 @@ export default function Suggestions() {
           </h1>
 
           <div className="suggestions-header-actions">
+            {currentTab === "rewatch" && filteredRewatchCandidates.length > 1 && (
+              <button
+                type="button"
+                className="suggestions-refresh-btn"
+                onClick={handleRerollSpotlight}
+                title="Pick another random completed anime"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="23 4 23 10 17 10"></polyline>
+                  <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                </svg>
+                <span>Pick Another</span>
+              </button>
+            )}
+
             {currentTab === "recommendations" && (
               <button
                 type="button"
@@ -240,7 +256,10 @@ export default function Suggestions() {
               <button
                 type="button"
                 className={`suggestions-tab-btn ${currentTab === "rewatch" ? "active" : ""}`}
-                onClick={() => setTab("rewatch")}
+                onClick={() => {
+                  setTab("rewatch");
+                  handleRerollSpotlight();
+                }}
                 role="tab"
                 aria-selected={currentTab === "rewatch"}
               >
@@ -290,7 +309,7 @@ export default function Suggestions() {
                 className={`rewatch-pill ${activeVibe === vibe.id ? "active" : ""}`}
                 onClick={() => {
                   setActiveVibe(vibe.id);
-                  setSpotlightIndex(0);
+                  setSpotlightIndex(Math.floor(Math.random() * 10000));
                 }}
               >
                 <span>{vibe.label}</span>
